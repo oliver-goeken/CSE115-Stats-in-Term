@@ -17,7 +17,7 @@ OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 all: $(OUT)
 
 $(OUT): $(OBJS)
-	$(CC) $(CLFAGS) -o $(OUT) $(OBJS) $(LDLIBS)
+	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LDLIBS)
 
 $(OBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
