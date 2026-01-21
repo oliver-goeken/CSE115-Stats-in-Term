@@ -1,6 +1,7 @@
 # vim stuff
 *.swp
 .ycm_extra_conf.py
+compile_commands.json
 
 # Prerequisites
 *.d
