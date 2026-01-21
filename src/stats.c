@@ -1,8 +1,15 @@
 #include "stats.h"
 #include "error.h"
+#include "display.h"
 
 int main (){
-	throw_error(-1, "testing", __FILE__, __LINE__);
+	display_init();
+
+	printw("Hello World!");
+	refresh();
+	getch();
+
+	display_kill();
 
 	return 0;
 }
