@@ -21,6 +21,6 @@ int display_init();
  * @details
  * only call when done with ncurses
  */
-int display_kill();
+int display_terminate();
 
 #endif

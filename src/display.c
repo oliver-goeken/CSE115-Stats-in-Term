@@ -1,8 +1,7 @@
 #include "display.h"
 
 int display_init(){
-	WINDOW* w = initscr();
-	if (w == NULL){
+	if (initscr() == NULL){
 		return -1;
 	}
 
