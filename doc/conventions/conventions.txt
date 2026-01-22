@@ -1,0 +1,7 @@
+tabs not spaces
+
+git commits should be formatted "add readme" not "added readme"
+should read as if you were saying "when you pull this commit it will [commit message]"
+
+function names relating to one part of the codebase should start with the name of that part
+i.e. functions relating to the display wrapper should start display_
