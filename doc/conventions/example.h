@@ -1,12 +1,11 @@
 #ifndef example_he
 #define example_he
 
-typedef struct struct_name {
+typedef struct example_struct {
 	int parameter;
-} struct_name;
+} example_struct;
 
 // comments describing entire functions should go in header
-
 // example to copy paste:
 /*
  * @brief
