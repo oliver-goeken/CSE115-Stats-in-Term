@@ -7,11 +7,25 @@ typedef struct struct_name {
 
 // comments describing entire functions should go in header
 
+// example to copy paste:
+/*
+ * @brief
+ *
+ * @param
+ * @param
+ *
+ * @return
+ *
+ * @details
+ * 
+ */
+
+
 /*
  * @brief brief description of what funciton does
  *
- * @param first argument
- * @param second argument
+ * @param first_argument what it does
+ * @param second_argument what it does
  *
  * @return expected return values
  *
