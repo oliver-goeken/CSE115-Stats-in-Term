@@ -1,4 +1,5 @@
 #include "example.h"
+// as many includes as possible should be in c file, not header (some may need to be in header for like structs for instance)
 
 int example_function(int* first_arg, int second_arg){ //int* ptr; (not: int *ptr;)
 	first_arg ++; //unrelated to scope change

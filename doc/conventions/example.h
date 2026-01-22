@@ -5,6 +5,8 @@ typedef struct struct_name {
 	int parameter;
 } struct_name;
 
+// comments describing entire functions should go in header
+
 /*
  * @brief brief description of what funciton does
  *
