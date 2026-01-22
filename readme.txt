@@ -1,4 +1,5 @@
 write and test code on development branch before merging into main
+i think frequent commits are better (like all the time, just makes going thru commit messages easier)
 
 "make" or "make stats" to compile the stats executable
 "make clean" to remove stats executable and object files (please make clean before commiting/pushing)
