@@ -4,8 +4,10 @@
 #include <ncurses.h>
 
 typedef struct display_window_content_node {
-	struct display_window_content_node* NEXT;
-	struct display_window_content_node* PREV;
+	struct display_window_content_node* next_node;
+	struct display_window_content_node* prev_node;
+
+	char* data;
 } display_window_content_node;
 
 typedef struct display_window {
@@ -125,5 +127,13 @@ int display_draw_window(display_window* window);
  * window from the contents struct linked list
  */
 int display_draw_window_contents(display_window* window);
+
+int display_init_window_contents(display_window* window);
+int display_terminate_window_contents(display_window* window);
+
+int display_window_add_content_node(display_window* window, char* data);
+int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node);
+
+int display_destroy_ncurses_window(display_window* window);
 
 #endif
