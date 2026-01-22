@@ -37,10 +37,8 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 	return new_display_window;
 }
 
-// TODO: delete old window contents from screen
 int display_destroy_window(display_window* window){
-	delwin(window->window);
-
+	display_destroy_ncurses_window(window->window);
 	display_terminate_window_contents(window);
 
 	free(window);
@@ -48,18 +46,11 @@ int display_destroy_window(display_window* window){
 	return 0;
 }
 
-// TODO: delete old window contents from screen
 int display_move_window(display_window* window, int new_begin_x, int new_begin_y){
 	window->start_x = new_begin_x;
 	window->start_y = new_begin_y;
 
-	wborder(window->window, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-	wrefresh(window->window);
-	delwin(window->window);
-
-	window->window = newwin(window->height, window->width, window->start_y, window->start_x);
-
-	display_draw_window(window);
+	display_window_change_attributes(window, new_begin_x, new_begin_y, window->width, window->height);
 
 	return 0;
 }
@@ -68,13 +59,26 @@ int display_resize_window(display_window* window, int new_width, int new_height)
 	window->width = new_width;
 	window->height = new_height;
 
-	wborder(window->window, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-	wrefresh(window->window);
-	delwin(window->window);
+	display_window_change_attributes(window, window->start_x, window->start_y, new_width, new_height);
 
-	window->window = newwin(window->height, window->width, window->start_y, window->start_x);
+	return 0;
+}
+
+int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height){
+	display_destroy_ncurses_window(window->window);
+
+	window->window = newwin(new_height, new_width, new_start_y, new_start_x);
 
 	display_draw_window(window);
+
+	return 0;
+}
+
+int display_destroy_ncurses_window(WINDOW* window){
+	werase(window);
+
+	wrefresh(window);
+	delwin(window);
 
 	return 0;
 }

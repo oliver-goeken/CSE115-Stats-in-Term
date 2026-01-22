@@ -134,6 +134,7 @@ int display_terminate_window_contents(display_window* window);
 int display_window_add_content_node(display_window* window, char* data);
 int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node);
 
-int display_destroy_ncurses_window(display_window* window);
+int display_destroy_ncurses_window(WINDOW* window);
+int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height);
 
 #endif
