@@ -2,10 +2,12 @@
 
 int display_init(){
 	WINDOW* w = initscr();
-
-	if (w == NULL){
+	if (w == NULL)
 		return -1;
-	} 
+
+	cbreak();
+	noecho();
+	keypad(stdscr, true);
 
 	return 0;
 }
