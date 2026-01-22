@@ -7,6 +7,7 @@ typedef struct example_struct {
 
 // comments describing entire functions should go in header
 // example to copy paste:
+
 /*
  * @brief
  *
