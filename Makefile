@@ -5,6 +5,8 @@ OUT = stats
 SRCDIR = src/
 INCDIR = include/
 OBJDIR = .obj/
+TESTDIR = tests/
+TESTOBJDIR = $(TESTDIR).obj/
 
 CC = cc
 LDLIBS = -lncurses
@@ -13,11 +15,27 @@ CFLAGS = -g -Wall -Wextra -I$(INCDIR)
 CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 
+TESTS = $(wildcard $(TESTDIR)*.c)
+TEST_OUTS := $(patsubst $(TESTDIR)%.c,$(TESTDIR)%,$(TESTS))
+TEST_OBJS := $(patsubst $(TESTDIR)%.c,$(TESTOBJDIR)%.o,$(TESTS)) tests/unity/unity.c
+TEST_FLAGS = -I$(TESTDIR)unity/ -I$(TESTDIR)
+TEST_LD_LIBS = -lunity
+
 
 all: $(OUT)
 
+.PHONY: test
+test: $(TEST_OUTS)
+
+
 $(OUT): $(OBJS)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LDLIBS)
+
+$(TEST_OUTS): $(TEST_OBJS)
+	$(CC) $(CFLAGS) $(TEST_FLAGS) -o $@ $(TEST_OBJS) $(LDLIBS)
+
+$(TESTOBJDIR)%.o: $(TESTDIR)%.c
+	$(CC) $(CFLAGS) $(TEST_FLAGS) -c -o $@ $<
 
 $(OBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -25,7 +43,11 @@ $(OBJDIR)%.o: $(SRCDIR)%.c
 $(OBJDIR):
 	mkdir -p $@
 
+$(TESTOBJDIR):
+	mkdir -p $@
+
 
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT)
+	rm -f $(TESTDIR)bin/*
