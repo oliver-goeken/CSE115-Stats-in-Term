@@ -159,9 +159,19 @@ int display_window_destroy_content_node(display_window* window, display_window_c
 
 	free(cur_node->data);
 
-	// make prev and next node reference each other
-	cur_node->prev_node->next_node = cur_node->next_node;
-	cur_node->next_node->prev_node = cur_node->prev_node;
+
+	// make prev and next node reference each other:
+	//
+	// if cur_node does not have a previous node, it is the root node
+	if (cur_node->prev_node != NULL){
+		cur_node->prev_node->next_node = cur_node->next_node;
+	} else {
+		window->content = cur_node->next_node;
+	}
+	// only change next_node->prev_node if next_node exists
+	if (cur_node->next_node != NULL){
+		cur_node->next_node->prev_node = cur_node->prev_node;
+	}
 
 	free(cur_node);
 

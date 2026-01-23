@@ -197,7 +197,7 @@ int display_window_add_content_node(display_window* window, char* data);
  * @param window window to destroy content node 
  * @param target_node content node to destroy
  *
- * @return 0 on success
+ * @return 0 on success, -1 if node is not in display window's linked list
  *
  * @details
  * frees memory associated with node, and moves previous and next node's pointers to correctly reflect lack of node
