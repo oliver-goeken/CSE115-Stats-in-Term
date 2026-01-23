@@ -15,10 +15,11 @@ CFLAGS = -g -Wall -Wextra -I$(INCDIR)
 CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 
-TESTS = $(wildcard $(TESTDIR)*.c)
-TEST_OUTS := $(patsubst $(TESTDIR)test_%.c,$(TESTDIR)test_%,$(TESTS))
-TEST_OBJS := $(patsubst $(TESTDIR)%.c,$(TESTOBJDIR)%.o,$(TESTS))
-TEST_FLAGS = -I$(TESTDIR)
+TESTS = $(wildcard $(TESTDIR)test_*.c)
+TEST_C_FILES = $(wildcard $(TESTDIR)*.c)
+TEST_OUTS := $(patsubst $(TESTDIR)%.c,$(TESTDIR)%,$(TESTS))
+TEST_OBJS := $(patsubst $(TESTDIR)%.c,$(TESTOBJDIR)%.o,$(TEST_C_FILES))
+TEST_FLAGS = -I$(TESTDIR) -I$(SRCDIR)
 
 
 all: $(OUT)
@@ -30,8 +31,8 @@ test: $(TEST_OUTS)
 $(OUT): $(OBJS)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LDLIBS)
 
-$(TEST_OUTS): $(TEST_OBJS)
-	$(CC) $(CFLAGS) $(TEST_FLAGS) -o $@ $(TEST_OBJS) $(LDLIBS)
+$(TEST_OUTS): $(TEST_OBJS) $(OBJS)
+	$(CC) $(CFLAGS) $(TEST_FLAGS) -o $@ $(TEST_OBJS) $(patsubst .obj/stats.o,,$(OBJS)) $(LDLIBS)
 
 $(TESTOBJDIR)%.o: $(TESTDIR)%.c
 	$(CC) $(CFLAGS) $(TEST_FLAGS) -c -o $@ $<
@@ -51,4 +52,5 @@ $(TESTOBJDIR):
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT)
+	rm -f $(TESTOBJDIR)*.o
 	rm -f $(TEST_OUTS)
