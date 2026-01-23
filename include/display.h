@@ -104,6 +104,32 @@ int display_resize_window(display_window* window, int new_width, int new_height)
 int display_move_window(display_window* winodw, int new_begin_x, int new_begin_y);
 
 /*
+ * @brief destroys an ncurses window
+ *
+ * @param window ncurses window to destroy
+ *
+ * @return 0 on success
+ *
+ * @details
+ * destroys an ncurses window and does visual cleanup
+ */
+int display_destroy_ncurses_window(WINDOW* window);
+
+/*
+ * @brief changes the size and position of a display_window
+ *
+ * @param window display_window to change attributes of
+ * @param new_start_x new top left corner x coordinate
+ * @param new_start_y new top left corner y coordinate
+ * @param new_width new width
+ * @param new_new new height
+ *
+ * @return 0 on success
+ *
+ */
+int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height);
+
+/*
  * @brief draws a display_window to the screen
  *
  * @param window display_window to draw
@@ -128,13 +154,54 @@ int display_draw_window(display_window* window);
  */
 int display_draw_window_contents(display_window* window);
 
+/*
+ * @brief initializes the data structure that holds the contents of the window
+ *
+ * @param window display_window's contents to initialize
+ *
+ * @return 0 on success
+ *
+ * @details
+ * allocates memory and sets default values for the contents data structure
+ */
 int display_init_window_contents(display_window* window);
+
+/*
+ * @brief destorys a display_windows contents data structure
+ *
+ * @param window display_window whose contents to destroy
+ *
+ * @return 0 on success
+ *
+ * @details
+ * frees all associated memory for every node in the contents linked list
+ */
 int display_terminate_window_contents(display_window* window);
 
+/*
+ * @brief adds a node to a display window's content struct
+ *
+ * @param window display_window to add content node to
+ * @param data string data to put in new content node
+ *
+ * @return 0 on success
+ *
+ * @details
+ * allocates memory, ensures references from previous node points correctly. also uses strcpy
+ */
 int display_window_add_content_node(display_window* window, char* data);
-int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node);
 
-int display_destroy_ncurses_window(WINDOW* window);
-int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height);
+/*
+ * @brief destorys a content node from a display window
+ *
+ * @param window window to destroy content node 
+ * @param target_node content node to destroy
+ *
+ * @return 0 on success
+ *
+ * @details
+ * frees memory associated with node, and moves previous and next node's pointers to correctly reflect lack of node
+ */
+int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node);
 
 #endif

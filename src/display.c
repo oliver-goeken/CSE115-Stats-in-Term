@@ -76,7 +76,6 @@ int display_window_change_attributes(display_window* window, int new_start_x, in
 
 int display_destroy_ncurses_window(WINDOW* window){
 	werase(window);
-
 	wrefresh(window);
 	delwin(window);
 
@@ -99,10 +98,13 @@ int display_draw_window_contents(display_window* window){
 
 int display_init_window_contents(display_window* window){
 	window->content = malloc(sizeof(display_window_content_node));
+
 	window->content->prev_node = NULL;
 	window->content->next_node = NULL;
 
 	window->content->data = NULL;
+
+	window->content_offset = 0;
 	
 	return 0;
 }
@@ -156,8 +158,10 @@ int display_window_destroy_content_node(display_window* window, display_window_c
 	}
 
 	free(cur_node->data);
-	cur_node->prev_node->next_node = cur_node->next_node; // make prev and next node reference each other
-	cur_node->next_node->prev_node = cur_node->prev_node; // "      "
+
+	// make prev and next node reference each other
+	cur_node->prev_node->next_node = cur_node->next_node;
+	cur_node->next_node->prev_node = cur_node->prev_node;
 
 	free(cur_node);
 
