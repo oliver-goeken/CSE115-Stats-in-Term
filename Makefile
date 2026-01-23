@@ -16,10 +16,9 @@ CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 
 TESTS = $(wildcard $(TESTDIR)*.c)
-TEST_OUTS := $(patsubst $(TESTDIR)%.c,$(TESTDIR)%,$(TESTS))
-TEST_OBJS := $(patsubst $(TESTDIR)%.c,$(TESTOBJDIR)%.o,$(TESTS)) tests/unity/unity.c
-TEST_FLAGS = -I$(TESTDIR)unity/ -I$(TESTDIR)
-TEST_LD_LIBS = -lunity
+TEST_OUTS := $(patsubst $(TESTDIR)test_%.c,$(TESTDIR)test_%,$(TESTS))
+TEST_OBJS := $(patsubst $(TESTDIR)%.c,$(TESTOBJDIR)%.o,$(TESTS))
+TEST_FLAGS = -I$(TESTDIR)
 
 
 all: $(OUT)
@@ -40,6 +39,8 @@ $(TESTOBJDIR)%.o: $(TESTDIR)%.c
 $(OBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(TESTDIR)%.c:;
+
 $(OBJDIR):
 	mkdir -p $@
 
@@ -50,4 +51,4 @@ $(TESTOBJDIR):
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT)
-	rm -f $(TESTDIR)bin/*
+	rm -f $(TEST_OUTS)
