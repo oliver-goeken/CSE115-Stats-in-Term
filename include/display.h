@@ -125,7 +125,6 @@ int display_destroy_ncurses_window(WINDOW* window);
  * @param new_new new height
  *
  * @return 0 on success
- *
  */
 int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height);
 
