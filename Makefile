@@ -1,4 +1,4 @@
-# sourced pretty much in its entirety from https://www.reddit.com/r/cpp_questions/comments/zmm6ur/help_to_use_a_separate_directory_for_objects_with/
+# sourced partially from https://www.reddit.com/r/cpp_questions/comments/zmm6ur/help_to_use_a_separate_directory_for_objects_with/
 
 OUT = stats
 
@@ -31,6 +31,7 @@ test: $(TEST_OUTS)
 $(OUT): $(OBJS)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LDLIBS)
 
+#clunky solution; should really be better
 $(TEST_OUTS): $(TEST_OBJS) $(OBJS)
 	$(CC) $(CFLAGS) $(TEST_FLAGS) -o $@ $(TEST_OBJS) $(patsubst .obj/stats.o,,$(OBJS)) $(LDLIBS)
 
