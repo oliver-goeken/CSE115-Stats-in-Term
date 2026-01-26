@@ -45,12 +45,12 @@ int display_terminate();
 /*
  * @brief creates a display_window object with provided parameters
  *
- * @param start_x top left x coordinate
- * @param start_y top left y coordinate
+ * @param start_x top left x coordinate (must be within bounds [0, COLS])
+ * @param start_y top left y coordinate (must be within bounds [0, LINES])
  * @param height height of window
  * @param width witdth of window
  *
- * @return pointer to new display_window
+ * @return pointer to new display_window on success, NULL on error
  *
  * @details
  * creates a display_window struct, a wrapper for ncurses window which allows for further functionality such as resizing and moving
