@@ -1,10 +1,15 @@
 #include "display.h"
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 static display_window_list* window_list;
 
 int display_init(){
+	time_t rawtime;
+	time(&rawtime);
+	fprintf(stderr, "\n[%s]\n", strtok(ctime(&rawtime), "\n"));
+
 	initscr();
 
 	keypad(stdscr, TRUE);
@@ -86,9 +91,7 @@ int display_destroy_window(display_window* window){
 	display_destroy_ncurses_window(window->window);
 	display_terminate_window_contents(window);
 
-	fprintf(stderr, "%d\n", __LINE__);
 	free(window);
-	fprintf(stderr, "%d\n", __LINE__);
 
 	return 0;
 }
@@ -147,13 +150,10 @@ int display_terminate_window_contents(display_window* window){
 	display_window_content_node* cur_node = window->content;
 
 	while (cur_node != NULL){
-		fprintf(stderr, "----iteration\n");
 		display_window_content_node* next_node = cur_node->next_node;
 
 		if (cur_node->data != NULL){
-			fprintf(stderr, "%s[%d]\n", __FILE__, __LINE__);
 			free(cur_node->data);
-			fprintf(stderr, "%s[%d]\n", __FILE__, __LINE__);
 		}
 
 		free(cur_node);
