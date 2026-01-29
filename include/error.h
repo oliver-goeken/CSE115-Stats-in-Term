@@ -1,6 +1,10 @@
 #ifndef error_h
 #define error_h
 
+#define __PRINTERR__ print_error(__FILE__, __LINE__);
+
+void print_error(char* file, int line);
+
 /*
  * @brief Throws an error with the provided information
  *
