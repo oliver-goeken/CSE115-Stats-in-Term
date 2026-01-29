@@ -4,6 +4,9 @@
 compile_commands.json
 .cache
 
+# log files
+.log
+
 # Prerequisites
 *.d
 
