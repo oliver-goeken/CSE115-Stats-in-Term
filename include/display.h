@@ -22,23 +22,34 @@ typedef struct display_window {
 	int content_offset;
 } display_window;
 
+typedef struct display_window_list_node {
+	struct display_window_list_node* next_node;
+	display_window* display_window;
+} display_window_list_node;
+
+typedef struct display_window_list {
+	display_window_list_node* root;
+} display_window_list;
+
 /*
- * @brief intializes ncurses
+ * @brief intializes ncurses and display_window
  *
  * @return 0 on success, -1 on error
  *
  * @details
  * should only be called at the very start of using ncurses
+ * intializes a list of display_windows
  */
 int display_init();
 
 /*
- * @brief terminates ncurses
+ * @brief terminates ncurses and display_window
  *
  * @return 0 on success, -1 on error
  *
  * @details
  * only call when done with ncurses
+ * terminates each display_window in display_window_list
  */
 int display_terminate();
 

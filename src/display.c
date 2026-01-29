@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+display_window_list* window_list;
+
 int display_init(){
 	initscr();
 
@@ -11,13 +13,41 @@ int display_init(){
 	noecho();
 	curs_set(0);
 
+	window_list = malloc(sizeof(display_window_list));
+	window_list->root = NULL;
+
 	return 0;
 }
 
 int display_terminate(){
+	if (window_list->root != NULL){
+		if (window_list->root->next_node == NULL){
+			display_destroy_window(window_list->root->display_window);
+			free(window_list->root);
+		} else {
+			display_window_list_node* cur_node = window_list->root;
+			display_window_list_node* prev_node = window_list->root;
+
+			while (cur_node != NULL){
+				cur_node = cur_node->next_node;
+
+				display_destroy_window(prev_node->display_window);
+				free(prev_node);
+
+				prev_node = cur_node;
+			}
+		}
+
+		window_list->root = NULL;
+	}
+
+	free(window_list);
+
 	if (endwin() != OK){
 		return -1;
 	}
+
+	fflush(stdout);
 
 	return 0;
 }
@@ -33,6 +63,23 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 	new_display_window->width = width;
 
 	display_init_window_contents(new_display_window);
+
+	display_window_list_node* new_window_node = malloc(sizeof(display_window_list_node));
+
+	new_window_node->display_window = new_display_window;
+	new_window_node->next_node = NULL;
+
+	if (window_list->root == NULL){
+		window_list->root = new_window_node;
+	} else {
+		display_window_list_node* cur_node = window_list->root;
+
+		while (cur_node->next_node != NULL){
+			cur_node = cur_node->next_node;
+		}
+
+		cur_node->next_node = new_window_node;
+	}
 
 	return new_display_window;
 }
