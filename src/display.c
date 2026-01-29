@@ -1,4 +1,5 @@
 #include "display.h"
+#include "error.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -140,8 +141,38 @@ int display_draw_window(display_window* window){
 	return 0;
 }
 
+/*
+ * TO-DO
+ * - fix wrapping issues?
+ * - maybe just provide it a string built from content nodes and it handles the wrapping itself?
+ * - insert newlines where it would wrap based on window size
+ * - smart wrapping/truncation so it still looks good
+ *
+ */
 int display_draw_window_contents(display_window* window){
-	mvwprintw(window->window, 1, 1, "Hello, World!");
+	int startx = 1;
+	int starty = 1;
+
+	display_window_content_node* content_node = window->content;
+
+	while(content_node != NULL){
+		__PRINTERR__;
+
+		if (content_node->data != NULL){
+			int newline_count = 0;
+			for (int i = 0; content_node->data[i] != '\0'; i ++){
+				if (content_node->data[i] == '\n')
+					newline_count ++;
+			}
+
+			mvwprintw(window->window, starty, startx, content_node->data);
+			starty += newline_count;
+		}
+
+		starty ++;
+
+		content_node = content_node->next_node;
+	}
 
 	return 0;
 }
@@ -179,6 +210,8 @@ int display_window_add_content_node(display_window* window, char* data){
 		cur_node->next_node = malloc(sizeof(display_window_content_node));
 		cur_node->next_node->next_node = NULL;
 		cur_node->next_node->prev_node = cur_node;
+
+		cur_node = cur_node->next_node;
 	} else {
 		window->content = malloc(sizeof(display_window_content_node));
 		window->content->next_node = NULL;
