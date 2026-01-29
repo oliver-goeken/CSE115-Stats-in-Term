@@ -141,6 +141,18 @@ int display_draw_window(display_window* window){
 	return 0;
 }
 
+int display_draw_all_windows(){
+	display_window_list_node* cur_node = window_list->root;
+
+	while (cur_node != NULL){
+		display_draw_window(cur_node->display_window);
+
+		cur_node = cur_node->next_node;
+	}
+
+	return 0;
+}
+
 /*
  * TO-DO
  * - fix wrapping issues?

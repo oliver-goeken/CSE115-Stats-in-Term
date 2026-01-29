@@ -151,6 +151,8 @@ int display_window_change_attributes(display_window* window, int new_start_x, in
  */
 int display_draw_window(display_window* window);
 
+int display_draw_all_windows();
+
 /*
  * @brief displays the contents of a window
  *
