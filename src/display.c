@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-display_window_list* window_list;
+static display_window_list* window_list;
 
 int display_init(){
 	initscr();
@@ -62,8 +62,6 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 	new_display_window->height = height;
 	new_display_window->width = width;
 
-	display_init_window_contents(new_display_window);
-
 	display_window_list_node* new_window_node = malloc(sizeof(display_window_list_node));
 
 	new_window_node->display_window = new_display_window;
@@ -88,7 +86,9 @@ int display_destroy_window(display_window* window){
 	display_destroy_ncurses_window(window->window);
 	display_terminate_window_contents(window);
 
+	fprintf(stderr, "%d\n", __LINE__);
 	free(window);
+	fprintf(stderr, "%d\n", __LINE__);
 
 	return 0;
 }
@@ -143,27 +143,17 @@ int display_draw_window_contents(display_window* window){
 	return 0;
 }
 
-int display_init_window_contents(display_window* window){
-	window->content = malloc(sizeof(display_window_content_node));
-
-	window->content->prev_node = NULL;
-	window->content->next_node = NULL;
-
-	window->content->data = NULL;
-
-	window->content_offset = 0;
-	
-	return 0;
-}
-
 int display_terminate_window_contents(display_window* window){
 	display_window_content_node* cur_node = window->content;
 
 	while (cur_node != NULL){
+		fprintf(stderr, "----iteration\n");
 		display_window_content_node* next_node = cur_node->next_node;
 
 		if (cur_node->data != NULL){
+			fprintf(stderr, "%s[%d]\n", __FILE__, __LINE__);
 			free(cur_node->data);
+			fprintf(stderr, "%s[%d]\n", __FILE__, __LINE__);
 		}
 
 		free(cur_node);
@@ -171,28 +161,48 @@ int display_terminate_window_contents(display_window* window){
 		cur_node = next_node;
 	}
 
+	window->content = NULL;
+
 	return 0;
 }
 
 int display_window_add_content_node(display_window* window, char* data){
-	display_window_content_node* cur_node = window->content;
+	display_window_content_node* cur_node;
 
-	while(cur_node->data != NULL){
-		if (cur_node->next_node != NULL){
-			cur_node = cur_node->next_node;
-		} else {
-			cur_node->next_node->prev_node = cur_node;
-			cur_node->next_node = malloc(sizeof(display_init_window_contents));
+	if (window->content != NULL){
+		cur_node = window->content;
+
+		while (cur_node->next_node != NULL){
 			cur_node = cur_node->next_node;
 		}
+
+		cur_node->next_node = malloc(sizeof(display_window_content_node));
+		cur_node->next_node->next_node = NULL;
+		cur_node->next_node->prev_node = cur_node;
+	} else {
+		window->content = malloc(sizeof(display_window_content_node));
+		window->content->next_node = NULL;
+		window->content->prev_node = NULL;
+
+		cur_node = window->content;
 	}
 
-	cur_node->data = malloc(strlen(data) + 1);
-	strcpy(cur_node->data, data);
+	if (strlen(data) == 0){
+		cur_node->data = NULL;
+	} else {
+		cur_node->data = malloc(strlen(data) + 1);
+		strcpy(cur_node->data, data);
+	}
 
 	return 0;
 }
 
+/*
+ *
+ * needs some maintanance!!!
+ * i wrote this very poorly!
+ *
+ */
 int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node){
 	display_window_content_node* cur_node = window->content;
 
@@ -205,7 +215,6 @@ int display_window_destroy_content_node(display_window* window, display_window_c
 	}
 
 	free(cur_node->data);
-
 
 	// make prev and next node reference each other:
 	//

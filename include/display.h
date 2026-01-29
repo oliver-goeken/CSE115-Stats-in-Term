@@ -165,18 +165,6 @@ int display_draw_window(display_window* window);
 int display_draw_window_contents(display_window* window);
 
 /*
- * @brief initializes the data structure that holds the contents of the window
- *
- * @param window display_window's contents to initialize
- *
- * @return 0 on success
- *
- * @details
- * allocates memory and sets default values for the contents data structure
- */
-int display_init_window_contents(display_window* window);
-
-/*
  * @brief destorys a display_windows contents data structure
  *
  * @param window display_window whose contents to destroy
