@@ -1,5 +1,4 @@
 #include "display.h"
-#include "error.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -168,8 +167,6 @@ int display_draw_window_contents(display_window* window){
 	display_window_content_node* content_node = window->content;
 
 	while(content_node != NULL){
-		__PRINTERR__;
-
 		if (content_node->data != NULL){
 			int newline_count = 0;
 			for (int i = 0; content_node->data[i] != '\0'; i ++){
