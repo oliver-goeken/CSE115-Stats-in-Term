@@ -8,7 +8,7 @@ static display_window_list* window_list;
 int display_init(){
 	time_t rawtime;
 	time(&rawtime);
-	fprintf(stderr, "\n[%s]\n", strtok(ctime(&rawtime), "\n"));
+	//fprintf(stderr, "\n[%s]\n", strtok(ctime(&rawtime), "\n"));
 
 	initscr();
 
@@ -16,7 +16,10 @@ int display_init(){
 	nonl();
 	cbreak();
 	noecho();
+	nodelay(stdscr, TRUE);
 	curs_set(0);
+
+	refresh();
 
 	window_list = malloc(sizeof(display_window_list));
 	window_list->root = NULL;
