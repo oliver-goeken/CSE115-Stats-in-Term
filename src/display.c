@@ -70,6 +70,8 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 	new_display_window->height = height;
 	new_display_window->width = width;
 
+	new_display_window->boxed = FALSE;
+
 	display_window_list_node* new_window_node = malloc(sizeof(display_window_list_node));
 
 	new_window_node->display_window = new_display_window;
@@ -88,6 +90,14 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 	}
 
 	return new_display_window;
+}
+
+int display_window_box(display_window* window, char vertical_edges, char horizontal_edges){
+	window->boxed = TRUE;
+
+	box(window->window, horizontal_edges, vertical_edges);
+
+	return 0;
 }
 
 int display_destroy_window(display_window* window){
@@ -164,8 +174,8 @@ int display_draw_all_windows(){
  *
  */
 int display_draw_window_contents(display_window* window){
-	int startx = 1;
-	int starty = 1;
+	int startx = window->boxed ? 1 : 0;
+	int starty = window->boxed ? 1 : 0;
 
 	display_window_content_node* content_node = window->content;
 

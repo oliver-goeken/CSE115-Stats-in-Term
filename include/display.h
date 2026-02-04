@@ -16,6 +16,8 @@ typedef struct display_window {
 	int width;
 	int height;
 
+	bool boxed;
+
 	WINDOW* window;
 
 	display_window_content_node* content;
@@ -67,6 +69,8 @@ int display_terminate();
  * creates a display_window struct, a wrapper for ncurses window which allows for further functionality such as resizing and moving
  */
 display_window* display_create_window(int start_x, int start_y, int height, int width);
+
+int display_window_box(display_window* window, char vertical_edges, char horizontal_edges);
 
 /*
  * @brief destroys a desplay_window
