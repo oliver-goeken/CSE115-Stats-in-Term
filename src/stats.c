@@ -1,12 +1,34 @@
 #include "stats.h"
-#include "error.h"
 #include "display.h"
-#include <string.h>
+#include <unistd.h>
 #include <signal.h>
-#include <stdlib.h>
+
+int SIGINT_FLAG = 0;
 
 int main (){
 	init();
+
+	display_window* list_window = display_create_window(0, 0, LINES, COLS / 2);
+	box(list_window->window, '|', '-');
+
+	display_window* info_window = display_create_window(COLS / 2, 0, LINES, COLS / 2);
+	box(info_window->window, '|', '-');
+
+	int DONE = 0;
+	while(!DONE){
+		if (SIGINT_FLAG != 0){
+			break;
+		}
+
+		display_draw_all_windows();
+		char ch = getch();
+
+		switch(ch){
+			case 'q':
+				DONE = 1;
+				break;
+		}
+	}
 
 	display_terminate();
 
@@ -17,17 +39,8 @@ void init(){
 	display_init();
 	
 	signal(SIGINT, handle_interrupt);
-	signal(SIGWINCH, handle_winch);
 }
 
 void handle_interrupt(){
-	endwin();
-
-	exit(0);
-}
-
-void handle_winch(){
-	endwin();
-
-	refresh();
+	SIGINT_FLAG = 1;
 }
