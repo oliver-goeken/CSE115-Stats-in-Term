@@ -8,14 +8,14 @@ int SIGINT_FLAG = 0;
 int main (){
 	init();
 
-	display_window* list_window = display_create_window(0, 0, LINES - 1, COLS / 2);
+	display_window* list_window = display_create_window(0, 0, LINES - 2, COLS / 2);
 	display_window_add_content_node(list_window, "hello!");
 	display_window_box(list_window, '-', '|');
 
-	display_window* info_window = display_create_window(COLS / 2, 0, LINES - 1, COLS / 2);
+	display_window* info_window = display_create_window(COLS / 2, 0, LINES - 2, COLS / 2);
 	display_window_box(info_window, '-', '|');
 
-	display_window* help_window = display_create_window(0, LINES - 1, 1, COLS);
+	display_window* help_window = display_create_window(0, LINES - 2, 2, COLS);
 	display_window_add_content_node(help_window, "press 'q' to quit!");
 
 	int DONE = 0;

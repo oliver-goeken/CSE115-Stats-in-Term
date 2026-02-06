@@ -29,6 +29,15 @@ typedef struct display_window_list_node {
 	display_window* display_window;
 } display_window_list_node;
 
+/*
+ *
+ *
+ * MAYBE:
+ * have multiple root nodes for the different 'screens'
+ * like the main screen and the settings screen
+ *
+ */
+
 typedef struct display_window_list {
 	display_window_list_node* root;
 } display_window_list;
