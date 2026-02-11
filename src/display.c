@@ -176,7 +176,6 @@ int display_destroy_ncurses_window(WINDOW* window){
 }
 
 int display_draw_window(display_window* window){
-	__PRINTERR__
 	if (window->boxed)
 		display_window_box(window, window->vertical_edges, window->horizontal_edges);
 
