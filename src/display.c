@@ -71,6 +71,7 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 	new_display_window->width = width;
 
 	new_display_window->boxed = FALSE;
+	new_display_window->mode = UNKNOWN;
 
 	display_window_list_node* new_window_node = malloc(sizeof(display_window_list_node));
 
@@ -180,18 +181,20 @@ int display_draw_window_contents(display_window* window){
 	display_window_content_node* content_node = window->content;
 
 	while(content_node != NULL){
-		if (content_node->data != NULL){
-			int newline_count = 0;
-			for (int i = 0; content_node->data[i] != '\0'; i ++){
-				if (content_node->data[i] == '\n')
-					newline_count ++;
+		if (content_node->mode == window->mode){
+			if (content_node->data != NULL){
+				int newline_count = 0;
+				for (int i = 0; content_node->data[i] != '\0'; i ++){
+					if (content_node->data[i] == '\n')
+						newline_count ++;
+				}
+
+				mvwprintw(window->window, starty, startx, content_node->data);
+				starty += newline_count;
 			}
 
-			mvwprintw(window->window, starty, startx, content_node->data);
-			starty += newline_count;
+			starty ++;
 		}
-
-		starty ++;
 
 		content_node = content_node->next_node;
 	}
@@ -219,7 +222,7 @@ int display_terminate_window_contents(display_window* window){
 	return 0;
 }
 
-int display_window_add_content_node(display_window* window, char* data){
+int display_window_add_content_node(display_window* window, Mode mode, char* data){
 	display_window_content_node* cur_node;
 
 	if (window->content != NULL){
@@ -230,17 +233,18 @@ int display_window_add_content_node(display_window* window, char* data){
 		}
 
 		cur_node->next_node = malloc(sizeof(display_window_content_node));
-		cur_node->next_node->next_node = NULL;
 		cur_node->next_node->prev_node = cur_node;
 
 		cur_node = cur_node->next_node;
 	} else {
 		window->content = malloc(sizeof(display_window_content_node));
-		window->content->next_node = NULL;
 		window->content->prev_node = NULL;
 
 		cur_node = window->content;
 	}
+
+	cur_node->next_node = NULL;
+	cur_node->mode = mode;
 
 	if (strlen(data) == 0){
 		cur_node->data = NULL;

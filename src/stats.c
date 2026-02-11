@@ -9,14 +9,15 @@ int main (){
 	init();
 
 	display_window* list_window = display_create_window(0, 0, LINES - 2, COLS / 2);
-	display_window_add_content_node(list_window, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
 	display_window_box(list_window, '-', '|');
 
 	display_window* info_window = display_create_window(COLS / 2, 0, LINES - 2, COLS / 2);
 	display_window_box(info_window, '-', '|');
 
 	display_window* help_window = display_create_window(0, LINES - 2, 2, COLS);
-	display_window_add_content_node(help_window, "press 'q' to quit!");
+	display_window_add_content_node(help_window, UNKNOWN, "press 'q' to quit!");
+	display_window_add_content_node(help_window, QUIT_CONFIRM, "do you want to quit ('q' to confirm)");
 
 	int DONE = 0;
 	while(!DONE){
@@ -29,7 +30,11 @@ int main (){
 
 		switch(ch){
 			case 'q':
-				DONE = 1;
+				if (help_window->mode == QUIT_CONFIRM){
+					DONE = 1;
+				} else {
+					help_window->mode = QUIT_CONFIRM;
+				}
 				break;
 		}
 	}

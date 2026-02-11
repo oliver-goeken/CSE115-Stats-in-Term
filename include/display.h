@@ -3,10 +3,22 @@
 
 #include <ncurses.h>
 
+/*
+ *
+ * enum for mode types
+ *
+ */
+typedef enum Mode {
+	UNKNOWN,
+	HELP_LINE,
+	QUIT_CONFIRM
+} Mode;
+
 typedef struct display_window_content_node {
 	struct display_window_content_node* next_node;
 	struct display_window_content_node* prev_node;
 
+	Mode mode;
 	char* data;
 } display_window_content_node;
 
@@ -17,6 +29,7 @@ typedef struct display_window {
 	int height;
 
 	bool boxed;
+	Mode mode;
 
 	WINDOW* window;
 
@@ -195,6 +208,7 @@ int display_terminate_window_contents(display_window* window);
  * @brief adds a node to a display window's content struct
  *
  * @param window display_window to add content node to
+ * @param mode mode for content to be displayed on
  * @param data string data to put in new content node
  *
  * @return 0 on success
@@ -202,7 +216,7 @@ int display_terminate_window_contents(display_window* window);
  * @details
  * allocates memory, ensures references from previous node points correctly. also uses strcpy
  */
-int display_window_add_content_node(display_window* window, char* data);
+int display_window_add_content_node(display_window* window, Mode mode, char* data);
 
 /*
  * @brief destorys a content node from a display window
