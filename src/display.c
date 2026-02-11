@@ -1,4 +1,5 @@
 #include "display.h"
+#include "utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -8,7 +9,7 @@ static display_window_list* window_list;
 int display_init(){
 	time_t rawtime;
 	time(&rawtime);
-	//fprintf(stderr, "\n[%s]\n", strtok(ctime(&rawtime), "\n"));
+	fprintf(stderr, "\n[%s]\n", strtok(ctime(&rawtime), "\n"));
 
 	initscr();
 
@@ -16,13 +17,13 @@ int display_init(){
 	nonl();
 	cbreak();
 	noecho();
-	nodelay(stdscr, TRUE);
 	curs_set(0);
 
 	refresh();
 
 	window_list = malloc(sizeof(display_window_list));
 	window_list->root = NULL;
+	window_list->current_screen = MAIN;
 
 	return 0;
 }
@@ -60,7 +61,28 @@ int display_terminate(){
 	return 0;
 }
 
-display_window* display_create_window(int start_x, int start_y, int height, int width){
+Screen display_get_current_screen(){
+	return window_list->current_screen;
+}
+
+int display_set_screen(Screen screen){
+	display_window_list_node* cur_node = window_list->root;
+
+	while(cur_node != NULL){
+		if (cur_node->display_window->associated_screen == window_list->current_screen){
+			werase(cur_node->display_window->window);
+			wrefresh(cur_node->display_window->window);
+		}
+
+		cur_node = cur_node->next_node;
+	}
+
+	window_list->current_screen = screen;
+
+	return 0;
+}
+
+display_window* display_create_window(Screen screen, int start_x, int start_y, int height, int width){
 	display_window* new_display_window = malloc(sizeof(display_window));
 
 	new_display_window->window = newwin(height, width, start_y, start_x);
@@ -69,8 +91,13 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 	new_display_window->start_y = start_y;
 	new_display_window->height = height;
 	new_display_window->width = width;
-
+	
 	new_display_window->boxed = FALSE;
+	new_display_window->horizontal_edges = '\0';
+	new_display_window->vertical_edges = '\0';
+
+	new_display_window->associated_screen = screen;
+
 	new_display_window->mode = UNKNOWN;
 
 	display_window_list_node* new_window_node = malloc(sizeof(display_window_list_node));
@@ -95,6 +122,8 @@ display_window* display_create_window(int start_x, int start_y, int height, int 
 
 int display_window_box(display_window* window, char vertical_edges, char horizontal_edges){
 	window->boxed = TRUE;
+	window->vertical_edges = vertical_edges;
+	window->horizontal_edges = horizontal_edges;
 
 	box(window->window, horizontal_edges, vertical_edges);
 
@@ -147,6 +176,10 @@ int display_destroy_ncurses_window(WINDOW* window){
 }
 
 int display_draw_window(display_window* window){
+	__PRINTERR__
+	if (window->boxed)
+		display_window_box(window, window->vertical_edges, window->horizontal_edges);
+
 	display_draw_window_contents(window);
 
 	wrefresh(window->window);
@@ -158,7 +191,8 @@ int display_draw_all_windows(){
 	display_window_list_node* cur_node = window_list->root;
 
 	while (cur_node != NULL){
-		display_draw_window(cur_node->display_window);
+		if (cur_node->display_window->associated_screen == window_list->current_screen)
+			display_draw_window(cur_node->display_window);
 
 		cur_node = cur_node->next_node;
 	}

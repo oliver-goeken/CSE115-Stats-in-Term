@@ -14,6 +14,12 @@ typedef enum Mode {
 	QUIT_CONFIRM
 } Mode;
 
+typedef enum Screen {
+	MENU,
+	MAIN,
+	EXIT
+} Screen;
+
 typedef struct display_window_content_node {
 	struct display_window_content_node* next_node;
 	struct display_window_content_node* prev_node;
@@ -28,7 +34,12 @@ typedef struct display_window {
 	int width;
 	int height;
 
+	Screen associated_screen;
+
 	bool boxed;
+	char horizontal_edges;
+	char vertical_edges;
+
 	Mode mode;
 
 	WINDOW* window;
@@ -39,20 +50,14 @@ typedef struct display_window {
 
 typedef struct display_window_list_node {
 	struct display_window_list_node* next_node;
+
 	display_window* display_window;
 } display_window_list_node;
 
-/*
- *
- *
- * MAYBE:
- * have multiple root nodes for the different 'screens'
- * like the main screen and the settings screen
- *
- */
-
 typedef struct display_window_list {
 	display_window_list_node* root;
+
+	Screen current_screen;
 } display_window_list;
 
 /*
@@ -77,6 +82,9 @@ int display_init();
  */
 int display_terminate();
 
+Screen display_get_current_screen();
+int display_set_screen(Screen screen);
+
 /*
  * @brief creates a display_window object with provided parameters
  *
@@ -90,9 +98,11 @@ int display_terminate();
  * @details
  * creates a display_window struct, a wrapper for ncurses window which allows for further functionality such as resizing and moving
  */
-display_window* display_create_window(int start_x, int start_y, int height, int width);
+display_window* display_create_window(Screen screen, int start_x, int start_y, int height, int width);
 
 int display_window_box(display_window* window, char vertical_edges, char horizontal_edges);
+
+int display_clear_window(display_window* window);
 
 /*
  * @brief destroys a desplay_window
