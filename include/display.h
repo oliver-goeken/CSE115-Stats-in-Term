@@ -20,9 +20,16 @@ typedef enum Screen {
 	EXIT
 } Screen;
 
+typedef enum Alignment {
+	LEFT,
+	CENTER
+} Alignment;
+
 typedef struct display_window_content_node {
 	struct display_window_content_node* next_node;
 	struct display_window_content_node* prev_node;
+
+	Alignment alignment;
 
 	Mode mode;
 	char* data;
@@ -226,7 +233,9 @@ int display_terminate_window_contents(display_window* window);
  * @details
  * allocates memory, ensures references from previous node points correctly. also uses strcpy
  */
-int display_window_add_content_node(display_window* window, Mode mode, char* data);
+display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data);
+
+int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
 
 /*
  * @brief destorys a content node from a display window

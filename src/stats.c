@@ -20,7 +20,7 @@ int main (){
 	display_window_add_content_node(help_window, UNKNOWN, "press 'q' to quit!");
 
 	display_window* quit_window = display_create_window(EXIT, COLS / 3, LINES / 3, 3, COLS / 3);
-	display_window_add_content_node(quit_window, UNKNOWN, "Are you sure you want to quit? Press 'q' to confirm");
+	display_set_content_node_alignment(display_window_add_content_node(quit_window, UNKNOWN, "Are you sure you want to quit? Press 'q' to confirm"), CENTER);
 	display_window_box(quit_window, '-', '|');
 
 	int DONE = 0;

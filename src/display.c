@@ -18,6 +18,7 @@ int display_init(){
 	cbreak();
 	noecho();
 	curs_set(0);
+	ESCDELAY = 0;
 
 	refresh();
 
@@ -222,7 +223,17 @@ int display_draw_window_contents(display_window* window){
 						newline_count ++;
 				}
 
-				mvwprintw(window->window, starty, startx, content_node->data);
+				int alignment_start_x = startx;
+
+				if(content_node->alignment == CENTER){
+					alignment_start_x = (window->width - strlen(content_node->data) + (window->boxed ? 2 : 0)) / 2 - 1;
+
+					if (alignment_start_x < 0){
+						alignment_start_x = 0;
+					}
+				}
+
+				mvwprintw(window->window, starty, alignment_start_x, content_node->data);
 				starty += newline_count;
 			}
 
@@ -255,7 +266,7 @@ int display_terminate_window_contents(display_window* window){
 	return 0;
 }
 
-int display_window_add_content_node(display_window* window, Mode mode, char* data){
+display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data){
 	display_window_content_node* cur_node;
 
 	if (window->content != NULL){
@@ -278,6 +289,7 @@ int display_window_add_content_node(display_window* window, Mode mode, char* dat
 
 	cur_node->next_node = NULL;
 	cur_node->mode = mode;
+	cur_node->alignment = LEFT;
 
 	if (strlen(data) == 0){
 		cur_node->data = NULL;
@@ -285,6 +297,12 @@ int display_window_add_content_node(display_window* window, Mode mode, char* dat
 		cur_node->data = malloc(strlen(data) + 1);
 		strcpy(cur_node->data, data);
 	}
+
+	return cur_node;
+}
+
+int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment){
+	content_node->alignment = new_alignment;
 
 	return 0;
 }
