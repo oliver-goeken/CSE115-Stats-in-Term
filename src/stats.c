@@ -9,17 +9,18 @@ int SIGINT_FLAG = 0;
 int main (){
 	init();
 
-	display_window* list_window = display_create_window(MAIN, 0, 0, LINES - 2, COLS / 2);
+	// 0:0:h1/1:l1/1
+	display_window* list_window = display_create_window(MAIN, "0:0:w1/2:h-2");
 	display_window_add_content_node(list_window, UNKNOWN, "hello!");
 	display_window_box(list_window, '-', '|');
 
-	display_window* info_window = display_create_window(MAIN, COLS / 2, 0, LINES - 2, COLS / 2);
+	display_window* info_window = display_create_window(MAIN, "w1/2:0:w1/2:h-2");
 	display_window_box(info_window, '-', '|');
 
-	display_window* help_window = display_create_window(MAIN, 0, LINES - 2, 2, COLS);
+	display_window* help_window = display_create_window(MAIN, "0:h-2:w:2");
 	display_window_add_content_node(help_window, UNKNOWN, "press 'q' to quit!");
 
-	display_window* quit_window = display_create_window(EXIT, COLS / 3, LINES / 3, 3, COLS / 3);
+	display_window* quit_window = display_create_window(EXIT, "w1/3:h1/3:w1/3:3");
 	display_set_content_node_alignment(display_window_add_content_node(quit_window, UNKNOWN, "Are you sure you want to quit? Press 'q' to confirm"), CENTER);
 	display_window_box(quit_window, '-', '|');
 
@@ -30,7 +31,11 @@ int main (){
 		}
 
 		display_draw_all_windows();
-		char ch = getch();
+		int ch = getch();
+
+		if (ch == KEY_RESIZE){
+			
+		}
 
 		switch (display_get_current_screen()){
 			case MENU:

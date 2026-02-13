@@ -6,6 +6,7 @@
 void print_error(char* file, int line);
 
 void string_truncate_middle(char* string, int space, char* new_string);
+void parse_dimensions_format(char* fmt_string);
 
 /*
  * @brief Throws an error with the provided information

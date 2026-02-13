@@ -41,6 +41,8 @@ typedef struct display_window {
 	int width;
 	int height;
 
+	char* dimensions_format;
+
 	Screen associated_screen;
 
 	bool boxed;
@@ -90,6 +92,7 @@ int display_init();
 int display_terminate();
 
 Screen display_get_current_screen();
+void display_parse_dimensions_format(display_window* window);
 int display_set_screen(Screen screen);
 
 /*
@@ -105,7 +108,7 @@ int display_set_screen(Screen screen);
  * @details
  * creates a display_window struct, a wrapper for ncurses window which allows for further functionality such as resizing and moving
  */
-display_window* display_create_window(Screen screen, int start_x, int start_y, int height, int width);
+display_window* display_create_window(Screen screen, char* dimension_format_string);
 
 int display_window_box(display_window* window, char vertical_edges, char horizontal_edges);
 
@@ -236,6 +239,8 @@ int display_terminate_window_contents(display_window* window);
 display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data);
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
+
+void display_handle_winch();
 
 /*
  * @brief destorys a content node from a display window

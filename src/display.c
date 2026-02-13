@@ -62,6 +62,89 @@ int display_terminate(){
 	return 0;
 }
 
+void display_parse_dimensions_format(display_window* window){
+	/*
+	 *
+	 * parse a formatted string into window startx, starty, width, height
+	 *
+	 * format: "[startx]:[starty]:[width]:[height]"
+	 * for each field, 'h' or 'w' can be used to represent percentage of screen width and height respectively
+	 * '/' indicates the division symbol between a numerator and denominator
+	 * '-' indicates an offset (always negative for now)
+	 * example: "h1/3:w1/3:h1/3:3" = start at 1/3 height, 1/3 width; width of 1/3 height and a height of 3
+	 * example: "0:0:w1/2:h-2" = start at 0, 0; width of 1/2; height of window height minus 2
+	 */
+
+	int position = 0;
+	for(int i = 0; i < 4; i ++){
+		char numerator[256] = {0};
+		char denominator[256] = {0};
+		int num_index = 0;
+		int den_index = 0;
+
+		numerator[0] = '1';
+		denominator[0] = '1';
+
+		char offset[256] = {0};
+		int off_index = 0;
+
+		offset[0] = '0';
+
+		int mult = 1;
+
+		int category = 0;
+
+		for (; window->dimensions_format[position] != ':' && window->dimensions_format[position] != '\0'; position ++){
+			if (window->dimensions_format[position] == 'h'){
+				mult = LINES;
+			} else if (window->dimensions_format[position] == 'w'){
+				mult = COLS;
+			}
+
+			if (window->dimensions_format[position] == '/'){
+				category = 1;
+			} else if (window->dimensions_format[position] == '-'){
+				category = 2;
+			}
+
+			if(window->dimensions_format[position] >= 48 && window->dimensions_format[position] <= 57){
+				if (category == 0){
+					numerator[num_index] = window->dimensions_format[position];
+					num_index ++;
+				} else if (category == 1){
+					denominator[den_index] = window->dimensions_format[position];
+					den_index ++;
+				} else if (category == 2){
+					offset[off_index] = window->dimensions_format[position];
+ 					off_index ++;
+				}
+			}
+			
+		}
+
+		int* field;
+		switch (i){
+			case 0:
+				field = &(window->start_x);
+				break;
+			case 1:
+				field = &(window->start_y);
+				break;
+			case 2:
+				field = &(window->width);
+				break;
+			case 3:
+				field = &(window->height);
+				break;
+		}
+
+
+		*field = ((atoi(numerator) * mult) / atoi(denominator)) - atoi(offset);
+
+		position ++;
+	}
+}
+
 Screen display_get_current_screen(){
 	return window_list->current_screen;
 }
@@ -83,15 +166,13 @@ int display_set_screen(Screen screen){
 	return 0;
 }
 
-display_window* display_create_window(Screen screen, int start_x, int start_y, int height, int width){
+display_window* display_create_window(Screen screen, char* dimension_format_string){
 	display_window* new_display_window = malloc(sizeof(display_window));
 
-	new_display_window->window = newwin(height, width, start_y, start_x);
+	new_display_window->dimensions_format = dimension_format_string;
+	display_parse_dimensions_format(new_display_window);
 
-	new_display_window->start_x = start_x;
-	new_display_window->start_y = start_y;
-	new_display_window->height = height;
-	new_display_window->width = width;
+	new_display_window->window = newwin(new_display_window->height, new_display_window->width, new_display_window->start_y, new_display_window->start_x);
 	
 	new_display_window->boxed = FALSE;
 	new_display_window->horizontal_edges = '\0';

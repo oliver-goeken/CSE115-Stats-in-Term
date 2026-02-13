@@ -41,6 +41,7 @@ void string_truncate_middle(char* string, int space, char* new_string){
 	}
 }
 
+
 void throw_error(int code, char* msg, char* file, int line){
 	fprintf(stderr, "%s:%d -- %s\n", file, line, msg);
 	exit(code);
