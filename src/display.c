@@ -9,7 +9,6 @@ static display_window_list* window_list;
 int display_init(){
 	time_t rawtime;
 	time(&rawtime);
-	fprintf(stderr, "\n[%s]\n", strtok(ctime(&rawtime), "\n"));
 
 	initscr();
 
@@ -62,6 +61,21 @@ int display_terminate(){
 	return 0;
 }
 
+void display_handle_winch(){
+	clear();
+	refresh();
+
+	display_window_list_node* cur_node = window_list->root;
+
+	while(cur_node != NULL){
+		display_parse_dimensions_format(cur_node->display_window);
+
+		cur_node = cur_node->next_node;
+	}
+
+	display_draw_all_windows();
+}
+
 void display_parse_dimensions_format(display_window* window){
 	/*
 	 *
@@ -74,6 +88,9 @@ void display_parse_dimensions_format(display_window* window){
 	 * example: "h1/3:w1/3:h1/3:3" = start at 1/3 height, 1/3 width; width of 1/3 height and a height of 3
 	 * example: "0:0:w1/2:h-2" = start at 0, 0; width of 1/2; height of window height minus 2
 	 */
+
+	int lines = LINES;
+	int cols = COLS;
 
 	int position = 0;
 	for(int i = 0; i < 4; i ++){
@@ -96,9 +113,9 @@ void display_parse_dimensions_format(display_window* window){
 
 		for (; window->dimensions_format[position] != ':' && window->dimensions_format[position] != '\0'; position ++){
 			if (window->dimensions_format[position] == 'h'){
-				mult = LINES;
+				mult = lines;
 			} else if (window->dimensions_format[position] == 'w'){
-				mult = COLS;
+				mult = cols;
 			}
 
 			if (window->dimensions_format[position] == '/'){
@@ -146,6 +163,9 @@ void display_parse_dimensions_format(display_window* window){
 
 
 		*field = ((atoi(numerator) * mult) / atoi(denominator)) + atoi(offset);
+
+		display_destroy_ncurses_window(window->window);
+		window->window = newwin(window->height, window->width, window->start_y, window->start_x);
 
 		position ++;
 	}
@@ -287,14 +307,6 @@ int display_draw_all_windows(){
 	return 0;
 }
 
-/*
- * TO-DO
- * - fix wrapping issues?
- * - maybe just provide it a string built from content nodes and it handles the wrapping itself?
- * - insert newlines where it would wrap based on window size
- * - smart wrapping/truncation so it still looks good
- *
- */
 int display_draw_window_contents(display_window* window){
 	int startx = window->boxed ? 1 : 0;
 	int starty = window->boxed ? 1 : 0;

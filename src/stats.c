@@ -34,7 +34,8 @@ int main (){
 		int ch = getch();
 
 		if (ch == KEY_RESIZE){
-			
+			display_handle_winch();
+			continue;
 		}
 
 		switch (display_get_current_screen()){

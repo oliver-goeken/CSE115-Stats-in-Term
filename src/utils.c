@@ -36,8 +36,6 @@ void string_truncate_middle(char* string, int space, char* new_string){
 		}
 
 		new_string[pos] = '\0';
-
-		strlcpy(string, new_string, space);
 	}
 }
 
