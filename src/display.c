@@ -223,17 +223,22 @@ int display_draw_window_contents(display_window* window){
 						newline_count ++;
 				}
 
-				int alignment_start_x = startx;
+				int window_available_width = window->width - (window->boxed ? 2 : 0);
 
+				char trunc_string[window_available_width + 1];
+
+				string_truncate_middle(content_node->data, window_available_width, trunc_string);
+
+				int alignment_start_x = startx;
 				if(content_node->alignment == CENTER){
-					alignment_start_x = (window->width - strlen(content_node->data) + (window->boxed ? 2 : 0)) / 2 - 1;
+					alignment_start_x = ((window_available_width - strlen(trunc_string)) / 2) + (window->boxed);
 
 					if (alignment_start_x < 0){
 						alignment_start_x = 0;
 					}
 				}
 
-				mvwprintw(window->window, starty, alignment_start_x, content_node->data);
+				mvwprintw(window->window, starty, alignment_start_x, trunc_string);
 				starty += newline_count;
 			}
 
