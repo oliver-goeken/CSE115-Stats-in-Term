@@ -70,7 +70,7 @@ void display_parse_dimensions_format(display_window* window){
 	 * format: "[startx]:[starty]:[width]:[height]"
 	 * for each field, 'h' or 'w' can be used to represent percentage of screen width and height respectively
 	 * '/' indicates the division symbol between a numerator and denominator
-	 * '-' indicates an offset (always negative for now)
+	 * '-' or '+' indicates an offset {ALWAYS PUT OFFSET AFTER DIMENSIONS RATIO}
 	 * example: "h1/3:w1/3:h1/3:3" = start at 1/3 height, 1/3 width; width of 1/3 height and a height of 3
 	 * example: "0:0:w1/2:h-2" = start at 0, 0; width of 1/2; height of window height minus 2
 	 */
@@ -104,6 +104,12 @@ void display_parse_dimensions_format(display_window* window){
 			if (window->dimensions_format[position] == '/'){
 				category = 1;
 			} else if (window->dimensions_format[position] == '-'){
+				offset[0] = '-';
+				offset[1] = '0';
+				off_index = 1;
+
+				category = 2;
+			} else if (window->dimensions_format[position] == '+'){
 				category = 2;
 			}
 
@@ -139,7 +145,7 @@ void display_parse_dimensions_format(display_window* window){
 		}
 
 
-		*field = ((atoi(numerator) * mult) / atoi(denominator)) - atoi(offset);
+		*field = ((atoi(numerator) * mult) / atoi(denominator)) + atoi(offset);
 
 		position ++;
 	}
