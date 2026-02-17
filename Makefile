@@ -36,19 +36,14 @@ $(TEST_OUTS): $(TEST_OBJS) $(OBJS)
 	$(CC) $(CFLAGS) $(TEST_FLAGS) -o $@ $(TEST_OBJS) $(patsubst .obj/stats.o,,$(OBJS)) $(LDLIBS)
 
 $(TESTOBJDIR)%.o: $(TESTDIR)%.c
+	mkdir -p $(TESTOBJDIR)
 	$(CC) $(CFLAGS) $(TEST_FLAGS) -c -o $@ $<
 
 $(OBJDIR)%.o: $(SRCDIR)%.c
+	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(TESTDIR)%.c:;
-
-$(OBJDIR):
-	mkdir -p $@
-
-$(TESTOBJDIR):
-	mkdir -p $@
-
 
 .PHONY: clean
 clean:
