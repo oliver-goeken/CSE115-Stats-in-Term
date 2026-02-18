@@ -19,6 +19,10 @@ int display_init(){
 	curs_set(0);
 	ESCDELAY = 0;
 
+	start_color();
+	init_pair(1, COLOR_WHITE, COLOR_BLACK);
+	init_pair(2, COLOR_BLACK, COLOR_WHITE);
+
 	refresh();
 
 	window_list = malloc(sizeof(display_window_list));
@@ -87,7 +91,9 @@ void display_parse_dimensions_format(display_window* window){
 	 * '-' or '+' indicates an offset {ALWAYS PUT OFFSET AFTER DIMENSIONS RATIO}
 	 * example: "h1/3:w1/3:h1/3:3" = start at 1/3 height, 1/3 width; width of 1/3 height and a height of 3
 	 * example: "0:0:w1/2:h-2" = start at 0, 0; width of 1/2; height of window height minus 2
-	 */
+	 * 
+	 *
+	 * ADD SUPPORT FOR WINDOW EXPANSION IF TOO SMALL FOR TEXT */
 
 	int lines = LINES;
 	int cols = COLS;
@@ -192,7 +198,7 @@ int display_set_screen(Screen screen){
 	return 0;
 }
 
-display_window* display_create_window(Screen screen, char* dimension_format_string){
+display_window* display_create_window(Screen screen, bool selectable, char* dimension_format_string){
 	display_window* new_display_window = malloc(sizeof(display_window));
 
 	new_display_window->dimensions_format = dimension_format_string;
@@ -203,6 +209,8 @@ display_window* display_create_window(Screen screen, char* dimension_format_stri
 	new_display_window->boxed = FALSE;
 	new_display_window->horizontal_edges = '\0';
 	new_display_window->vertical_edges = '\0';
+
+	new_display_window->selectable = selectable;
 
 	new_display_window->associated_screen = screen;
 
@@ -215,6 +223,7 @@ display_window* display_create_window(Screen screen, char* dimension_format_stri
 
 	if (window_list->root == NULL){
 		window_list->root = new_window_node;
+		new_window_node->display_window->selected = new_window_node->display_window->selectable ? true : false;
 	} else {
 		display_window_list_node* cur_node = window_list->root;
 
@@ -223,6 +232,7 @@ display_window* display_create_window(Screen screen, char* dimension_format_stri
 		}
 
 		cur_node->next_node = new_window_node;
+		new_window_node->display_window->selected = false;
 	}
 
 	return new_display_window;
@@ -245,6 +255,66 @@ int display_destroy_window(display_window* window){
 	free(window);
 
 	return 0;
+}
+
+int display_window_select_next_node(display_window* window){
+	if (window == NULL){
+		return -3;
+	}
+
+	display_window_content_node* selected_node;
+	if ((selected_node = display_window_get_current_selection(window)) == NULL){
+		return -1;
+	}
+
+	if (selected_node->next_node != NULL){
+		selected_node->selected = false;
+		selected_node->next_node->selected = true;
+	} else {
+		return -2;
+	}
+
+	return 0;
+}
+
+int display_window_select_previous_node(display_window* window){
+	if (window == NULL){
+		return -3;
+	}
+
+	display_window_content_node* selected_node;
+	if ((selected_node = display_window_get_current_selection(window)) == NULL){
+		return -1;
+	}
+
+	if (selected_node->prev_node != NULL){
+		selected_node->selected = false;
+		selected_node->prev_node->selected = true;
+	} else {
+		return -2;
+	}
+
+	return 0;
+}
+
+display_window_content_node* display_window_get_current_selection(display_window* window){
+	display_window_content_node* cur_node = window->content;
+
+	while (cur_node != NULL && cur_node->selected == false){
+		cur_node = cur_node->next_node;
+	}
+
+	return cur_node;
+}
+
+display_window* display_get_current_window(){
+	display_window_list_node* window_node = window_list->root;
+
+	while (window_node != NULL && window_node->display_window->selected == false){
+		window_node = window_node->next_node;
+	}
+
+	return window_node->display_window;
 }
 
 int display_move_window(display_window* window, int new_begin_x, int new_begin_y){
@@ -337,7 +407,14 @@ int display_draw_window_contents(display_window* window){
 					}
 				}
 
+				// check if panel is selected first so whichever item is selected in a panel is saved even if panel itself not selected
+				if (content_node->associated_window->selectable && content_node->selected && content_node->associated_window->selected){
+					wattron(window->window, COLOR_PAIR(2));
+				} else {
+					wattron(window->window, COLOR_PAIR(content_node->color_pair));
+				}
 				mvwprintw(window->window, starty, alignment_start_x, trunc_string);
+				wattron(window->window, COLOR_PAIR(1));
 				starty += newline_count;
 			}
 
@@ -384,16 +461,20 @@ display_window_content_node* display_window_add_content_node(display_window* win
 		cur_node->next_node->prev_node = cur_node;
 
 		cur_node = cur_node->next_node;
+		cur_node->selected = false;
 	} else {
 		window->content = malloc(sizeof(display_window_content_node));
 		window->content->prev_node = NULL;
 
 		cur_node = window->content;
+		cur_node->selected = window->selectable ? true : false;
 	}
 
 	cur_node->next_node = NULL;
 	cur_node->mode = mode;
 	cur_node->alignment = LEFT;
+	cur_node->color_pair = 1;
+	cur_node->associated_window = window;
 
 	if (strlen(data) == 0){
 		cur_node->data = NULL;
@@ -407,6 +488,12 @@ display_window_content_node* display_window_add_content_node(display_window* win
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment){
 	content_node->alignment = new_alignment;
+
+	return 0;
+}
+
+int display_set_contend_node_color(display_window_content_node* content_node, int color_pair){
+	content_node->color_pair = color_pair;
 
 	return 0;
 }

@@ -25,11 +25,18 @@ typedef enum Alignment {
 	CENTER
 } Alignment;
 
+struct display_window;
+
 typedef struct display_window_content_node {
 	struct display_window_content_node* next_node;
 	struct display_window_content_node* prev_node;
 
+	struct display_window* associated_window;
+
 	Alignment alignment;
+	int color_pair;
+
+	bool selected;
 
 	Mode mode;
 	char* data;
@@ -48,6 +55,9 @@ typedef struct display_window {
 	bool boxed;
 	char horizontal_edges;
 	char vertical_edges;
+
+	bool selectable;
+	bool selected;
 
 	Mode mode;
 
@@ -108,11 +118,16 @@ int display_set_screen(Screen screen);
  * @details
  * creates a display_window struct, a wrapper for ncurses window which allows for further functionality such as resizing and moving
  */
-display_window* display_create_window(Screen screen, char* dimension_format_string);
+display_window* display_create_window(Screen screen, bool selectable, char* dimension_format_string);
 
 int display_window_box(display_window* window, char vertical_edges, char horizontal_edges);
 
-int display_clear_window(display_window* window);
+int display_window_select_next_node(display_window* window);
+int display_window_select_previous_node(display_window* window);
+
+display_window_content_node* display_window_get_current_selection(display_window* window);
+
+display_window* display_get_current_window();
 
 /*
  * @brief destroys a desplay_window
@@ -239,6 +254,7 @@ int display_terminate_window_contents(display_window* window);
 display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data);
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
+int display_set_contend_node_color(display_window_content_node* content_node, int color_pair);
 
 void display_handle_winch();
 
