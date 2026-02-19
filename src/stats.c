@@ -24,7 +24,7 @@ int main (){
 	display_window_box(info_window, '-', '|');
 
 	display_window* help_window = display_create_window(MAIN, false, "0:h-2:w:2");
-	display_window_add_content_node(help_window, UNKNOWN, "press 'q' to quit!");
+	display_set_content_node_alignment(display_window_add_content_node(help_window, UNKNOWN, "Use [arrow keys] or [hjkl] to navigate - Press [q] to quit!"), CENTER);
 
 	display_window* quit_window = display_create_window(EXIT, false, "w1/3:h1/3:w1/3:3");
 	display_set_content_node_alignment(display_window_add_content_node(quit_window, UNKNOWN, "Are you sure you want to quit? Press 'q' to confirm"), CENTER);
