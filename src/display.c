@@ -257,13 +257,13 @@ int display_destroy_window(display_window* window){
 	return 0;
 }
 
-int display_window_select_next_node(display_window* window){
-	if (window == NULL){
+int display_window_select_next_node(display_window_list_node* window_node){
+	if (window_node == NULL){
 		return -3;
 	}
 
 	display_window_content_node* selected_node;
-	if ((selected_node = display_window_get_current_selection(window)) == NULL){
+	if ((selected_node = display_window_get_current_selection(window_node->display_window)) == NULL){
 		return -1;
 	}
 
@@ -277,13 +277,13 @@ int display_window_select_next_node(display_window* window){
 	return 0;
 }
 
-int display_window_select_previous_node(display_window* window){
-	if (window == NULL){
+int display_window_select_previous_node(display_window_list_node* window_node){
+	if (window_node == NULL){
 		return -3;
 	}
 
 	display_window_content_node* selected_node;
-	if ((selected_node = display_window_get_current_selection(window)) == NULL){
+	if ((selected_node = display_window_get_current_selection(window_node->display_window)) == NULL){
 		return -1;
 	}
 

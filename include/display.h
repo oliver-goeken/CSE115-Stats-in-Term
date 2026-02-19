@@ -122,8 +122,8 @@ display_window* display_create_window(Screen screen, bool selectable, char* dime
 
 int display_window_box(display_window* window, char vertical_edges, char horizontal_edges);
 
-int display_window_select_next_node(display_window* window);
-int display_window_select_previous_node(display_window* window);
+int display_window_select_next_node(display_window_list_node* window_node);
+int display_window_select_previous_node(display_window_list_node* window_node);
 
 display_window_content_node* display_window_get_current_selection(display_window* window);
 

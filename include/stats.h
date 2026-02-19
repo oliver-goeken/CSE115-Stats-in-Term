@@ -5,5 +5,6 @@ void init();
 
 void handle_interrupt();
 void handle_winch();
+void handle_segfault();
 
 #endif
