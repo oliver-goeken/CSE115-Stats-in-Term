@@ -307,14 +307,62 @@ display_window_content_node* display_window_get_current_selection(display_window
 	return cur_node;
 }
 
-display_window* display_get_current_window(){
-	display_window_list_node* window_node = window_list->root;
+display_window_list_node* display_get_current_window(){
+	display_window_list_node* selected_window = window_list->root;
 
-	while (window_node != NULL && window_node->display_window->selected == false){
-		window_node = window_node->next_node;
+	while (selected_window != NULL && !(selected_window->display_window->associated_screen == window_list->current_screen && selected_window->display_window->selected == true)){
+		selected_window = selected_window->next_node;
 	}
 
-	return window_node->display_window;
+	return selected_window;
+}
+
+int display_select_next_window(){
+	display_window_list_node* cur_selection = display_get_current_window();
+
+	if (cur_selection == NULL){
+		return -1;
+	}
+
+	display_window_list_node* next_selection = window_list->root;
+
+	// find which window is entirely to the right of current window
+	while (next_selection != NULL){
+		if (next_selection->display_window->associated_screen == window_list->current_screen && next_selection->display_window->selectable){
+			if (next_selection->display_window->start_x > cur_selection->display_window->start_x){
+				cur_selection->display_window->selected = false;
+				next_selection->display_window->selected = true;
+				return 0;
+			}
+		}
+		next_selection = next_selection->next_node;
+	}
+
+	return -1;
+}
+
+int display_select_previous_window(){
+	display_window_list_node* cur_selection = display_get_current_window();
+
+	if (cur_selection == NULL){
+		return -1;
+	}
+
+	display_window_list_node* next_selection = window_list->root;
+
+	// find which window is entirely to the right of current window
+	while (next_selection != NULL){
+		if (next_selection->display_window->associated_screen == window_list->current_screen && next_selection->display_window->selectable){
+			if (next_selection->display_window->start_x < cur_selection->display_window->start_x){
+				cur_selection->display_window->selected = false;
+				next_selection->display_window->selected = true;
+				return 0;
+			}
+		}
+		next_selection = next_selection->next_node;
+	}
+
+	return -1;
 }
 
 int display_move_window(display_window* window, int new_begin_x, int new_begin_y){
@@ -407,11 +455,10 @@ int display_draw_window_contents(display_window* window){
 					}
 				}
 
-				// check if panel is selected first so whichever item is selected in a panel is saved even if panel itself not selected
 				if (content_node->associated_window->selectable && content_node->selected && content_node->associated_window->selected){
 					wattron(window->window, COLOR_PAIR(2));
 				} else {
-					wattron(window->window, COLOR_PAIR(content_node->color_pair));
+					wattron(window->window, COLOR_PAIR(1));
 				}
 				mvwprintw(window->window, starty, alignment_start_x, trunc_string);
 				wattron(window->window, COLOR_PAIR(1));

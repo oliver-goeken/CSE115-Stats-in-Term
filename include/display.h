@@ -127,7 +127,10 @@ int display_window_select_previous_node(display_window* window);
 
 display_window_content_node* display_window_get_current_selection(display_window* window);
 
-display_window* display_get_current_window();
+display_window_list_node* display_get_current_window();
+
+int display_select_next_window();
+int display_select_previous_window();
 
 /*
  * @brief destroys a desplay_window
