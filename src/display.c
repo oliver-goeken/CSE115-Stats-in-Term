@@ -216,6 +216,8 @@ display_window* display_create_window(Screen screen, bool selectable, char* dime
 
 	new_display_window->mode = UNKNOWN;
 
+	new_display_window->expand_to_fit_text = false;
+
 	display_window_list_node* new_window_node = malloc(sizeof(display_window_list_node));
 
 	new_window_node->display_window = new_display_window;
@@ -239,7 +241,7 @@ display_window* display_create_window(Screen screen, bool selectable, char* dime
 }
 
 int display_window_box(display_window* window, char vertical_edges, char horizontal_edges){
-	window->boxed = TRUE;
+	window->boxed = true;
 	window->vertical_edges = vertical_edges;
 	window->horizontal_edges = horizontal_edges;
 
@@ -263,7 +265,7 @@ int display_window_select_next_node(display_window_list_node* window_node){
 	}
 
 	display_window_content_node* selected_node;
-	if ((selected_node = display_window_get_current_selection(window_node->display_window)) == NULL){
+	if ((selected_node = display_window_get_current_selection(window_node)) == NULL){
 		return -1;
 	}
 
@@ -301,7 +303,7 @@ int display_window_select_previous_node(display_window_list_node* window_node){
 	}
 
 	display_window_content_node* selected_node;
-	if ((selected_node = display_window_get_current_selection(window_node->display_window)) == NULL){
+	if ((selected_node = display_window_get_current_selection(window_node)) == NULL){
 		return -1;
 	}
 
@@ -326,8 +328,12 @@ int display_window_select_previous_node(display_window_list_node* window_node){
 	return 0;
 }
 
-display_window_content_node* display_window_get_current_selection(display_window* window){
-	display_window_content_node* cur_node = window->content;
+display_window_content_node* display_window_get_current_selection(display_window_list_node* window_node){
+	if (window_node == NULL){
+		return NULL;
+	}
+
+	display_window_content_node* cur_node = window_node->display_window->content;
 
 	while (cur_node != NULL && cur_node->selected == false){
 		cur_node = cur_node->next_node;
@@ -349,11 +355,26 @@ int display_set_selected_window(display_window* window){
 				window_node->display_window->selected = false;
 			}
 		}
+		window_node = window_node->next_node;
 	}
 
 	window->selected = true;
 
 	return 0;
+}
+
+int display_content_node_set_interaction(display_window_content_node* content_node, void (*interact_function)(display_window_content_node*, display_window*)){
+	content_node->handle_interact = interact_function;
+
+	return 0;
+}
+
+void display_handle_interaction(){
+	display_window_content_node* selected_node = display_window_get_current_selection(display_get_current_window());
+
+	if (selected_node->handle_interact != NULL){
+		(*(selected_node->handle_interact))(selected_node, display_get_current_window()->display_window);
+	}
 }
 
 display_window_list_node* display_get_current_window(){
@@ -415,18 +436,12 @@ int display_select_previous_window(){
 }
 
 int display_move_window(display_window* window, int new_begin_x, int new_begin_y){
-	window->start_x = new_begin_x;
-	window->start_y = new_begin_y;
-
 	display_window_change_attributes(window, new_begin_x, new_begin_y, window->width, window->height);
 
 	return 0;
 }
 
 int display_resize_window(display_window* window, int new_width, int new_height){
-	window->width = new_width;
-	window->height = new_height;
-
 	display_window_change_attributes(window, window->start_x, window->start_y, new_width, new_height);
 
 	return 0;
@@ -435,9 +450,14 @@ int display_resize_window(display_window* window, int new_width, int new_height)
 int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height){
 	display_destroy_ncurses_window(window->window);
 
-	window->window = newwin(new_height, new_width, new_start_y, new_start_x);
+	window->width = new_width;
+	window->height = new_height;
+	window->start_x = new_start_x;
+	window->start_y = new_start_y;
 
-	display_draw_window(window);
+	window->window = newwin(new_height, new_width, new_start_y, new_start_x);
+	if (window->boxed)
+		display_window_box(window, window->vertical_edges, window->horizontal_edges);
 
 	return 0;
 }
@@ -480,6 +500,34 @@ int display_draw_window_contents(display_window* window){
 
 	display_window_content_node* content_node = window->content;
 
+	/*
+	 *
+	 * this whole section is fucked and needs to be completely rewritten
+	 * like entirely
+	 *
+	 */
+	if (window->expand_to_fit_text){
+		while (content_node != NULL){
+			int size_diff = (int)strlen(content_node->data) - (window->width - (window->boxed ? 2 : 0));
+			fprintf(stderr, "-\n-\n-=%d\n", size_diff);
+
+			/*
+			 * this whole thing is so broken in such a weird way im honestly not sure what to do
+			 */
+			int startx_delta = (size_diff / 2);
+			fprintf(stderr, "strxd: %d\n", startx_delta);
+			int width_delta = size_diff - startx_delta;
+			fprintf(stderr, "wd: %d\n", width_delta);
+			if (size_diff > 0){
+				display_window_change_attributes(window, window->start_x - (size_diff / 2), window->start_y, window->width + size_diff, window->height);
+			}
+			
+			content_node = content_node->next_node;
+		}
+
+		content_node = window->content;
+	}
+
 	for (int i = 0; i < window->content_offset && content_node != NULL; i ++){
 		content_node = content_node->next_node;
 	}
@@ -487,8 +535,12 @@ int display_draw_window_contents(display_window* window){
 	while(content_node != NULL){
 		if (content_node->mode == window->mode){
 			if (content_node->data != NULL){
+				/*
+				 *
+				 * NEWLINES IN CONTENT STRINGS NOT REALLY SUPPORTED, USE A NEW CONTENT NODE
+				 *
+				 */
 				int newline_count = 0;
-
 				count_newlines(content_node->data, &newline_count);
 
 				if (starty + newline_count > (window->height - (window->boxed ? 2 : 0))){
@@ -577,6 +629,7 @@ display_window_content_node* display_window_add_content_node(display_window* win
 	cur_node->alignment = LEFT;
 	cur_node->color_pair = 1;
 	cur_node->associated_window = window;
+	cur_node->handle_interact = NULL;
 
 	if (strlen(data) == 0){
 		cur_node->data = NULL;
@@ -588,12 +641,14 @@ display_window_content_node* display_window_add_content_node(display_window* win
 	return cur_node;
 }
 
-void display_add_content_node_interaction(display_window_content_node* content_node, void (*handle_interact)(display_window_content_node*)){
-	content_node->handle_interact = handle_interact;
-}
-
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment){
 	content_node->alignment = new_alignment;
+
+	return 0;
+}
+
+int display_set_window_expansion(display_window* window, bool expand_to_fit_text){
+	window->expand_to_fit_text = expand_to_fit_text;
 
 	return 0;
 }

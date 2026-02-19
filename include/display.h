@@ -44,7 +44,7 @@ typedef struct display_window_content_node {
 	 * not sure how to integrate exactly
 	 */
 
-	void (*handle_interact)(struct display_window_content_node*);
+	void (*handle_interact)(struct display_window_content_node*, struct display_window*);
 
 	Mode mode;
 	char* data;
@@ -66,6 +66,8 @@ typedef struct display_window {
 
 	bool selectable;
 	bool selected;
+
+	bool expand_to_fit_text;
 
 	Mode mode;
 
@@ -133,9 +135,12 @@ int display_window_box(display_window* window, char vertical_edges, char horizon
 int display_window_select_next_node(display_window_list_node* window_node);
 int display_window_select_previous_node(display_window_list_node* window_node);
 
-display_window_content_node* display_window_get_current_selection(display_window* window);
+display_window_content_node* display_window_get_current_selection(display_window_list_node* window_node);
 
 int display_set_selected_window(display_window* window);
+
+int display_content_node_set_interaction(display_window_content_node* content_node, void (*interact_function)(display_window_content_node*, display_window*));
+void display_handle_interaction();
 
 display_window_list_node* display_get_current_window();
 
@@ -266,10 +271,10 @@ int display_terminate_window_contents(display_window* window);
  */
 display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data);
 
-void display_add_content_node_interaction(display_window_content_node* content_node, void (*handle_interact)(display_window_content_node*));
-
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
 int display_set_contend_node_color(display_window_content_node* content_node, int color_pair);
+
+int display_set_window_expansion(display_window* window, bool expand_to_fit_text);
 
 void display_handle_winch();
 
