@@ -13,7 +13,22 @@ int main (){
 
 	// 0:0:h1/1:l1/1
 	display_window* list_window = display_create_window(MAIN, true, "0:0:w1/2:h-2");
+	display_window_add_content_node(list_window, UNKNOWN, "test!");
 	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "2est!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "3est!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "4est!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "5est!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "hello!");
+	display_window_add_content_node(list_window, UNKNOWN, "6est!");
 	display_window_add_content_node(list_window, UNKNOWN, "hello!");
 	display_window_add_content_node(list_window, UNKNOWN, "hello!");
 	display_window_box(list_window, '-', '|');
@@ -45,13 +60,9 @@ int main (){
 
 		int ch = getch();
 
-		if (ch == KEY_RESIZE){
-			display_handle_winch();
-			continue;
-		}
-
 		switch(ch){
 			case KEY_RESIZE:
+				display_handle_winch();
 				break;
 			case 'j':
 			case KEY_DOWN:
@@ -69,12 +80,15 @@ int main (){
 			case KEY_RIGHT:
 				display_select_next_window();
 				break;
+			case KEY_ENTER:
+				break;
 			default:
 				switch (display_get_current_screen()){
 					case MENU:
 						break;
 					case MAIN:
 						switch(ch){
+							case 'Q':
 							case 'q':
 								display_set_screen(EXIT);
 								break;
@@ -82,6 +96,7 @@ int main (){
 						break;
 					case EXIT:
 						switch(ch){
+							case 'Q':
 							case 'q':
 								DONE = 1;
 								break;

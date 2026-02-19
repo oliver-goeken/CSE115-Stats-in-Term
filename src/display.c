@@ -206,7 +206,7 @@ display_window* display_create_window(Screen screen, bool selectable, char* dime
 
 	new_display_window->window = newwin(new_display_window->height, new_display_window->width, new_display_window->start_y, new_display_window->start_x);
 	
-	new_display_window->boxed = FALSE;
+	new_display_window->boxed = false;
 	new_display_window->horizontal_edges = '\0';
 	new_display_window->vertical_edges = '\0';
 
@@ -268,6 +268,24 @@ int display_window_select_next_node(display_window_list_node* window_node){
 	}
 
 	if (selected_node->next_node != NULL){
+		int total_lines = 0;
+		display_window_content_node* tmp_node = window_node->display_window->content;
+
+		for (int i = 0; tmp_node != NULL && i < window_node->display_window->content_offset; i ++){
+			tmp_node = tmp_node->next_node;
+		}
+
+		while (tmp_node != selected_node->next_node){
+			total_lines ++;
+			count_newlines(tmp_node->data, &total_lines);
+			tmp_node = tmp_node->next_node;
+		}
+
+		if (total_lines >= window_node->display_window->height - (window_node->display_window->boxed ? 2 : 0)){
+			werase(window_node->display_window->window);
+			window_node->display_window->content_offset ++;
+		}
+
 		selected_node->selected = false;
 		selected_node->next_node->selected = true;
 	} else {
@@ -288,6 +306,17 @@ int display_window_select_previous_node(display_window_list_node* window_node){
 	}
 
 	if (selected_node->prev_node != NULL){
+		display_window_content_node* tmp_node = window_node->display_window->content;
+
+		for (int i = 0; tmp_node != NULL && i < window_node->display_window->content_offset - 1; i ++){
+			tmp_node = tmp_node->next_node;
+		}
+
+		if (tmp_node == selected_node->prev_node){
+			window_node->display_window->content_offset --;
+			werase(window_node->display_window->window);
+		}
+
 		selected_node->selected = false;
 		selected_node->prev_node->selected = true;
 	} else {
@@ -305,6 +334,26 @@ display_window_content_node* display_window_get_current_selection(display_window
 	}
 
 	return cur_node;
+}
+
+int display_set_selected_window(display_window* window){
+	if (window == NULL){
+		return -1;
+	}
+
+	display_window_list_node* window_node = window_list->root;
+
+	while (window_node != NULL){
+		if (window_node->display_window->associated_screen == window->associated_screen){
+			if (window_node->display_window != window){
+				window_node->display_window->selected = false;
+			}
+		}
+	}
+
+	window->selected = true;
+
+	return 0;
 }
 
 display_window_list_node* display_get_current_window(){
@@ -431,13 +480,19 @@ int display_draw_window_contents(display_window* window){
 
 	display_window_content_node* content_node = window->content;
 
+	for (int i = 0; i < window->content_offset && content_node != NULL; i ++){
+		content_node = content_node->next_node;
+	}
+
 	while(content_node != NULL){
 		if (content_node->mode == window->mode){
 			if (content_node->data != NULL){
 				int newline_count = 0;
-				for (int i = 0; content_node->data[i] != '\0'; i ++){
-					if (content_node->data[i] == '\n')
-						newline_count ++;
+
+				count_newlines(content_node->data, &newline_count);
+
+				if (starty + newline_count > (window->height - (window->boxed ? 2 : 0))){
+					break;
 				}
 
 				int window_available_width = window->width - (window->boxed ? 2 : 0);
@@ -531,6 +586,10 @@ display_window_content_node* display_window_add_content_node(display_window* win
 	}
 
 	return cur_node;
+}
+
+void display_add_content_node_interaction(display_window_content_node* content_node, void (*handle_interact)(display_window_content_node*)){
+	content_node->handle_interact = handle_interact;
 }
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment){

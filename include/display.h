@@ -37,6 +37,14 @@ typedef struct display_window_content_node {
 	int color_pair;
 
 	bool selected;
+	
+	/*
+	 * pointer to "interaction" function should go next
+	 * this function will contain the code to run if enter is pressed while a content node is selected
+	 * not sure how to integrate exactly
+	 */
+
+	void (*handle_interact)(struct display_window_content_node*);
 
 	Mode mode;
 	char* data;
@@ -126,6 +134,8 @@ int display_window_select_next_node(display_window_list_node* window_node);
 int display_window_select_previous_node(display_window_list_node* window_node);
 
 display_window_content_node* display_window_get_current_selection(display_window* window);
+
+int display_set_selected_window(display_window* window);
 
 display_window_list_node* display_get_current_window();
 
@@ -255,6 +265,8 @@ int display_terminate_window_contents(display_window* window);
  * allocates memory, ensures references from previous node points correctly. also uses strcpy
  */
 display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data);
+
+void display_add_content_node_interaction(display_window_content_node* content_node, void (*handle_interact)(display_window_content_node*));
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
 int display_set_contend_node_color(display_window_content_node* content_node, int color_pair);

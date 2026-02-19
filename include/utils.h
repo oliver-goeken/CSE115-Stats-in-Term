@@ -7,6 +7,8 @@ void print_error(char* file, int line);
 
 void string_truncate_middle(char* string, int space, char* new_string);
 
+void count_newlines(char* string, int* newlines);
+
 /*
  * @brief Throws an error with the provided information
  *
