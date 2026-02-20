@@ -11,7 +11,6 @@ int DONE = 0;
 int main (){
 	init();
 
-	// 0:0:h1/1:l1/1
 	display_window* list_window = display_create_window(MAIN, true, "0:0:w1/2:h-2");
 	display_window_add_content_node(list_window, UNKNOWN, "test!");
 	display_window_add_content_node(list_window, UNKNOWN, "hello!");
@@ -40,8 +39,9 @@ int main (){
 	display_window_box(info_window, '-', '|');
 
 	display_window* help_window = display_create_window(MAIN, false, "0:h-2:w:2");
-	display_set_content_node_alignment(display_window_add_content_node(help_window, UNKNOWN, "Use [arrow keys] or [hjkl] to navigate - Press [q] to quit!"), CENTER);
+	display_set_content_node_alignment(display_window_add_content_node(help_window, UNKNOWN, "Use [arrow keys] or [hjkl] to navigate - [:] to enter command mode - [q] to quit!"), CENTER);
 
+	display_window* command_window = display_create_window(HIDDEN, false, "0:h-2:w:2");
 
 	display_window* quit_window = display_create_window(EXIT, false, "w1/3:h1/2-3:w1/3:6");
 	display_set_content_node_alignment(display_window_add_content_node(quit_window, UNKNOWN, "Are you sure you want to quit"), CENTER);
@@ -58,8 +58,6 @@ int main (){
 	display_window_content_node* no_node = display_window_add_content_node(no_window, UNKNOWN, "No");
 	display_content_node_set_interaction(no_node, handle_interact_quit_no);
 	display_set_content_node_alignment(no_node, CENTER);
-
-	display_set_selected_window(no_window);
 
 	while(!DONE){
 		if (SIGINT_FLAG != 0){
@@ -95,15 +93,28 @@ int main (){
 			case 13:
 				display_handle_interaction();
 				break;
+			case ':':
+				display_set_window_screen(help_window, HIDDEN);
+				display_set_window_screen(command_window, MAIN);
+
+				display_handle_command(&SIGINT_FLAG, command_window);
+
+				display_set_window_screen(help_window, MAIN);
+				display_set_window_screen(command_window, HIDDEN);
+				break;
 			default:
 				switch (display_get_current_screen()){
+					case HIDDEN:
+						break;
 					case MENU:
 						break;
 					case MAIN:
 						switch(ch){
 							case 'Q':
 							case 'q':
+							case 27:
 								display_set_screen(EXIT);
+								display_set_selected_window(no_window);
 								break;
 						}
 						break;

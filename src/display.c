@@ -19,6 +19,8 @@ int display_init(){
 	curs_set(0);
 	ESCDELAY = 0;
 
+	timeout(-1);
+
 	start_color();
 	init_pair(1, COLOR_WHITE, COLOR_BLACK);
 	init_pair(2, COLOR_BLACK, COLOR_WHITE);
@@ -435,6 +437,92 @@ int display_select_previous_window(){
 	return -1;
 }
 
+int display_handle_command(int* SIGINT_FLAG, display_window* command_window){
+	//move to correct position in window
+	//print ':'
+	
+	char command_buffer[256] = {0};
+	int command_buffer_pos = 0;
+
+	bool execute_command = false;
+
+	WINDOW* ncurses_window = command_window->window;
+
+	wmove(ncurses_window, 0, 0);
+	wprintw(ncurses_window, ":");
+	wmove(ncurses_window, 0, 1);
+	wattrset(ncurses_window, COLOR_PAIR(2));
+	wprintw(ncurses_window, " ");
+	wattrset(ncurses_window, COLOR_PAIR(1));
+
+	bool done = false;
+	while(!done){
+		if (!SIGINT_FLAG){
+			return -1;
+		}
+
+		display_draw_window(command_window);
+
+		int ch = getch();
+
+		switch(ch){
+			case KEY_RESIZE:
+				display_handle_winch();
+				break;
+			case KEY_ENTER:
+			case 13:
+				done = true;
+				execute_command = true;
+				break;
+			case 27:
+				done = true;
+				break;
+			case KEY_BACKSPACE:
+			case 127:
+			case '\b':
+				if (command_buffer_pos > 0){
+					command_buffer[command_buffer_pos] = 0;
+
+					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, " ");
+
+					command_buffer_pos --;
+
+					wattrset(ncurses_window, COLOR_PAIR(2));
+					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, " ");
+					wattrset(ncurses_window, COLOR_PAIR(1));
+				}
+				break;
+			default:
+				if (command_buffer_pos < 256 && 32 <= ch && ch <= 126){
+					command_buffer[command_buffer_pos] = ch;
+
+					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, "%c", ch);
+
+					command_buffer_pos ++;
+
+					wattrset(ncurses_window, COLOR_PAIR(2));
+					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, " ");
+					wattrset(ncurses_window, COLOR_PAIR(1));
+				}
+				break;
+		}
+	}
+
+	if (execute_command){
+		
+	}
+
+	return 0;
+}
+
+int display_set_window_screen(display_window* window, Screen screen){
+	window->associated_screen = screen;
+
+	display_draw_window(window);
+
+	return 0;
+}
+
 int display_move_window(display_window* window, int new_begin_x, int new_begin_y){
 	display_window_change_attributes(window, new_begin_x, new_begin_y, window->width, window->height);
 
@@ -471,10 +559,14 @@ int display_destroy_ncurses_window(WINDOW* window){
 }
 
 int display_draw_window(display_window* window){
-	if (window->boxed)
-		display_window_box(window, window->vertical_edges, window->horizontal_edges);
+	if (window_list->current_screen != window->associated_screen){
+		werase(window->window);
+	} else {
+		if (window->boxed)
+			display_window_box(window, window->vertical_edges, window->horizontal_edges);
 
-	display_draw_window_contents(window);
+		display_draw_window_contents(window);
+	}
 
 	wrefresh(window->window);
 
@@ -503,7 +595,6 @@ int display_draw_window_contents(display_window* window){
 	/*
 	 *
 	 * errors:
-	 * - not truncating properly on expanding windows (window dissapears)
 	 * - not a solution BUT should enforce minimum terminal size
 	 *
 	 */
@@ -518,7 +609,6 @@ int display_draw_window_contents(display_window* window){
 			if (size_diff > 0){
 				new_startx = window->start_x - (size_diff / 2);
 				new_width = window->width + size_diff;
-				//fprintf(stderr, "+COLS: %d\n+STARTX: %d\n +WIDTH: %d\n", COLS, new_startx, new_width);
 
 				if (new_startx < 0){
 					new_startx = 0;
@@ -528,8 +618,6 @@ int display_draw_window_contents(display_window* window){
 					new_width = (COLS - new_startx);
 				}
 				display_window_change_attributes(window, new_startx, window->start_y, new_width, window->height);
-
-				//fprintf(stderr, "COLS: %d\nSTARTX: %d\n WIDTH: %d\n", COLS, new_startx, new_width);
 			}
 
 			content_node = content_node->next_node;

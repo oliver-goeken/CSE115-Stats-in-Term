@@ -17,7 +17,8 @@ typedef enum Mode {
 typedef enum Screen {
 	MENU,
 	MAIN,
-	EXIT
+	EXIT,
+	HIDDEN
 } Screen;
 
 typedef enum Alignment {
@@ -146,6 +147,10 @@ display_window_list_node* display_get_current_window();
 
 int display_select_next_window();
 int display_select_previous_window();
+
+int display_set_window_screen(display_window* window, Screen screen);
+
+int display_handle_command(int* SIGINT_FLAG, display_window* command_window);
 
 /*
  * @brief destroys a desplay_window
