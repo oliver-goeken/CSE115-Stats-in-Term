@@ -1,5 +1,6 @@
 #include <string>
 #include <chrono>
+#include <vector>
 #include <optional>
 
 using namespace std;
@@ -24,8 +25,8 @@ struct Query {
 
 };
 
-vector<SongListen> search(const Query& q);
+vector<SongListen> searchSong(const Query& q);
 
-chrono::system_clock::time_point parseTimestamp(const std::string& ts);
+//chrono::system_clock::time_point parseTimestamp(const std::string& ts);
 
 void parseJson(const std::string& filename, std::vector<SongListen>& songs);
