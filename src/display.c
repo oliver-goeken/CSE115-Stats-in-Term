@@ -502,9 +502,9 @@ int display_draw_window_contents(display_window* window){
 
 	/*
 	 *
-	 * this whole section is fucked and needs to be completely rewritten
-	 * like entirely
-	 * need to check for window bounds to cap resize
+	 * errors:
+	 * - not truncating properly on expanding windows (window dissapears)
+	 * - not a solution BUT should enforce minimum terminal size
 	 *
 	 */
 	if (window->expand_to_fit_text){
@@ -518,15 +518,18 @@ int display_draw_window_contents(display_window* window){
 			if (size_diff > 0){
 				new_startx = window->start_x - (size_diff / 2);
 				new_width = window->width + size_diff;
+				//fprintf(stderr, "+COLS: %d\n+STARTX: %d\n +WIDTH: %d\n", COLS, new_startx, new_width);
 
 				if (new_startx < 0){
-					startx = 0;
+					new_startx = 0;
 				}
 
-				if ((new_startx + new_width) > COLS){
+				if ((new_startx + new_width) >= COLS){
 					new_width = (COLS - new_startx);
 				}
 				display_window_change_attributes(window, new_startx, window->start_y, new_width, window->height);
+
+				//fprintf(stderr, "COLS: %d\nSTARTX: %d\n WIDTH: %d\n", COLS, new_startx, new_width);
 			}
 
 			content_node = content_node->next_node;
