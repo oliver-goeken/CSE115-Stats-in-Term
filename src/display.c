@@ -504,24 +504,31 @@ int display_draw_window_contents(display_window* window){
 	 *
 	 * this whole section is fucked and needs to be completely rewritten
 	 * like entirely
+	 * need to check for window bounds to cap resize
 	 *
 	 */
 	if (window->expand_to_fit_text){
 		while (content_node != NULL){
-			int size_diff = (int)strlen(content_node->data) - (window->width - (window->boxed ? 2 : 0));
-			fprintf(stderr, "-\n-\n-=%d\n", size_diff);
+			int size_diff;
+			int new_startx;
+			int new_width;
 
-			/*
-			 * this whole thing is so broken in such a weird way im honestly not sure what to do
-			 */
-			int startx_delta = (size_diff / 2);
-			fprintf(stderr, "strxd: %d\n", startx_delta);
-			int width_delta = size_diff - startx_delta;
-			fprintf(stderr, "wd: %d\n", width_delta);
+			size_diff = strlen(content_node->data) - (window->width - (window->boxed ? 2 : 0));
+
 			if (size_diff > 0){
-				display_window_change_attributes(window, window->start_x - (size_diff / 2), window->start_y, window->width + size_diff, window->height);
+				new_startx = window->start_x - (size_diff / 2);
+				new_width = window->width + size_diff;
+
+				if (new_startx < 0){
+					startx = 0;
+				}
+
+				if ((new_startx + new_width) > COLS){
+					new_width = (COLS - new_startx);
+				}
+				display_window_change_attributes(window, new_startx, window->start_y, new_width, window->height);
 			}
-			
+
 			content_node = content_node->next_node;
 		}
 
