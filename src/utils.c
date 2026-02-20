@@ -19,7 +19,7 @@ void string_truncate_middle(char* string, int space, char* new_string){
 	int start_str_len = 0;
 	int end_str_len = 0;
 
-	if (string_len <= (space + 1)){
+	if (string_len <= space){
 		strlcpy(new_string, string, space + 1);
 		return;
 	} else {
