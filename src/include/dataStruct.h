@@ -5,6 +5,15 @@
 
 using namespace std;
 
+const vector<string> VALID_START_REASONS = {
+    "playbtn", "trackdone", "clickrow", "appload"
+};
+
+const vector<string> VALID_END_REASONS = {
+    "trackdone", "endplay", "remote", "unexpected-exit-while-paused"
+};
+
+
 struct SongListen {
     string name;
     string artist;
@@ -16,17 +25,20 @@ struct SongListen {
 };
 
 struct Query {
-    optional<std::string> artist;
-    optional<std::string> album;
-    optional<std::string> start;
-    optional<std::string> end;
-    optional<std::string> startReason;
-    optional<std::string> endReason;
+    optional<string> name;
+    optional<string> artist;
+    optional<string> album;
+    optional<string> start;
+    optional<string> end;
+    optional<string> startReason;
+    optional<string> endReason;
 
 };
 
-vector<SongListen> searchSong(const Query& q);
+vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs);
 
-chrono::system_clock::time_point parseTimestamp(const std::string& ts);
+Query getSortQuery(const string& input);
 
-void parseJson(const std::string& filename, std::vector<SongListen>& songs);
+void parseJson(const string& filename, vector<SongListen>& songs);
+
+string getInput();
