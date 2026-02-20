@@ -8,20 +8,15 @@
 #include <iomanip>
 #include "include/dataStruct.h"
 
-
 using namespace std;
-std::vector<SongListen> allSongs; 
+vector<SongListen> allSongs;
 
-int main() { 
-    /*parseJson("songExamplesZach.json", allSongs); 
-    cout << "Loaded " << allSongs.size() << " songs\n"; 
+int main() {
+    parseJson("C:/Users/Zachary/source/repos/Intro to Software Engineering/src/songExamplesZach.json", allSongs);
+    cout << "Loaded " << allSongs.size() << " songs\n";
     for (const auto& song : allSongs) { 
-        cout << "Name: " << song.name << ", Artist: " << song.artist << ", Album: " << song.album << "\n"; 
-    } */
-    cout<<"Hi\n";
-    tm tm = {};
-    istringstream ss("2024-12-10T03:56:20Z");
-    ss >> get_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
-    cout<<ss.str()<<"\n";
-    return 0;
+        cout << "Artist: " << song.artist << ", Album: " << song.album << ", Name: " << song.name  
+             << "\n\t Time listened: "<<song.timestamp << "\n\tStart Reson: "<<song.startReason 
+             << ", End Reson: " << song.endReason<<"\n";
+    }
 }

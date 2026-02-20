@@ -1,7 +1,9 @@
-#include "display.h"
+#include "include/display.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
+#include <cstdbool>
 
 static display_window_list* window_list;
 

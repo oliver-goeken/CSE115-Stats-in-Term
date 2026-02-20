@@ -9,7 +9,7 @@ struct SongListen {
     string name;
     string artist;
     string album;
-    chrono::system_clock::time_point timestamp;
+    string timestamp;
     string startReason;
     string endReason;
 
@@ -18,8 +18,8 @@ struct SongListen {
 struct Query {
     optional<std::string> artist;
     optional<std::string> album;
-    optional<std::chrono::system_clock::time_point> start; 
-    optional<std::chrono::system_clock::time_point> end;
+    optional<std::string> start;
+    optional<std::string> end;
     optional<std::string> startReason;
     optional<std::string> endReason;
 
@@ -27,6 +27,6 @@ struct Query {
 
 vector<SongListen> searchSong(const Query& q);
 
-//chrono::system_clock::time_point parseTimestamp(const std::string& ts);
+chrono::system_clock::time_point parseTimestamp(const std::string& ts);
 
 void parseJson(const std::string& filename, std::vector<SongListen>& songs);

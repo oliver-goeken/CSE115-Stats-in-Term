@@ -1,4 +1,4 @@
-#include "stats.h"
+#include "incstats.h"
 #include "display.h"
 #include <unistd.h>
 #include <signal.h>
