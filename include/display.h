@@ -274,7 +274,7 @@ int display_terminate_window_contents(display_window* window);
  * @details
  * allocates memory, ensures references from previous node points correctly. also uses strcpy
  */
-display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data);
+display_window_content_node* display_window_add_content_node(display_window* window, char* data);
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
 int display_set_contend_node_color(display_window_content_node* content_node, int color_pair);

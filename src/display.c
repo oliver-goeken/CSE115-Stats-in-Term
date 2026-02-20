@@ -469,6 +469,7 @@ int display_handle_command(int* SIGINT_FLAG, display_window* command_window){
 			case KEY_RESIZE:
 				display_handle_winch();
 				break;
+			case '\n':
 			case KEY_ENTER:
 			case 13:
 				done = true;
@@ -699,7 +700,7 @@ int display_terminate_window_contents(display_window* window){
 	return 0;
 }
 
-display_window_content_node* display_window_add_content_node(display_window* window, Mode mode, char* data){
+display_window_content_node* display_window_add_content_node(display_window* window, char* data){
 	display_window_content_node* cur_node;
 
 	if (window->content != NULL){
@@ -723,7 +724,7 @@ display_window_content_node* display_window_add_content_node(display_window* win
 	}
 
 	cur_node->next_node = NULL;
-	cur_node->mode = mode;
+	cur_node->mode = UNKNOWN;
 	cur_node->alignment = LEFT;
 	cur_node->color_pair = 1;
 	cur_node->associated_window = window;
