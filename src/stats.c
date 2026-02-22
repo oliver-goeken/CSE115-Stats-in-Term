@@ -1,5 +1,6 @@
 #include "stats.h"
 #include "utils.h"
+#include "dataStruct.h"
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
