@@ -17,7 +17,7 @@ int display_init(){
 		endwin();
 		fflush(stdout);
 
-		exit(0);
+		exit(1);
 	}
 
 	keypad(stdscr, TRUE);
