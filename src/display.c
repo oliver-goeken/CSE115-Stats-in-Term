@@ -12,6 +12,14 @@ int display_init(){
 
 	initscr();
 
+	if (LINES < 10 || COLS < 50){
+		fprintf(stderr, "Minimum suppported terminal Size is 50 wide and 10 high.\n");
+		endwin();
+		fflush(stdout);
+
+		exit(0);
+	}
+
 	keypad(stdscr, TRUE);
 	nonl();
 	cbreak();
@@ -30,6 +38,7 @@ int display_init(){
 	window_list = malloc(sizeof(display_window_list));
 	window_list->root = NULL;
 	window_list->current_screen = MAIN;
+
 
 	return 0;
 }
@@ -404,6 +413,7 @@ int display_select_next_window(){
 			if (next_selection->display_window->start_x > cur_selection->display_window->start_x){
 				cur_selection->display_window->selected = false;
 				next_selection->display_window->selected = true;
+
 				return 0;
 			}
 		}
@@ -451,6 +461,7 @@ int display_handle_command(int* SIGINT_FLAG, display_window* command_window){
 	wmove(ncurses_window, 0, 0);
 	wprintw(ncurses_window, ":");
 	wmove(ncurses_window, 0, 1);
+	
 	wattrset(ncurses_window, COLOR_PAIR(2));
 	wprintw(ncurses_window, " ");
 	wattrset(ncurses_window, COLOR_PAIR(1));
@@ -636,7 +647,7 @@ int display_draw_window_contents(display_window* window){
 			if (content_node->data != NULL){
 				/*
 				 *
-				 * NEWLINES IN CONTENT STRINGS NOT REALLY SUPPORTED, USE A NEW CONTENT NODE
+				 * NEWLINES IN CONTENT STRINGS NOT FULLY SUPPORTED, USE A NEW CONTENT NODE
 				 *
 				 */
 				int newline_count = 0;
