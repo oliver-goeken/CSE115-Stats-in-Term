@@ -3,6 +3,10 @@
 
 #include <ncurses.h>
 
+#define WINDOW_SELECTABLE true
+#define WINDOW_NOT_SELECTABLE false
+#define WINDOW_EXPAND_TO_FIT_TEXT true
+
 /*
  *
  * enum for mode types
