@@ -8,10 +8,10 @@
 #include <iomanip>
 #include "dataStruct.h"
 
+/*
 using namespace std;
 vector<SongListen> allSongs;
 
-/*
 	int main() {
 		cout << "Starting\n";
 		parseJson("C:/Users/Zachary/source/repos/Intro to Software Engineering/src/songExamplesZach-Long.json", allSongs);

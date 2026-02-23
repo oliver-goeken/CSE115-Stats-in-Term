@@ -11,6 +11,8 @@ using namespace std;
 
 const int NumFIELDS = 7;
 
+vector<SongListen> allSongs;
+
 bool contains(const vector<string>& arr, const string& value) {
     return find(arr.begin(), arr.end(), value) != arr.end();
 }
@@ -86,6 +88,11 @@ void parseJson(const string& filename, vector<SongListen>& songs) {
 
         songs.push_back(std::move(s));
     }
+}
+
+EXPORT_C void wrap_parseJson(const char* filename){
+	string cpp_filename = filename;
+	parseJson(cpp_filename, allSongs);
 }
 
 vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs) {

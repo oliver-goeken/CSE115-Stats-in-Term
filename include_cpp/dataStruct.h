@@ -2,7 +2,14 @@
 #define DATASTRUCT_H
 
 #ifdef __cplusplus
+  #define EXPORT_C extern "C"
+#else
+  #define EXPORT_C
+#endif
 
+
+// A LOT OF THE C WRAPPER STUFF HERE IS HEAVILY INSPIRED BY https://caiorss.github.io/C-Cpp-Notes/CwrapperToQtLibrary.html
+#ifdef __cplusplus
 #include <string>
 #include <chrono>
 #include <vector>
@@ -49,5 +56,7 @@ void parseJson(const string& filename, vector<SongListen>& songs);
 string getInput();
 
 #endif // end of CPP
+
+EXPORT_C void wrap_parseJson(const char* filename);
 
 #endif

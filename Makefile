@@ -20,7 +20,8 @@ CPP_SRCDIR = src_cpp/
 CPP_INCDIR = include_cpp/
 CPP_OBJDIR = .obj_cpp/
 
-CFLAGS = -g -Wall -Wextra -std=c++17 -I$(CPP_INCDIR) -I$(INCDIR)
+CPPFLAGS = -g -Wall -Wextra -std=c++1z -I$(CPP_INCDIR) -I$(INCDIR)
+CFLAGS = -g -Wall -Wextra -I$(CPP_INCDIR) -I$(INCDIR)
 
 CXX = g++
 
@@ -42,7 +43,7 @@ test: $(TEST_OUTS)
 
 
 $(OUT): $(OBJS) $(CPP_OBJS)
-	$(CXX) $(CFLAGS) -o $(OUT) $(OBJS) $(CPP_OBJS) $(LDLIBS)
+	$(CXX) $(CPPFLAGS) -o $(OUT) $(OBJS) $(CPP_OBJS) $(LDLIBS)
 
 #clunky solution; should really be better
 $(TEST_OUTS): $(TEST_OBJS) $(OBJS)
@@ -58,12 +59,13 @@ $(OBJDIR)%.o: $(SRCDIR)%.c
 
 $(CPP_OBJDIR)%.o: $(CPP_SRCDIR)%.cpp
 	mkdir -p $(CPP_OBJDIR)
-	$(CXX) $(CFLAGS) -c -o $@ $<
+	$(CXX) $(CPPFLAGS) -c -o $@ $<
 
 $(TESTDIR)%.c:;
 
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT)
+	rm -f $(CPP_OBJDIR)*.o
 	rm -f $(TESTOBJDIR)*.o
 	rm -f $(TEST_OUTS)
