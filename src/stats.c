@@ -10,9 +10,9 @@ int SIGSEGV_FLAG = 0;
 
 int DONE = 0;
 int main (){
-	init();
-
 	wrap_parseJson("/Users/oliverdgoeken/school/25-26/q2/cse/CSE115-Stats-in-Term/src_cpp/songExamplesZach.json");
+
+	init();
 
 	display_window* list_window = display_create_window(MAIN, WINDOW_SELECTABLE, "0:0:w1/2:h-2");
 	display_window_add_content_node(list_window, "test!");
