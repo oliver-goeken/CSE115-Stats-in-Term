@@ -7,6 +7,7 @@
 #include <sstream>
 #include <algorithm>
 #include "json.hpp" //json tools library
+					
 using namespace std;
 
 const int NumFIELDS = 7;
@@ -93,6 +94,15 @@ void parseJson(const string& filename, vector<SongListen>& songs) {
 EXPORT_C void wrap_parseJson(const char* filename){
 	string cpp_filename = filename;
 	parseJson(cpp_filename, allSongs);
+}
+
+EXPORT_C void wrap_get_strings(display_window* window){
+	for (const auto& song : allSongs){
+		string song_data = song.name + " - " + song.artist;
+
+		char* c_song_data = song_data.data();
+		display_window_add_content_node(window, c_song_data);
+	}
 }
 
 vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs) {

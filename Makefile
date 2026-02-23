@@ -20,7 +20,7 @@ CPP_SRCDIR = src_cpp/
 CPP_INCDIR = include_cpp/
 CPP_OBJDIR = .obj_cpp/
 
-CPPFLAGS = -g -Wall -Wextra -std=c++1z -I$(CPP_INCDIR) -I$(INCDIR)
+CPPFLAGS = -g -Wall -Wextra -std=c++17 -I$(CPP_INCDIR) -I$(INCDIR)
 CFLAGS = -g -Wall -Wextra -I$(CPP_INCDIR) -I$(INCDIR)
 
 CXX = g++

@@ -7,6 +7,12 @@
 #define WINDOW_NOT_SELECTABLE false
 #define WINDOW_EXPAND_TO_FIT_TEXT true
 
+#ifdef __cplusplus
+extern "C"{
+#else
+  #define EXPORT_C
+#endif
+
 /*
  *
  * enum for mode types
@@ -299,5 +305,8 @@ void display_handle_winch();
  * frees memory associated with node, and moves previous and next node's pointers to correctly reflect lack of node
  */
 int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node);
+#ifdef __cplusplus
+}
+#endif
 
 #endif

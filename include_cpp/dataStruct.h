@@ -7,13 +7,16 @@
   #define EXPORT_C
 #endif
 
-
 // A LOT OF THE C WRAPPER STUFF HERE IS HEAVILY INSPIRED BY https://caiorss.github.io/C-Cpp-Notes/CwrapperToQtLibrary.html
 #ifdef __cplusplus
 #include <string>
 #include <chrono>
 #include <vector>
 #include <optional>
+
+extern "C" {
+#include "display.h"
+}
 
 using namespace std;
 
@@ -58,5 +61,6 @@ string getInput();
 #endif // end of CPP
 
 EXPORT_C void wrap_parseJson(const char* filename);
+EXPORT_C void wrap_get_strings(display_window* window);
 
 #endif
