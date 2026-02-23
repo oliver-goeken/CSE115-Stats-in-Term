@@ -105,6 +105,66 @@ EXPORT_C void wrap_get_strings(display_window* window){
 	}
 }
 
+EXPORT_C void wrap_search_command(char* command, display_window* window){
+	char search_field[256] = {'\0'};
+	char search_token[256] = {'\0'};
+
+	int part = 0;
+	int pos = 0;
+
+	for (int i = 0; i < 256 && command[i] != '\0'; i ++){
+		if (part == 0 && command[i] == ' '){
+			part = 1;
+			pos = 0;
+			continue;
+		}
+
+		if (part == 0){
+			search_field[pos] = command[i];
+		} else {
+			search_token[pos] = command[i];
+		}
+
+		pos ++;
+	}
+
+	string name = "";
+	string artist = "";
+	string album = "";
+	string start = "";
+	string end = "";
+	string start_reason = "";
+	string end_reason = "";
+
+	string field = search_field;
+	string token = search_token;
+
+	if (field == "name"){
+		name = search_token;
+	} else if (field == "artist"){
+		artist = search_token;
+	} else if (field == "album"){
+		album = search_token;
+	}
+
+    string combined = name + "," + artist + "," + album + "," + start + "," + end + "," + start_reason + "," + end_reason;
+
+	cerr << "{" + combined + "}";
+
+	Query search_query = getSortQuery(combined);
+
+	vector<SongListen> sorted_songs = searchSong(search_query, allSongs);
+
+	if (!sorted_songs.empty()){
+		for (const auto& song : sorted_songs){
+			string song_data = song.name + " - " + song.artist;
+
+			char* c_song_data = song_data.data();
+			display_window_add_content_node(window, c_song_data);
+		}
+	}
+}
+
 vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs) {
     vector<SongListen> results;
 

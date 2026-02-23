@@ -15,8 +15,7 @@ int main (){
 	display_window* list_window = display_create_window(MAIN, WINDOW_SELECTABLE, "0:0:w1/2:h-2");
 	display_window_box(list_window, '-', '|');
 
-	wrap_parseJson("/Users/oliverdgoeken/school/25-26/q2/cse/CSE115-Stats-in-Term/src_cpp/songExamplesZach.json");
-	wrap_get_strings(list_window);
+	display_setup_song_list(list_window);
 
 	display_window* info_window = display_create_window(MAIN, WINDOW_SELECTABLE, "w1/2:0:w1/2:h-2");
 	display_window_add_content_node(info_window, "hello!");
@@ -83,7 +82,7 @@ int main (){
 				display_set_window_screen(help_window, HIDDEN);
 				display_set_window_screen(command_window, MAIN);
 
-				display_handle_command(&SIGINT_FLAG, command_window);
+				display_handle_command(&SIGINT_FLAG, command_window, list_window);
 
 				display_set_window_screen(help_window, MAIN);
 				display_set_window_screen(command_window, HIDDEN);

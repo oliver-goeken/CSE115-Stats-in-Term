@@ -160,7 +160,8 @@ int display_select_previous_window();
 
 int display_set_window_screen(display_window* window, Screen screen);
 
-int display_handle_command(int* SIGINT_FLAG, display_window* command_window);
+int display_handle_command(int* SIGINT_FLAG, display_window* command_window, display_window* results_window);
+int display_setup_song_list(display_window* window);
 
 /*
  * @brief destroys a desplay_window

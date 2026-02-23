@@ -1,10 +1,13 @@
 #include "display.h"
 #include "utils.h"
+#include "dataStruct.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 static display_window_list* window_list;
+
+static display_window_content_node* all_songs_list;
 
 int display_init(){
 	time_t rawtime;
@@ -19,6 +22,7 @@ int display_init(){
 
 		exit(1);
 	}
+
 
 	keypad(stdscr, TRUE);
 	nonl();
@@ -43,6 +47,15 @@ int display_init(){
 	return 0;
 }
 
+int display_setup_song_list(display_window* window){
+	wrap_parseJson("/Users/oliverdgoeken/school/25-26/q2/cse/CSE115-Stats-in-Term/src_cpp/songExamplesZach.json");
+	wrap_get_strings(window);
+
+	all_songs_list = window->content;
+
+	return 0;
+}
+
 int display_terminate(){
 	if (window_list->root != NULL){
 		if (window_list->root->next_node == NULL){
@@ -53,9 +66,11 @@ int display_terminate(){
 			display_window_list_node* prev_node = window_list->root;
 
 			while (cur_node != NULL){
+				fprintf(stderr, "made it to %d of display terminate\n", __LINE__);
 				cur_node = cur_node->next_node;
 
 				display_destroy_window(prev_node->display_window);
+				fprintf(stderr, "made it to %d of display terminate\n", __LINE__);
 				free(prev_node);
 
 				prev_node = cur_node;
@@ -72,6 +87,7 @@ int display_terminate(){
 	}
 
 	fflush(stdout);
+
 
 	return 0;
 }
@@ -262,8 +278,8 @@ int display_window_box(display_window* window, char vertical_edges, char horizon
 }
 
 int display_destroy_window(display_window* window){
-	display_destroy_ncurses_window(window->window);
 	display_terminate_window_contents(window);
+	display_destroy_ncurses_window(window->window);
 
 	free(window);
 
@@ -274,6 +290,7 @@ int display_window_select_next_node(display_window_list_node* window_node){
 	if (window_node == NULL){
 		return -3;
 	}
+
 
 	display_window_content_node* selected_node;
 	if ((selected_node = display_window_get_current_selection(window_node)) == NULL){
@@ -447,7 +464,7 @@ int display_select_previous_window(){
 	return -1;
 }
 
-int display_handle_command(int* SIGINT_FLAG, display_window* command_window){
+int display_handle_command(int* SIGINT_FLAG, display_window* command_window, display_window* results_window){
 	//move to correct position in window
 	//print ':'
 	
@@ -520,8 +537,68 @@ int display_handle_command(int* SIGINT_FLAG, display_window* command_window){
 		}
 	}
 
+	/*
+	 *
+	 * total rewrite needed
+	 * just start from scratch
+	 * try and error proof it - think of everything
+	 * also rewrite the cpp funcs when its time
+	 * for now this is just proof of concept
+	 *
+	 *
+	 */
 	if (execute_command){
-		
+		char command[256] = {'\0'};
+
+		char args[256] = {'\0'};
+
+		int pos = 0;
+		bool on_args = false;
+
+		for (int i = 0; command_buffer[i] != '\0'; i ++){
+			if (!on_args && command_buffer[i] == ' '){
+				on_args = true;
+				pos = 0;
+				continue;
+			}
+
+			if (!on_args){
+				command[pos] = command_buffer[i];
+			} else {
+				args[pos] = command_buffer[i];
+			}
+
+			pos ++;
+		}
+
+		if (strcmp(command, "search") == 0){
+			if (results_window->content != all_songs_list){
+				display_terminate_window_contents(results_window);
+			} else {
+				results_window->content = NULL;
+			}
+
+			werase(results_window->window);
+			wrap_search_command(args, results_window);
+
+			if (results_window->content != NULL){
+				results_window->content->selected = true;
+			} else {
+				results_window->content = all_songs_list;
+			}
+
+			fprintf(stderr, "[%s]\n", args);
+
+			results_window->content_offset = 0;
+		} else if (strcmp(command, "reset") == 0){
+			if (results_window->content != all_songs_list){
+				display_terminate_window_contents(results_window);
+				results_window->content = all_songs_list;
+				results_window->content->selected = true;
+			}
+		} else if (strcmp(command, "q") == 0){
+			display_terminate();
+		}
 	}
 
 	return 0;
@@ -707,6 +784,9 @@ int display_terminate_window_contents(display_window* window){
 	}
 
 	window->content = NULL;
+
+	werase(window->window);
+	window->content_offset = 0;
 
 	return 0;
 }

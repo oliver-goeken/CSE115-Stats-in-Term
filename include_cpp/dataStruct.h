@@ -62,5 +62,6 @@ string getInput();
 
 EXPORT_C void wrap_parseJson(const char* filename);
 EXPORT_C void wrap_get_strings(display_window* window);
+EXPORT_C void wrap_search_command(char* command, display_window* window);
 
 #endif
