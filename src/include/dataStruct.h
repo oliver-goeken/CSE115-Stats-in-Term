@@ -36,7 +36,7 @@ const vector<string> VALID_END_REASONS = {
 };
 
 //Used to hold a single song listen and its attributes.
-struct SongListen {
+struct songListen {
     string name;
     string artist;
     string album;
@@ -46,27 +46,27 @@ struct SongListen {
 
 };
 
-//Holds criteria to search for a song. Its members are optional.
+//Holds criteria to search for a song. Without optional, it is now identical to songListen
 struct Query {
-    optional<string> name;
-    optional<string> artist;
-    optional<string> album;
-    optional<string> start;
-    optional<string> end;
-    optional<string> startReason;
-    optional<string> endReason;
+    string name;
+    string artist;
+    string album;
+    string start;
+    string end;
+    string startReason;
+    string endReason;
 
 };
 
-//returns a vector of SongListens from a specified stored vector that fit a given query.
-vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs);
+//returns a vector of songListens from a specified stored vector that fit a given query.
+vector<songListen> searchSong(const Query& q, const vector<songListen>& songs);
 
 //Prompts a user for critera and returns a filled-out query struct.
 Query getSortQuery();
 
-//Parses a spotify-formatted .json into a specified SongListen vector. 
+//Parses a spotify-formatted .json into a specified songListen vector. 
 //This can be used >1 time for a single vector if multiple file parses are needed.
-void parseJson(const string& filename, vector<SongListen>& songs);
+void parseJson(const string& filename, vector<songListen>& songs);
 
 //Determines if a user input is valid for a specific criteria. 
 //The prompt string comes from the "const string prompts" in the .h file.

@@ -9,7 +9,7 @@
 #include "include/dataStruct.h"
 
 using namespace std;
-vector<SongListen> allSongs;
+vector<songListen> allSongs;
 
 int main() {
     cout << "Starting\n";
@@ -20,7 +20,7 @@ int main() {
 
     Query q = getSortQuery();
 
-    vector<SongListen> sortedSongs = searchSong(q, allSongs);
+    vector<songListen> sortedSongs = searchSong(q, allSongs);
 
     cout << "Found " << sortedSongs.size() << " songs:\n";
     for (const auto& song : sortedSongs) { 

@@ -31,13 +31,13 @@ Query getSortQuery() {
         inputs[i] = temp;
     }
     
-    if (inputs[0] != "") q.name        = inputs[0];
-    if (inputs[1] != "") q.artist      = inputs[1];
-    if (inputs[2] != "") q.album       = inputs[2];
-    if (inputs[3] != "") q.start       = inputs[3];
-    if (inputs[4] != "") q.end         = inputs[4];
-    if (inputs[5] != "") q.startReason = inputs[5];
-    if (inputs[6] != "") q.endReason   = inputs[6];
+    q.name        = inputs[0];
+    q.artist      = inputs[1];
+    q.album       = inputs[2];
+    q.start       = inputs[3];
+    q.end         = inputs[4];
+    q.startReason = inputs[5];
+    q.endReason   = inputs[6];
 
     return q;
 }
@@ -72,7 +72,7 @@ bool validInput(string prompt, string input) {
     else return true;
 }
 
-void parseJson(const string& filename, vector<SongListen>& songs) {
+void parseJson(const string& filename, vector<songListen>& songs) {
     ifstream file(filename);
     if (!file.is_open()) {
         cout << "Could not open JSON\n";
@@ -82,7 +82,7 @@ void parseJson(const string& filename, vector<SongListen>& songs) {
     file >> j;
 
     for (const auto& item : j) {
-        SongListen s;
+        songListen s;
         if (item["master_metadata_track_name"].is_null()) continue;
         s.name        = item.value("master_metadata_track_name", "");
         s.artist      = item.value("master_metadata_album_artist_name", "");
@@ -95,18 +95,18 @@ void parseJson(const string& filename, vector<SongListen>& songs) {
     }
 }
 
-vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs) {
-    vector<SongListen> results;
+vector<songListen> searchSong(const Query& q, const vector<songListen>& songs) {
+    vector<songListen> results;
 
     for (const auto& s : songs) {
 
-        if (q.name        && s.name        != *q.name       ) continue;
-        if (q.artist      && s.artist      != *q.artist     ) continue;
-        if (q.album       && s.album       != *q.album      ) continue;
-        if (q.start       && s.timestamp    < *q.start      ) continue;
-        if (q.end         && s.timestamp    > *q.end        ) continue;
-        if (q.startReason && s.startReason != *q.startReason) continue;
-        if (q.endReason   && s.endReason   != *q.endReason  ) continue;
+        if (q.name        != "" && s.name        != q.name       ) continue;
+        if (q.artist      != "" && s.artist      != q.artist     ) continue;
+        if (q.album       != "" && s.album       != q.album      ) continue;
+        if (q.start       != "" && s.timestamp    < q.start      ) continue;
+        if (q.end         != "" && s.timestamp    > q.end        ) continue;
+        if (q.startReason != "" && s.startReason != q.startReason) continue;
+        if (q.endReason   != "" && s.endReason   != q.endReason  ) continue;
 
         results.push_back(s);
     }
