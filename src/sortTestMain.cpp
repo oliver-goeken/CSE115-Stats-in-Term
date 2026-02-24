@@ -18,7 +18,7 @@ int main() {
 
    
 
-    Query q = getSortQuery(getInput());
+    Query q = getSortQuery();
 
     vector<SongListen> sortedSongs = searchSong(q, allSongs);
 

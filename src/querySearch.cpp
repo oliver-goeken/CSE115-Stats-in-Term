@@ -6,63 +6,70 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <regex>
 #include "include/json.hpp" //json tools library
 using namespace std;
-
-const int NumFIELDS = 7;
 
 bool contains(const vector<string>& arr, const string& value) {
     return find(arr.begin(), arr.end(), value) != arr.end();
 }
 
-Query getSortQuery(const string& input) {
+Query getSortQuery() {
     Query q;
+    string inputs [NumFIELDS];
+    
+    string temp;
+    for (int i = 0; i < NumFIELDS; i++) {
+        cout << prompts[i];
+        getline(cin, temp);
 
-    vector<string> tokens;
-    string token;
-    stringstream ss(input);
-
-    // Split input using commas
-    while (getline(ss, token, ',')) {
-        // Trim whitespace
-        token.erase(0, token.find_first_not_of(" \t\n\r"));
-        token.erase(token.find_last_not_of(" \t\n\r") + 1);
-        tokens.push_back(token);
-    }
-
-    // Ensure at least NumFIELDS fields
-    while (tokens.size() < NumFIELDS) {
-        tokens.push_back("");
-    }
-
-    // Populate Query fields if non-empty
-    if (!tokens[0].empty()) q.name   = tokens[0];
-    if (!tokens[1].empty()) q.artist = tokens[1];
-    if (!tokens[2].empty()) q.album  = tokens[2];
-    if (!tokens[3].empty()) q.start  = tokens[3];
-    if (!tokens[4].empty()) q.end    = tokens[4];
-
-    // Validate startReason
-    if (!tokens[5].empty()) {
-        if (contains(VALID_START_REASONS, tokens[5])) {
-            q.startReason = tokens[5];
+        //Error checking for inputs.
+        while (!validInput(prompts[i], temp)) {
+            getline(cin, temp);
         }
-        else {
-            cerr << "Warning: Invalid startReason '" << tokens[5] << "' ignored.\n";
-        }
-    }
 
-    // Validate endReason
-    if (!tokens[6].empty()) {
-        if (contains(VALID_END_REASONS, tokens[6])) {
-            q.endReason = tokens[6];
-        }
-        else {
-            cerr << "Warning: Invalid endReason '" << tokens[6] << "' ignored.\n";
-        }
+        inputs[i] = temp;
     }
+    
+    if (inputs[0] != "") q.name        = inputs[0];
+    if (inputs[1] != "") q.artist      = inputs[1];
+    if (inputs[2] != "") q.album       = inputs[2];
+    if (inputs[3] != "") q.start       = inputs[3];
+    if (inputs[4] != "") q.end         = inputs[4];
+    if (inputs[5] != "") q.startReason = inputs[5];
+    if (inputs[6] != "") q.endReason   = inputs[6];
 
     return q;
+}
+
+bool validInput(string prompt, string input) {
+    if (input == "") { return true; }
+    if (prompt == "Start date: " || prompt == "End date: ") {
+        static const regex iso8601_extended_regex(R"(^(?:[0-9]{4})-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):(?:[0-5][0-9]):(?:[0-5][0-9])Z$)");
+        if (!regex_match(input, iso8601_extended_regex)) {
+            cout << "Invalid date format. Please use 'YYYY-MM-DDTHH:MM:SSZ': ";
+            return false;
+        }
+        else return true;
+    }
+
+    else if (prompt == "Start reason: ") {
+        if (!contains(VALID_START_REASONS, input)) {
+            cout << "Invalid start reason. Please try again: ";
+            return false;
+        }
+        return true;
+    }
+
+    else if (prompt == "End reason: ") {
+        if (!contains(VALID_END_REASONS, input)) {
+            cout << "Invalid start reason. Please try again: ";
+            return false;
+        }
+        return true;
+    }
+
+    else return true;
 }
 
 void parseJson(const string& filename, vector<SongListen>& songs) {
@@ -93,46 +100,16 @@ vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs) {
 
     for (const auto& s : songs) {
 
-        if (q.name   && s.name     != *q.name)        continue;
-        if (q.artist && s.artist   != *q.artist)      continue;
-        if (q.album  && s.album    != *q.album)       continue;
-        if (q.start  && s.timestamp < *q.start)       continue;
-        if (q.end    && s.timestamp > *q.end)         continue;
+        if (q.name        && s.name        != *q.name       ) continue;
+        if (q.artist      && s.artist      != *q.artist     ) continue;
+        if (q.album       && s.album       != *q.album      ) continue;
+        if (q.start       && s.timestamp    < *q.start      ) continue;
+        if (q.end         && s.timestamp    > *q.end        ) continue;
         if (q.startReason && s.startReason != *q.startReason) continue;
-        if (q.endReason   && s.endReason   != *q.endReason)   continue;
+        if (q.endReason   && s.endReason   != *q.endReason  ) continue;
 
         results.push_back(s);
     }
 
     return results;
-}
-
-string getInput() {
-    string name, artist, album, start, end, startReason, endReason;
-
-    cout << "Song name: ";
-    getline(cin, name);
-
-    cout << "Artist: ";
-    getline(cin, artist);
-
-    cout << "Album: ";
-    getline(cin, album);
-
-    cout << "Start date: ";
-    getline(cin, start);
-
-    cout << "End date: ";
-    getline(cin, end);
-
-    cout << "Start reason: ";
-    getline(cin, startReason);
-
-    cout << "End reason: ";
-    getline(cin, endReason);
-
-    string combined = name + "," + artist + "," + album + "," +
-        start + "," + end + "," + startReason + "," + endReason;
-
-    return combined;
 }
