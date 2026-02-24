@@ -7,8 +7,29 @@
 #include <sstream>
 #include <algorithm>
 #include <regex>
+#include <cstring>
 #include "include/json.hpp" //json tools library
 using namespace std;
+
+// Case-insensitive strstr
+const char* strcasestr_c(const char* haystack, const char* needle) {
+    if (!*needle) return haystack;
+
+    for (; *haystack; ++haystack) {
+        const char* h = haystack;
+        const char* n = needle;
+
+        while (*h && *n && tolower((unsigned char)*h) == tolower((unsigned char)*n)) {
+            ++h;
+            ++n;
+        }
+
+        if (!*n) return haystack; // found match
+    }
+
+    return nullptr;
+}
+
 
 bool contains(const vector<string>& arr, const string& value) {
     return find(arr.begin(), arr.end(), value) != arr.end();
@@ -100,13 +121,13 @@ vector<songListen> searchSong(const Query& q, const vector<songListen>& songs) {
 
     for (const auto& s : songs) {
 
-        if (q.name        != "" && s.name        != q.name       ) continue;
-        if (q.artist      != "" && s.artist      != q.artist     ) continue;
-        if (q.album       != "" && s.album       != q.album      ) continue;
-        if (q.start       != "" && s.timestamp    < q.start      ) continue;
-        if (q.end         != "" && s.timestamp    > q.end        ) continue;
-        if (q.startReason != "" && s.startReason != q.startReason) continue;
-        if (q.endReason   != "" && s.endReason   != q.endReason  ) continue;
+        if (!q.name  .empty() && strcasestr_c(s.name  .c_str(), q.name  .c_str())==nullptr) continue;
+        if (!q.artist.empty() && strcasestr_c(s.artist.c_str(), q.artist.c_str())==nullptr) continue;
+        if (!q.album .empty() && strcasestr_c(s.album .c_str(), q.album .c_str())==nullptr) continue;
+        if (!q.start .empty() && s.timestamp         < q.start      ) continue;
+        if (!q.end   .empty() && s.timestamp         > q.end        ) continue;
+        if (!q.startReason.empty() && s.startReason != q.startReason) continue;
+        if (!q.endReason  .empty() && s.endReason   != q.endReason  ) continue;
 
         results.push_back(s);
     }
