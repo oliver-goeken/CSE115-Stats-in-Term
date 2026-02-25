@@ -1,13 +1,10 @@
 #include "display.h"
 #include "utils.h"
-#include "dataStruct.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 static display_window_list* window_list;
-
-static display_window_content_node* all_songs_list;
 
 int display_init(){
 	time_t rawtime;
@@ -22,7 +19,6 @@ int display_init(){
 
 		exit(1);
 	}
-
 
 	keypad(stdscr, TRUE);
 	nonl();
@@ -40,37 +36,12 @@ int display_init(){
 	refresh();
 
 	window_list = malloc(sizeof(display_window_list));
-	window_list->info_panel = NULL;
 	window_list->root = NULL;
 	window_list->current_screen = MAIN;
 
 	return 0;
 }
 
-int display_window_list_set_info_panel(display_window* window){
-	window_list->info_panel = window;
-
-	return 0;
-}
-
-int display_setup_song_list(display_window* window){
-	load_all_song_listens("/Users/oliverdgoeken/school/25-26/q2/cse/CSE115-Stats-in-Term/src_cpp/songExamplesZach-Long.json");
-
-	if (window->content != NULL){
-		display_terminate_window_contents(window);
-	}
-	
-	if (display_window_add_all_song_listens(window) != 0) {
-		return -1;
-	}
-
-	display_set_content_window(window->content, window);
-
-	all_songs_list = window->content;
-
-	display_show_song_info(window->content);
-	return 0;
-}
 
 int display_content_node_set_data(display_window_content_node* node, char* data_str){
 	if (node->data != NULL){
@@ -108,10 +79,6 @@ int display_terminate(){
 		window_list->root = NULL;
 	}
 
-	if (all_songs_list != NULL){
-		display_destroy_content_node(all_songs_list);
-	}
-
 	free(window_list);
 
 	if (endwin() != OK){
@@ -119,7 +86,6 @@ int display_terminate(){
 	}
 
 	fflush(stdout);
-
 
 	return 0;
 }
@@ -323,7 +289,6 @@ int display_window_select_next_node(display_window_list_node* window_node){
 		return -3;
 	}
 
-
 	display_window_content_node* selected_node;
 	if ((selected_node = display_window_get_current_selection(window_node)) == NULL){
 		return -1;
@@ -350,57 +315,9 @@ int display_window_select_next_node(display_window_list_node* window_node){
 
 		selected_node->selected = false;
 		selected_node->next_node->selected = true;
-
-		if (selected_node->next_node->song_listen != NULL && window_list->info_panel != NULL){
-			display_terminate_window_contents(window_list->info_panel);
-
-			display_show_song_info(selected_node->next_node);
-		}
 	} else {
 		return -2;
 	}
-
-	return 0;
-}
-
-int display_show_song_info(display_window_content_node* content_node){
-			//make strings for each song play info
-			//add content node to info panel for each field with string using new func 
-			//int display_show_song_info(display_window_content_node* content_node);
-			//
-	
-	song_listen* listen = content_node->song_listen;
-
-
-	char* name_info_str = "Name: ";
-	char* artist_info_str = "Artist: ";
-	char* album_info_str = "Album: ";
-	char* timestamp_info_str = "Time Played: ";
-
-	int name_len = strlen(listen->name) + strlen(name_info_str) + 1;
-	int album_len = strlen(listen->album) + strlen(album_info_str) + 1;
-	int artist_len = strlen(listen->artist) + strlen(artist_info_str) + 1;
-	int timestamp_len = strlen(listen->timestamp) + strlen(timestamp_info_str) + 1;
-
-	char name_str[name_len];
-	char album_str[album_len];
-	char artist_str[artist_len];
-	char timestamp_str[timestamp_len];
-
-	strlcpy(name_str, name_info_str, name_len);
-	strlcpy(album_str, album_info_str, album_len);
-	strlcpy(artist_str, artist_info_str, artist_len);
-	strlcpy(timestamp_str, timestamp_info_str, timestamp_len);
-
-	strlcat(name_str, listen->name, name_len);
-	strlcat(album_str, listen->album, album_len);
-	strlcat(artist_str, listen->artist, artist_len);
-	strlcat(timestamp_str, listen->timestamp, timestamp_len);
-
-	display_window_add_content_node(window_list->info_panel, name_str);
-	display_window_add_content_node(window_list->info_panel, album_str);
-	display_window_add_content_node(window_list->info_panel, artist_str);
-	display_window_add_content_node(window_list->info_panel, timestamp_str);
 
 	return 0;
 }
@@ -429,12 +346,6 @@ int display_window_select_previous_node(display_window_list_node* window_node){
 
 		selected_node->selected = false;
 		selected_node->prev_node->selected = true;
-
-		if (selected_node->prev_node->song_listen != NULL && window_list->info_panel != NULL){
-			display_terminate_window_contents(window_list->info_panel);
-
-			display_show_song_info(selected_node->prev_node);
-		}
 	} else {
 		return -2;
 	}
@@ -548,27 +459,6 @@ int display_select_previous_window(){
 	}
 
 	return -1;
-}
-
-song_listen* display_new_song_listen(char* name, char* album, char* artist, char* timestamp){
-	song_listen* new_song_listen = malloc(sizeof(song_listen));
-
-	int name_len = strlen(name) + 1;
-	int album_len = strlen(album) + 1;
-	int artist_len = strlen(artist) + 1;
-	int timestamp_len = strlen(timestamp) + 1;
-
-	new_song_listen->name = malloc(sizeof(char) * name_len);
-	new_song_listen->album = malloc(sizeof(char) * album_len);
-	new_song_listen->artist = malloc(sizeof(char) * artist_len);
-	new_song_listen->timestamp = malloc(sizeof(char) * timestamp_len);
-
-	strlcpy(new_song_listen->name, name, name_len);
-	strlcpy(new_song_listen->album, album, album_len);
-	strlcpy(new_song_listen->artist, artist, artist_len);
-	strlcpy(new_song_listen->timestamp, timestamp, timestamp_len);
-
-	return new_song_listen;
 }
 
 void display_destroy_song_listen(song_listen* song_listen){
@@ -689,16 +579,7 @@ int display_handle_command(int* SIGINT_FLAG, display_window* command_window, dis
 
 		if (strcmp(command, "search") == 0){
 			if (strlen(args) != 0){
-				display_window_content_node* songs_found = search_songs(args);
-
-				if (results_window->content != all_songs_list){
-					display_terminate_window_contents(results_window);
-				} else {
-					results_window->content = NULL;
-				}
-
-				display_window_set_contents(results_window, songs_found);
-				display_set_content_window(songs_found, results_window);
+				//search
 			}
 		} else if (strcmp(command, "reset") == 0){
 			if (results_window->content != all_songs_list){
@@ -910,17 +791,12 @@ int display_draw_window_contents(display_window* window){
 int display_terminate_window_contents(display_window* window){
 	display_window_content_node* cur_node = window->content;
 
-	if (cur_node == all_songs_list){
-		all_songs_list = NULL;
-	}
-
 	while (cur_node != NULL){
 		display_window_content_node* next_node = cur_node->next_node;
 
 		if (cur_node->data != NULL){
 			free(cur_node->data);
 		}
-		display_destroy_song_listen(cur_node->song_listen);
 
 		free(cur_node);
 

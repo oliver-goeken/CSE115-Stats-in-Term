@@ -7,12 +7,6 @@
 #define WINDOW_NOT_SELECTABLE false
 #define WINDOW_EXPAND_TO_FIT_TEXT true
 
-#ifdef __cplusplus
-extern "C"{
-#else
-  #define EXPORT_C
-#endif
-
 /*
  *
  * enum for mode types
@@ -38,13 +32,6 @@ typedef enum Alignment {
 
 struct display_window;
 
-typedef struct song_listen {
-	char* name;
-	char* album;
-	char* artist;
-	char* timestamp;
-} song_listen;
-
 typedef struct display_window_content_node {
 	struct display_window_content_node* next_node;
 	struct display_window_content_node* prev_node;
@@ -67,7 +54,6 @@ typedef struct display_window_content_node {
 	Mode mode;
 
 	char* data;
-	song_listen* song_listen;
 } display_window_content_node;
 
 typedef struct display_window {
@@ -107,19 +93,11 @@ typedef struct display_window_list {
 	display_window_list_node* root;
 
 	Screen current_screen;
-	display_window* info_panel;
 } display_window_list;
 
-int display_window_list_set_info_panel(display_window* window);
 int display_destroy_content_node(display_window_content_node* content_node);
 
-song_listen* display_new_song_listen(char* name, char* album, char* artist, char* timestamp);
-
-void display_destroy_song_listen(song_listen* song_listen);
-
 int display_content_node_change_window(display_window_content_node* content_node, display_window* window);
-
-int display_show_song_info(display_window_content_node* content_node);
 
 /*
  * @brief intializes ncurses and display_window
@@ -142,6 +120,7 @@ int display_init();
  * terminates each display_window in display_window_list
  */
 int display_terminate();
+
 void display_set_content_window(display_window_content_node* root, display_window* window);
 int display_content_node_set_data(display_window_content_node* node, char* data_str);
 int display_window_set_contents(display_window* window, display_window_content_node* content_node);
@@ -332,8 +311,4 @@ void display_handle_winch();
  * frees memory associated with node, and moves previous and next node's pointers to correctly reflect lack of node
  */
 int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node);
-#ifdef __cplusplus
-}
-#endif
-
 #endif
