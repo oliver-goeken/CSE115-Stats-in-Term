@@ -10,13 +10,13 @@ TESTDIR = tests/
 TESTOBJDIR = $(TESTDIR).obj/
 
 CC = cc
-LDLIBS = -lncurses -lSqlite3
+LDLIBS = -lncurses -lpthread -ldl
 CFLAGS = -g -Wall -Wextra -I$(INCDIR) -I$(LIBDIR)
 
 CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 
-LIBCFILES = lib/cJSON.c 
+LIBCFILES = lib/cJSON.c lib/sqlite3.c
 LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.d,$(LIBCFILES))
 
 
@@ -48,7 +48,7 @@ $(OBJDIR)%.o: $(SRCDIR)%.c
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR)%.d: $(LIBCFILES)
+$(OBJDIR)%.d: $(LIBDIR)%.c
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -56,6 +56,6 @@ $(TESTDIR)%.c:;
 
 .PHONY: clean
 clean:
-	rm -f $(OBJDIR)*.o $(OUT)
+	rm -f $(OBJDIR)*.o $(OUT) $(OBJDIR)*.d
 	rm -f $(TESTOBJDIR)*.o
 	rm -f $(TEST_OUTS)
