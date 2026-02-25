@@ -12,16 +12,26 @@ int DONE = 0;
 int main (){
 	init();
 
-	display_window* list_window = display_create_window(MAIN, WINDOW_SELECTABLE, "0:0:w1/2:h-2");
+	display_window* list_title_window = display_create_window(MAIN, WINDOW_NOT_SELECTABLE, "0:0:w1/2:3");
+	display_window_box(list_title_window, '-', '|');
+	display_window_content_node* list_title_node = display_window_add_content_node(list_title_window, "Listening History");
+	display_set_content_node_alignment(list_title_node, CENTER);
+
+	display_window* info_title_window = display_create_window(MAIN, WINDOW_NOT_SELECTABLE, "w1/2:0:w1/2:3");
+	display_window_box(info_title_window, '-', '|');
+	display_window_content_node* info_title_node = display_window_add_content_node(info_title_window, "Song Listen Information");
+	display_set_content_node_alignment(info_title_node, CENTER);
+
+	display_window* list_window = display_create_window(MAIN, WINDOW_SELECTABLE, "0:2:w1/2:h-5");
 	display_window_box(list_window, '-', '|');
 
-	display_setup_song_list(list_window);
-
-	display_window* info_window = display_create_window(MAIN, WINDOW_SELECTABLE, "w1/2:0:w1/2:h-2");
-	display_window_add_content_node(info_window, "hello!");
-	display_window_add_content_node(info_window, "hello!");
-	display_window_add_content_node(info_window, "hello!");
+	display_window* info_window = display_create_window(MAIN, WINDOW_SELECTABLE, "w1/2:2:w1/2:h-5");
+	display_window_list_set_info_panel(info_window);
 	display_window_box(info_window, '-', '|');
+
+	if (display_setup_song_list(list_window) != 0){
+		fprintf(stderr, "something went wrong\n");
+	}
 
 	display_window* help_window = display_create_window(MAIN, WINDOW_NOT_SELECTABLE, "0:h-2:w:2");
 	display_set_content_node_alignment(display_window_add_content_node(help_window, "[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit"), CENTER);
@@ -43,6 +53,9 @@ int main (){
 	display_window_content_node* no_node = display_window_add_content_node(no_window, "No");
 	display_content_node_set_interaction(no_node, handle_interact_quit_no);
 	display_set_content_node_alignment(no_node, CENTER);
+
+	display_set_selected_window(list_window);
+
 
 	while(!DONE){
 		if (SIGINT_FLAG != 0){
@@ -82,7 +95,9 @@ int main (){
 				display_set_window_screen(help_window, HIDDEN);
 				display_set_window_screen(command_window, MAIN);
 
-				display_handle_command(&SIGINT_FLAG, command_window, list_window);
+				if (display_handle_command(&SIGINT_FLAG, command_window, list_window) == -1){
+					DONE = true;
+				}
 
 				display_set_window_screen(help_window, MAIN);
 				display_set_window_screen(command_window, HIDDEN);

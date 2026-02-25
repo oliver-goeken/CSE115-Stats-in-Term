@@ -40,18 +40,48 @@ int display_init(){
 	refresh();
 
 	window_list = malloc(sizeof(display_window_list));
+	window_list->info_panel = NULL;
 	window_list->root = NULL;
 	window_list->current_screen = MAIN;
 
+	return 0;
+}
+
+int display_window_list_set_info_panel(display_window* window){
+	window_list->info_panel = window;
 
 	return 0;
 }
 
 int display_setup_song_list(display_window* window){
-	wrap_parseJson("/Users/oliverdgoeken/school/25-26/q2/cse/CSE115-Stats-in-Term/src_cpp/songExamplesZach.json");
-	wrap_get_strings(window);
+	load_all_song_listens("/Users/oliverdgoeken/school/25-26/q2/cse/CSE115-Stats-in-Term/src_cpp/songExamplesZach-Long.json");
+
+	if (window->content != NULL){
+		display_terminate_window_contents(window);
+	}
+	
+	if (display_window_add_all_song_listens(window) != 0) {
+		return -1;
+	}
+
+	display_set_content_window(window->content, window);
 
 	all_songs_list = window->content;
+
+	display_show_song_info(window->content);
+	return 0;
+}
+
+int display_content_node_set_data(display_window_content_node* node, char* data_str){
+	if (node->data != NULL){
+		free(node->data);
+	}
+
+	int str_len = strlen(data_str) + 1;
+	char* data_string = malloc(sizeof(char) * str_len);
+	strlcpy(data_string, data_str, str_len);
+
+	node->data = data_string;
 
 	return 0;
 }
@@ -66,11 +96,9 @@ int display_terminate(){
 			display_window_list_node* prev_node = window_list->root;
 
 			while (cur_node != NULL){
-				fprintf(stderr, "made it to %d of display terminate\n", __LINE__);
 				cur_node = cur_node->next_node;
 
 				display_destroy_window(prev_node->display_window);
-				fprintf(stderr, "made it to %d of display terminate\n", __LINE__);
 				free(prev_node);
 
 				prev_node = cur_node;
@@ -78,6 +106,10 @@ int display_terminate(){
 		}
 
 		window_list->root = NULL;
+	}
+
+	if (all_songs_list != NULL){
+		display_destroy_content_node(all_songs_list);
 	}
 
 	free(window_list);
@@ -318,9 +350,57 @@ int display_window_select_next_node(display_window_list_node* window_node){
 
 		selected_node->selected = false;
 		selected_node->next_node->selected = true;
+
+		if (selected_node->next_node->song_listen != NULL && window_list->info_panel != NULL){
+			display_terminate_window_contents(window_list->info_panel);
+
+			display_show_song_info(selected_node->next_node);
+		}
 	} else {
 		return -2;
 	}
+
+	return 0;
+}
+
+int display_show_song_info(display_window_content_node* content_node){
+			//make strings for each song play info
+			//add content node to info panel for each field with string using new func 
+			//int display_show_song_info(display_window_content_node* content_node);
+			//
+	
+	song_listen* listen = content_node->song_listen;
+
+
+	char* name_info_str = "Name: ";
+	char* artist_info_str = "Artist: ";
+	char* album_info_str = "Album: ";
+	char* timestamp_info_str = "Time Played: ";
+
+	int name_len = strlen(listen->name) + strlen(name_info_str) + 1;
+	int album_len = strlen(listen->album) + strlen(album_info_str) + 1;
+	int artist_len = strlen(listen->artist) + strlen(artist_info_str) + 1;
+	int timestamp_len = strlen(listen->timestamp) + strlen(timestamp_info_str) + 1;
+
+	char name_str[name_len];
+	char album_str[album_len];
+	char artist_str[artist_len];
+	char timestamp_str[timestamp_len];
+
+	strlcpy(name_str, name_info_str, name_len);
+	strlcpy(album_str, album_info_str, album_len);
+	strlcpy(artist_str, artist_info_str, artist_len);
+	strlcpy(timestamp_str, timestamp_info_str, timestamp_len);
+
+	strlcat(name_str, listen->name, name_len);
+	strlcat(album_str, listen->album, album_len);
+	strlcat(artist_str, listen->artist, artist_len);
+	strlcat(timestamp_str, listen->timestamp, timestamp_len);
+
+	display_window_add_content_node(window_list->info_panel, name_str);
+	display_window_add_content_node(window_list->info_panel, album_str);
+	display_window_add_content_node(window_list->info_panel, artist_str);
+	display_window_add_content_node(window_list->info_panel, timestamp_str);
 
 	return 0;
 }
@@ -349,6 +429,12 @@ int display_window_select_previous_node(display_window_list_node* window_node){
 
 		selected_node->selected = false;
 		selected_node->prev_node->selected = true;
+
+		if (selected_node->prev_node->song_listen != NULL && window_list->info_panel != NULL){
+			display_terminate_window_contents(window_list->info_panel);
+
+			display_show_song_info(selected_node->prev_node);
+		}
 	} else {
 		return -2;
 	}
@@ -464,10 +550,39 @@ int display_select_previous_window(){
 	return -1;
 }
 
+song_listen* display_new_song_listen(char* name, char* album, char* artist, char* timestamp){
+	song_listen* new_song_listen = malloc(sizeof(song_listen));
+
+	int name_len = strlen(name) + 1;
+	int album_len = strlen(album) + 1;
+	int artist_len = strlen(artist) + 1;
+	int timestamp_len = strlen(timestamp) + 1;
+
+	new_song_listen->name = malloc(sizeof(char) * name_len);
+	new_song_listen->album = malloc(sizeof(char) * album_len);
+	new_song_listen->artist = malloc(sizeof(char) * artist_len);
+	new_song_listen->timestamp = malloc(sizeof(char) * timestamp_len);
+
+	strlcpy(new_song_listen->name, name, name_len);
+	strlcpy(new_song_listen->album, album, album_len);
+	strlcpy(new_song_listen->artist, artist, artist_len);
+	strlcpy(new_song_listen->timestamp, timestamp, timestamp_len);
+
+	return new_song_listen;
+}
+
+void display_destroy_song_listen(song_listen* song_listen){
+	if (song_listen != NULL){
+		free(song_listen->name);
+		free(song_listen->album);
+		free(song_listen->artist);
+		free(song_listen->timestamp);
+
+		free(song_listen);
+	}
+}
+
 int display_handle_command(int* SIGINT_FLAG, display_window* command_window, display_window* results_window){
-	//move to correct position in window
-	//print ':'
-	
 	char command_buffer[256] = {0};
 	int command_buffer_pos = 0;
 
@@ -571,35 +686,59 @@ int display_handle_command(int* SIGINT_FLAG, display_window* command_window, dis
 			pos ++;
 		}
 
+
 		if (strcmp(command, "search") == 0){
-			if (results_window->content != all_songs_list){
-				display_terminate_window_contents(results_window);
-			} else {
-				results_window->content = NULL;
+			if (strlen(args) != 0){
+				display_window_content_node* songs_found = search_songs(args);
+
+				if (results_window->content != all_songs_list){
+					display_terminate_window_contents(results_window);
+				} else {
+					results_window->content = NULL;
+				}
+
+				display_window_set_contents(results_window, songs_found);
+				display_set_content_window(songs_found, results_window);
 			}
-
-			werase(results_window->window);
-			wrap_search_command(args, results_window);
-
-			if (results_window->content != NULL){
-				results_window->content->selected = true;
-			} else {
-				results_window->content = all_songs_list;
-			}
-
-			fprintf(stderr, "[%s]\n", args);
-
-			results_window->content_offset = 0;
 		} else if (strcmp(command, "reset") == 0){
 			if (results_window->content != all_songs_list){
-				display_terminate_window_contents(results_window);
-				results_window->content = all_songs_list;
-				results_window->content->selected = true;
+				display_window_set_contents(results_window, all_songs_list);
 			}
 		} else if (strcmp(command, "q") == 0){
-			display_terminate();
+			return -1;
 		}
 	}
+
+	return 0;
+}
+
+int display_window_select_first_node(display_window* window){
+	display_window_content_node* root = window->content;
+
+	if (root != NULL){
+		root->selected = true;
+		root = root->next_node;
+	}
+
+	while (root != NULL){
+		root->selected = false;
+
+		root = root->next_node;
+	}
+
+	return 0;
+}
+
+int display_window_set_contents(display_window* window, display_window_content_node* content_node){
+	if (window->content != NULL){
+		display_terminate_window_contents(window);
+	}
+
+	window->content = content_node;
+	window->content_offset = 0;
+	display_window_select_first_node(window);
+
+	werase(window->window);
 
 	return 0;
 }
@@ -771,12 +910,17 @@ int display_draw_window_contents(display_window* window){
 int display_terminate_window_contents(display_window* window){
 	display_window_content_node* cur_node = window->content;
 
+	if (cur_node == all_songs_list){
+		all_songs_list = NULL;
+	}
+
 	while (cur_node != NULL){
 		display_window_content_node* next_node = cur_node->next_node;
 
 		if (cur_node->data != NULL){
 			free(cur_node->data);
 		}
+		display_destroy_song_listen(cur_node->song_listen);
 
 		free(cur_node);
 
@@ -801,34 +945,63 @@ display_window_content_node* display_window_add_content_node(display_window* win
 			cur_node = cur_node->next_node;
 		}
 
-		cur_node->next_node = malloc(sizeof(display_window_content_node));
+		cur_node->next_node = display_add_content_node(NULL);
 		cur_node->next_node->prev_node = cur_node;
 
 		cur_node = cur_node->next_node;
 		cur_node->selected = false;
 	} else {
-		window->content = malloc(sizeof(display_window_content_node));
+		window->content = display_add_content_node(NULL);
 		window->content->prev_node = NULL;
 
 		cur_node = window->content;
 		cur_node->selected = window->selectable ? true : false;
 	}
 
-	cur_node->next_node = NULL;
-	cur_node->mode = UNKNOWN;
-	cur_node->alignment = LEFT;
-	cur_node->color_pair = 1;
 	cur_node->associated_window = window;
-	cur_node->handle_interact = NULL;
 
-	if (strlen(data) == 0){
-		cur_node->data = NULL;
-	} else {
+	if (strlen(data) != 0){
 		cur_node->data = malloc(strlen(data) + 1);
 		strcpy(cur_node->data, data);
 	}
 
 	return cur_node;
+}
+
+display_window_content_node* display_add_content_node(display_window_content_node* existing_node){
+	display_window_content_node* cur_node = malloc(sizeof(display_window_content_node));
+
+	cur_node->next_node = NULL;
+
+	if (existing_node == NULL){
+		cur_node->prev_node = NULL;
+	} else {
+		cur_node->prev_node = existing_node;
+		existing_node->next_node = cur_node;
+	}
+
+	cur_node->associated_window = NULL;
+
+	cur_node->alignment = LEFT;
+	cur_node->color_pair = 1;
+
+	cur_node->selected = false;
+
+	cur_node->handle_interact = NULL;
+
+	cur_node->mode = UNKNOWN;
+
+	cur_node->data = NULL;
+	cur_node->song_listen = NULL;
+
+	return cur_node;
+}
+
+void display_set_content_window(display_window_content_node* root, display_window* window){
+	while (root != NULL){
+		root->associated_window = window;
+		root = root->next_node;
+	}
 }
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment){
@@ -882,6 +1055,28 @@ int display_window_destroy_content_node(display_window* window, display_window_c
 	}
 
 	free(cur_node);
+
+	return 0;
+}
+
+int display_destroy_content_node(display_window_content_node* content_node){
+	fprintf(stderr, "did i make it here\n");
+
+	while (content_node != NULL){
+		display_window_content_node* next_node = content_node->next_node;
+
+		if (content_node->data != NULL){
+			free(content_node->data);
+		}
+
+		display_destroy_song_listen(content_node->song_listen);
+
+		free(content_node);
+
+		content_node = next_node;
+
+		fprintf(stderr, "how about here\n");
+	}
 
 	return 0;
 }

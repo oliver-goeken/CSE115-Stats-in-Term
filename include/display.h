@@ -38,6 +38,13 @@ typedef enum Alignment {
 
 struct display_window;
 
+typedef struct song_listen {
+	char* name;
+	char* album;
+	char* artist;
+	char* timestamp;
+} song_listen;
+
 typedef struct display_window_content_node {
 	struct display_window_content_node* next_node;
 	struct display_window_content_node* prev_node;
@@ -58,7 +65,9 @@ typedef struct display_window_content_node {
 	void (*handle_interact)(struct display_window_content_node*, struct display_window*);
 
 	Mode mode;
+
 	char* data;
+	song_listen* song_listen;
 } display_window_content_node;
 
 typedef struct display_window {
@@ -98,7 +107,19 @@ typedef struct display_window_list {
 	display_window_list_node* root;
 
 	Screen current_screen;
+	display_window* info_panel;
 } display_window_list;
+
+int display_window_list_set_info_panel(display_window* window);
+int display_destroy_content_node(display_window_content_node* content_node);
+
+song_listen* display_new_song_listen(char* name, char* album, char* artist, char* timestamp);
+
+void display_destroy_song_listen(song_listen* song_listen);
+
+int display_content_node_change_window(display_window_content_node* content_node, display_window* window);
+
+int display_show_song_info(display_window_content_node* content_node);
 
 /*
  * @brief intializes ncurses and display_window
@@ -121,6 +142,9 @@ int display_init();
  * terminates each display_window in display_window_list
  */
 int display_terminate();
+void display_set_content_window(display_window_content_node* root, display_window* window);
+int display_content_node_set_data(display_window_content_node* node, char* data_str);
+int display_window_set_contents(display_window* window, display_window_content_node* content_node);
 
 Screen display_get_current_screen();
 void display_parse_dimensions_format(display_window* window);
@@ -286,6 +310,8 @@ int display_terminate_window_contents(display_window* window);
  * allocates memory, ensures references from previous node points correctly. also uses strcpy
  */
 display_window_content_node* display_window_add_content_node(display_window* window, char* data);
+
+display_window_content_node* display_add_content_node(display_window_content_node* existing_node);
 
 int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
 int display_set_contend_node_color(display_window_content_node* content_node, int color_pair);

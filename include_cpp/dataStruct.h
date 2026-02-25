@@ -1,24 +1,41 @@
-#ifndef DATASTRUCT_H
-#define DATASTRUCT_H
+#ifndef DATA_STRUCT_H
+#define DATA_STRUCT_H
 
-#ifdef __cplusplus
-  #define EXPORT_C extern "C"
-#else
-  #define EXPORT_C
-#endif
+#include "display.h"
 
-// A LOT OF THE C WRAPPER STUFF HERE IS HEAVILY INSPIRED BY https://caiorss.github.io/C-Cpp-Notes/CwrapperToQtLibrary.html
-#ifdef __cplusplus
+#ifndef __cplusplus
+	#define EXPORT_C
+#else 
+	#define EXPORT_C extern "C"
+
 #include <string>
 #include <chrono>
 #include <vector>
 #include <optional>
 
-extern "C" {
-#include "display.h"
-}
-
 using namespace std;
+const int NumFIELDS = 7;
+
+const string prompts[NumFIELDS] = {
+    "Song name: ",
+    "Artist: ",
+    "Album: ",
+    "Start date: ",
+    "End date: ",
+    "Start reason: ",
+    "End reason: "
+};
+/* SWITCH TO THIS CHAR IMPLEMENTATION FOR C
+const char prompts[NumFIELDS][15] = {
+    "Song name: ",
+    "Artist: ",
+    "Album: ",
+    "Start date: ",
+    "End date: ",
+    "Start reason: ",
+    "End reason: "
+};*/
+
 
 const vector<string> VALID_START_REASONS = {
     "playbtn", "trackdone", "clickrow", "appload"
@@ -28,8 +45,8 @@ const vector<string> VALID_END_REASONS = {
     "trackdone", "endplay", "remote", "unexpected-exit-while-paused"
 };
 
-
-struct SongListen {
+//Used to hold a single song listen and its attributes.
+struct songListen {
     string name;
     string artist;
     string album;
@@ -39,29 +56,45 @@ struct SongListen {
 
 };
 
+//Holds criteria to search for a song. Without optional, it is now identical to songListen
 struct Query {
-    optional<string> name;
-    optional<string> artist;
-    optional<string> album;
-    optional<string> start;
-    optional<string> end;
-    optional<string> startReason;
-    optional<string> endReason;
+    string name;
+    string artist;
+    string album;
+    string start;
+    string end;
+    string startReason;
+    string endReason;
 
 };
 
-vector<SongListen> searchSong(const Query& q, const vector<SongListen>& songs);
+//returns a vector of songListens from a specified stored vector that fit a given query.
+vector<songListen> searchSong(const Query& q, const vector<songListen>& songs);
 
-Query getSortQuery(const string& input);
+//Prompts a user for critera and returns a filled-out query struct.
+Query getSortQuery();
 
-void parseJson(const string& filename, vector<SongListen>& songs);
+//Parses a spotify-formatted .json into a specified songListen vector. 
+//This can be used >1 time for a single vector if multiple file parses are needed.
+void parseJson(const string& filename, vector<songListen>& songs);
 
-string getInput();
+//Determines if a user input is valid for a specific criteria. 
+//The prompt string comes from the "const string prompts" in the .h file.
+bool validInput(string prompt, string input);
 
-#endif // end of CPP
+void get_song_listens();
 
-EXPORT_C void wrap_parseJson(const char* filename);
-EXPORT_C void wrap_get_strings(display_window* window);
-EXPORT_C void wrap_search_command(char* command, display_window* window);
+
+Query* get_query_from_command(char* command);
+display_window_content_node* vector_to_content_nodes(const vector<songListen>& songs);
+
+string convert_to_ascii(string str);
+
+#endif //end of cpp
+
+EXPORT_C void load_all_song_listens(char* filename);
+EXPORT_C int display_window_add_all_song_listens(display_window* window);
+
+EXPORT_C display_window_content_node* search_songs(char* search_query);
 
 #endif
