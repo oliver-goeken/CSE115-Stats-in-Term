@@ -461,17 +461,6 @@ int display_select_previous_window(){
 	return -1;
 }
 
-void display_destroy_song_listen(song_listen* song_listen){
-	if (song_listen != NULL){
-		free(song_listen->name);
-		free(song_listen->album);
-		free(song_listen->artist);
-		free(song_listen->timestamp);
-
-		free(song_listen);
-	}
-}
-
 int display_handle_command(int* SIGINT_FLAG, display_window* command_window, display_window* results_window){
 	char command_buffer[256] = {0};
 	int command_buffer_pos = 0;
@@ -582,9 +571,6 @@ int display_handle_command(int* SIGINT_FLAG, display_window* command_window, dis
 				//search
 			}
 		} else if (strcmp(command, "reset") == 0){
-			if (results_window->content != all_songs_list){
-				display_window_set_contents(results_window, all_songs_list);
-			}
 		} else if (strcmp(command, "q") == 0){
 			return -1;
 		}
@@ -868,7 +854,6 @@ display_window_content_node* display_add_content_node(display_window_content_nod
 	cur_node->mode = UNKNOWN;
 
 	cur_node->data = NULL;
-	cur_node->song_listen = NULL;
 
 	return cur_node;
 }
@@ -944,8 +929,6 @@ int display_destroy_content_node(display_window_content_node* content_node){
 		if (content_node->data != NULL){
 			free(content_node->data);
 		}
-
-		display_destroy_song_listen(content_node->song_listen);
 
 		free(content_node);
 

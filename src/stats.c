@@ -1,6 +1,5 @@
 #include "stats.h"
 #include "utils.h"
-#include "dataStruct.h"
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -26,12 +25,7 @@ int main (){
 	display_window_box(list_window, '-', '|');
 
 	display_window* info_window = display_create_window(MAIN, WINDOW_SELECTABLE, "w1/2:2:w1/2:h-4");
-	display_window_list_set_info_panel(info_window);
 	display_window_box(info_window, '-', '|');
-
-	if (display_setup_song_list(list_window) != 0){
-		fprintf(stderr, "something went wrong\n");
-	}
 
 	display_window* help_window = display_create_window(MAIN, WINDOW_NOT_SELECTABLE, "0:h-2:w:2");
 	display_set_content_node_alignment(display_window_add_content_node(help_window, "[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit"), CENTER);
