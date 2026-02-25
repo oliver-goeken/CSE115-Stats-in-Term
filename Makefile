@@ -2,7 +2,6 @@
 
 OUT = stats
 
-
 SRCDIR = src/
 INCDIR = include/
 OBJDIR = .obj/
@@ -11,22 +10,10 @@ TESTOBJDIR = $(TESTDIR).obj/
 
 CC = cc
 LDLIBS = -lncurses
+CFLAGS = -g -Wall -Wextra -I$(INCDIR)
 
 CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
-
-
-CPP_SRCDIR = src_cpp/
-CPP_INCDIR = include_cpp/
-CPP_OBJDIR = .obj_cpp/
-
-CPPFLAGS = -g -Wall -Wextra -std=c++17 -I$(CPP_INCDIR) -I$(INCDIR)
-CFLAGS = -g -Wall -Wextra -I$(CPP_INCDIR) -I$(INCDIR)
-
-CXX = g++
-
-CPPFILES = $(wildcard $(CPP_SRCDIR)*.cpp)
-CPP_OBJS := $(patsubst $(CPP_SRCDIR)%.cpp,$(CPP_OBJDIR)%.o,$(CPPFILES))
 
 
 TESTS = $(wildcard $(TESTDIR)test_*.c)
@@ -43,7 +30,7 @@ test: $(TEST_OUTS)
 
 
 $(OUT): $(OBJS) $(CPP_OBJS)
-	$(CXX) $(CPPFLAGS) -o $(OUT) $(OBJS) $(CPP_OBJS) $(LDLIBS)
+	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LDLIBS)
 
 #clunky solution; should really be better
 $(TEST_OUTS): $(TEST_OBJS) $(OBJS)
@@ -57,15 +44,10 @@ $(OBJDIR)%.o: $(SRCDIR)%.c
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(CPP_OBJDIR)%.o: $(CPP_SRCDIR)%.cpp
-	mkdir -p $(CPP_OBJDIR)
-	$(CXX) $(CPPFLAGS) -c -o $@ $<
-
 $(TESTDIR)%.c:;
 
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT)
-	rm -f $(CPP_OBJDIR)*.o
 	rm -f $(TESTOBJDIR)*.o
 	rm -f $(TEST_OUTS)
