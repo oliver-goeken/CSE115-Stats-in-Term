@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parse_db_funcs.h"
+#include "sqlite3.h"
 // install cJSON : sudo apt install libcjson-dev
 //install sqlite3 : sudo apt install sqlite3
 
@@ -21,7 +22,7 @@ int create_db()
     rem_con = sqlite3_open("spotifyHistory.db", &database);
     
     if (rem_con != 0) { // if it can't open!
-        fprintf(stderr, "Error: %s \n", sqlite_errmsg(&database)) ; 
+        fprintf(stderr, "Error: %s \n", sqlite3_errmsg(database)) ; 
         sqlite3_close(database) ; 
         return 1 ; 
     }
@@ -40,7 +41,7 @@ int create_db()
     // check connection again
     if (rem_con != 0)
     {
-        fprintf(stderr, "Error in database: %s \n", sqlite_errmsg(&database)) ; 
+        fprintf(stderr, "Error in database: %s \n", sqlite3_errmsg(database)) ; 
         sqlite3_close(database) ; 
         return 1 ;
     }

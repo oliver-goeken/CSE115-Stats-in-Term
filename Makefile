@@ -4,16 +4,20 @@ OUT = stats
 
 SRCDIR = src/
 INCDIR = include/
+LIBDIR = lib/
 OBJDIR = .obj/
 TESTDIR = tests/
 TESTOBJDIR = $(TESTDIR).obj/
 
 CC = cc
-LDLIBS = -lncurses
-CFLAGS = -g -Wall -Wextra -I$(INCDIR)
+LDLIBS = -lncurses -lSqlite3
+CFLAGS = -g -Wall -Wextra -I$(INCDIR) -I$(LIBDIR)
 
 CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
+
+LIBCFILES = lib/cJSON.c 
+LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.d,$(LIBCFILES))
 
 
 TESTS = $(wildcard $(TESTDIR)test_*.c)
@@ -29,8 +33,8 @@ all: $(OUT)
 test: $(TEST_OUTS)
 
 
-$(OUT): $(OBJS) $(CPP_OBJS)
-	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LDLIBS)
+$(OUT): $(OBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LIBOBJS) $(LDLIBS)
 
 #clunky solution; should really be better
 $(TEST_OUTS): $(TEST_OBJS) $(OBJS)
@@ -41,6 +45,10 @@ $(TESTOBJDIR)%.o: $(TESTDIR)%.c
 	$(CC) $(CFLAGS) $(TEST_FLAGS) -c -o $@ $<
 
 $(OBJDIR)%.o: $(SRCDIR)%.c
+	mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)%.d: $(LIBCFILES)
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
