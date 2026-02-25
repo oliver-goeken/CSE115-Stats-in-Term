@@ -22,10 +22,10 @@ int main (){
 	display_window_content_node* info_title_node = display_window_add_content_node(info_title_window, "Song Listen Information");
 	display_set_content_node_alignment(info_title_node, CENTER);
 
-	display_window* list_window = display_create_window(MAIN, WINDOW_SELECTABLE, "0:2:w1/2:h-5");
+	display_window* list_window = display_create_window(MAIN, WINDOW_SELECTABLE, "0:2:w1/2:h-4");
 	display_window_box(list_window, '-', '|');
 
-	display_window* info_window = display_create_window(MAIN, WINDOW_SELECTABLE, "w1/2:2:w1/2:h-5");
+	display_window* info_window = display_create_window(MAIN, WINDOW_SELECTABLE, "w1/2:2:w1/2:h-4");
 	display_window_list_set_info_panel(info_window);
 	display_window_box(info_window, '-', '|');
 
@@ -55,7 +55,6 @@ int main (){
 	display_set_content_node_alignment(no_node, CENTER);
 
 	display_set_selected_window(list_window);
-
 
 	while(!DONE){
 		if (SIGINT_FLAG != 0){

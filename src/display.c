@@ -832,7 +832,7 @@ int display_draw_window_contents(display_window* window){
 			int new_startx;
 			int new_width;
 
-			size_diff = strlen(content_node->data) - (window->width - (window->boxed ? 2 : 0));
+			size_diff = strlen(content_node->data) - (window->width - (window->boxed ? 3 : 0));
 
 			if (size_diff > 0){
 				new_startx = window->start_x - (size_diff / 2);
