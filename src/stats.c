@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 int SIGINT_FLAG = 0;
-int SIGSEGV_FLAG = 0;
 
 int DONE = 0;
 int main (){
