@@ -50,7 +50,7 @@ int display_content_node_set_data(display_window_content_node* node, char* data_
 
 	int str_len = strlen(data_str) + 1;
 	char* data_string = malloc(sizeof(char) * str_len);
-	strlcpy(data_string, data_str, str_len);
+	strncpy(data_string, data_str, str_len);
 
 	node->data = data_string;
 
@@ -461,6 +461,14 @@ int display_select_previous_window(){
 	return -1;
 }
 
+int display_get_user_input(display_window* input_window, int text_startx, int text_starty, char* command_buffer, int buffer_length);
+	/*
+	 *
+	 * tmp store the content nodes from input window and clear the window, then do ncurses stuff then change back
+	 * maybe do this in a wrapper because not necessarily wanted for every
+	 *
+	 */
+
 int display_handle_command(int* SIGINT_FLAG, display_window* command_window, display_window* results_window){
 	char command_buffer[256] = {0};
 	int command_buffer_pos = 0;
@@ -839,6 +847,9 @@ display_window_content_node* display_add_content_node(display_window_content_nod
 		cur_node->prev_node = NULL;
 	} else {
 		cur_node->prev_node = existing_node;
+		if (existing_node->next_node != NULL){
+			cur_node->next_node = existing_node->next_node;
+		}
 		existing_node->next_node = cur_node;
 	}
 
