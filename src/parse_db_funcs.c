@@ -42,6 +42,7 @@ int create_db()
     if (rem_con != 0)
     {
         fprintf(stderr, "Error in database: %s \n", sqlite3_errmsg(database)) ; 
+        database = NULL ;
         sqlite3_close(database) ; 
         return 1 ;
     }
@@ -49,20 +50,25 @@ int create_db()
     return 0 ; 
 }
 
-char* read_json (const char* file)
+char* read_json (char* file)
 {
-    FILE *f = fopen(file, "rb") ; 
+    if (!file) return NULL ;
+    FILE *f = fopen(file, "rb") ;
+    if (!f) return NULL ;
 
     // 1) get len of file
-    fseek(f, 0, SEEK_END) ; 
+    if (fseek(f, 0, SEEK_END) != 0) {fclose(f) ; return NULL ;}
+    
     long file_len = ftell(f) ; 
+    if (file_len < 0)  {fclose(f) ; return NULL ;}
 
     // 2) set the pointer back to the start 
-    fseek(f, 0, SEEK_SET) ; 
+    if (fseek(f, 0, SEEK_SET) != 0) {fclose(f) ; return NULL ;}
 
     // 3) save enough mem to go through full file & read the full file
     char* load_data = malloc (file_len + 1) ; 
-    fread(load_data, 1, file_len, f) ; 
+    if (!load_data) {fclose(f) ; return NULL ;}
+    if (fread(load_data, 1, (size_t) file_len, f) != file_len) {free(load_data) ; fclose(f) ; return NULL ;}
 
     // 4) close and exit properly
     fclose(f) ;
@@ -72,17 +78,39 @@ char* read_json (const char* file)
     return load_data ; 
 }
 
-void json_import_to_db(sqlite3* database, const char* json_file)
+void json_import_to_db(sqlite3* database, char* file_name)
 {
-    cJSON* root = cJSON_Parse(json_file) ; if (!root) return ; 
+    if (!database || !file_name) return ;
 
+    char* json_data = read_json(file_name) ;
+    if (!json_data) return ; 
+
+    cJSON* root = cJSON_Parse(json_data) ; 
+    if (!root) 
+    {
+        free(json_data) ; 
+        return ; 
+    }
     // 1) Set up the command to add stuff to the sql
-    sqlite3_stmt* cmd ; 
+    sqlite3_stmt* cmd = NULL; 
     const char* sql_cmd = "INSERT INTO spotifyHistory (artist, track, album, ms_played, timestamp, track_uri) VALUES (?, ?, ?, ?, ?, ?);" ; 
-    sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) ; 
+    int rem_con = sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) ; 
     
+    if (rem_con != 0) { // if it can't open!
+        cJSON_Delete(root) ;
+        free(json_data) ;
+        return ; 
+    }
+        
     // 2) start parsing!
-    sqlite3_exec(database, "BEGIN TRANSACTION;", NULL, NULL, NULL) ; 
+    rem_con = sqlite3_exec(database, "BEGIN TRANSACTION;", NULL, NULL, NULL) ; 
+    if (rem_con != 0) { // if it can't open!
+        sqlite3_finalize(cmd) ;
+        cJSON_Delete(root) ;
+        free(json_data) ;
+        return ; 
+    }
+    bool success = true ; 
     cJSON* elem = NULL ; 
     cJSON_ArrayForEach (elem, root)
     {
@@ -103,15 +131,21 @@ void json_import_to_db(sqlite3* database, const char* json_file)
         sqlite3_bind_text(cmd, 5, (ts && ts->valuestring) ? ts->valuestring : "", -1, SQLITE_STATIC) ;  
         sqlite3_bind_text(cmd, 6, (track_uri && track_uri->valuestring) ? track_uri->valuestring : "", -1, SQLITE_STATIC) ; 
 
-        sqlite3_step(cmd) ; 
+        rem_con = sqlite3_step(cmd) ; 
+        if (rem_con != SQLITE_DONE) {
+            sqlite3_exec(database, "ROLLBACK;", NULL, NULL, NULL) ; // reset everything if failed!!!
+            success = false ; 
+            break ; 
+        }
         sqlite3_reset(cmd) ; 
 
     }
 
     // close cleanly
-    sqlite3_exec(database, "COMMIT;", NULL, NULL, NULL) ; 
+    if (success) sqlite3_exec(database, "COMMIT;", NULL, NULL, NULL) ; 
     sqlite3_finalize(cmd) ; 
     cJSON_Delete(root) ; 
+    free(json_data) ; 
 
 }
 
