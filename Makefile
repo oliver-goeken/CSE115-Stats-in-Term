@@ -17,7 +17,7 @@ CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 
 LIBCFILES = lib/cJSON.c lib/sqlite3.c
-LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.o,$(LIBCFILES))
+LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.d,$(LIBCFILES))
 
 
 TESTS = $(wildcard $(TESTDIR)test_*.c)
@@ -48,7 +48,7 @@ $(OBJDIR)%.o: $(SRCDIR)%.c
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR)%.o: $(LIBDIR)%.c
+$(OBJDIR)%.d: $(LIBDIR)%.c
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -56,6 +56,6 @@ $(TESTDIR)%.c:;
 
 .PHONY: clean
 clean:
-	rm -f $(OBJDIR)*.o $(OUT) $(OBJDIR)*.o
+	rm -f $(OBJDIR)*.o $(OUT) $(OBJDIR)*.d
 	rm -f $(TESTOBJDIR)*.o
 	rm -f $(TEST_OUTS)
