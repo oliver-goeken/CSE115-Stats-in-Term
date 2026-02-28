@@ -1,15 +1,9 @@
-#ifndef stats_h
-#define stats_h
+#ifndef STATS_H
+#define STATS_H
 
 #include "display.h"
 
-void init();
-
-void handle_interrupt();
-void handle_winch();
-void handle_segfault();
-
-void handle_interact_quit_yes(display_window_content_node* node, display_window* window);
-void handle_interact_quit_no(display_window_content_node* node, display_window* window);
+void quit_yes_button_interact(display_content_node* content_node);
+void quit_no_button_interact(display_content_node* content_node);
 
 #endif

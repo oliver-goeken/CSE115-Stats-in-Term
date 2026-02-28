@@ -2,15 +2,26 @@
 #include "utils.h"
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
-static display_window_list* window_list;
+static display_info* display_info_struct;
 
 int display_init(){
-	time_t rawtime;
-	time(&rawtime);
+	if (display_ncurses_init() != 0){
+		return -1;
+	}
 
-	initscr();
+	if (display_intitialize_display_info() != 0){
+		return -2;
+	}
+
+	return 0;
+}
+
+int display_ncurses_init(){
+	if (initscr() == NULL){
+		fprintf(stderr, "initscr failed");
+		return -1;
+	}
 
 	if (LINES < 10 || COLS < 50){
 		fprintf(stderr, "Minimum suppported terminal Size is 50 wide and 10 high.\n");
@@ -26,8 +37,9 @@ int display_init(){
 	noecho();
 	curs_set(0);
 	ESCDELAY = 0;
+	nodelay(stdscr, TRUE);
 
-	timeout(-1);
+	timeout(33);
 
 	start_color();
 	init_pair(1, COLOR_WHITE, COLOR_BLACK);
@@ -35,77 +47,783 @@ int display_init(){
 
 	refresh();
 
-	window_list = malloc(sizeof(display_window_list));
-	window_list->root = NULL;
-	window_list->current_screen = MAIN;
-
-	return 0;
-}
-
-
-int display_content_node_set_data(display_window_content_node* node, char* data_str){
-	if (node->data != NULL){
-		free(node->data);
-	}
-
-	int str_len = strlen(data_str) + 1;
-	char* data_string = malloc(sizeof(char) * str_len);
-	strncpy(data_string, data_str, str_len);
-
-	node->data = data_string;
-
 	return 0;
 }
 
 int display_terminate(){
-	if (window_list->root != NULL){
-		if (window_list->root->next_node == NULL){
-			display_destroy_window(window_list->root->display_window);
-			free(window_list->root);
-		} else {
-			display_window_list_node* cur_node = window_list->root;
-			display_window_list_node* prev_node = window_list->root;
-
-			while (cur_node != NULL){
-				cur_node = cur_node->next_node;
-
-				display_destroy_window(prev_node->display_window);
-				free(prev_node);
-
-				prev_node = cur_node;
-			}
-		}
-
-		window_list->root = NULL;
-	}
-
-	free(window_list);
-
-	if (endwin() != OK){
+	if (display_ncurses_terminate() != 0){
 		return -1;
 	}
 
-	fflush(stdout);
+	if (display_terminate_display_info() != 0){
+		return -2;
+	}
 
 	return 0;
 }
 
-void display_handle_winch(){
-	clear();
-	refresh();
+int display_ncurses_terminate(){
+	if (endwin() != OK){
+		return -1;
+	}
 
-	display_window_list_node* cur_node = window_list->root;
+	return 0;
+}
 
-	while(cur_node != NULL){
-		display_parse_dimensions_format(cur_node->display_window);
+
+int display_intitialize_display_info(){
+	if (display_info_struct != NULL){
+		return -1;
+	}
+
+	display_info_struct = malloc(sizeof(display_info));
+
+	display_info_struct->current_screen = NULL;
+	display_info_struct->screen_list = display_initialize_screen_list();
+
+	return 0;
+}
+
+int display_terminate_display_info(){
+	if (display_info_struct == NULL){
+		return -1;
+	}
+
+	display_terminate_screen_list(display_info_struct->screen_list);
+	free(display_info_struct);
+
+	return 0;
+}
+
+
+display_screen_list* display_initialize_screen_list(){
+	display_screen_list* new_screen_list = malloc(sizeof(display_screen_list));
+	new_screen_list->root = NULL;
+
+	return new_screen_list;
+}
+
+int display_terminate_screen_list(display_screen_list* screen_list){
+	if (screen_list == NULL){
+		return -1;
+	}
+
+	display_screen_node* screen_node = screen_list->root;
+	display_screen_node* next_screen_node = screen_list->root;
+
+	while (screen_node != NULL){
+		next_screen_node = screen_node->next_node;
+
+		display_destroy_screen_node(screen_node);
+
+		screen_node = next_screen_node;
+	}
+
+	free(screen_list);
+
+	return 0;
+}
+
+
+display_screen_node* display_create_screen_node(){
+	display_screen_node* new_screen_node = malloc(sizeof(display_screen_node));
+	new_screen_node->next_node = NULL;
+	new_screen_node->display_screen = NULL;
+
+	return new_screen_node;
+}
+
+int display_destroy_screen_node(display_screen_node* screen_node){
+	if (screen_node == NULL){
+		return -1;
+	}
+
+	display_destroy_screen(screen_node->display_screen);
+
+	free(screen_node);
+
+	return 0;
+}
+
+display_content_node* display_get_selected_content_node(){
+	if (display_get_current_screen() == NULL){
+		return NULL;
+	}
+
+	display_window_list_node* current_window = display_screen_get_selected_window_node(display_get_current_screen());
+
+	if (current_window == NULL || current_window->display_window == NULL || current_window->display_window->contents == NULL){
+		return NULL;
+	}
+
+	display_content_node* cur_node = current_window->display_window->contents->root;
+
+	while (cur_node != NULL){
+		if (cur_node->selected == CONTENT_NODE_SELECTED){
+			return cur_node;
+		}
 
 		cur_node = cur_node->next_node;
 	}
 
-	display_draw_all_windows();
+	return NULL;
 }
 
-void display_parse_dimensions_format(display_window* window){
+display_screen* display_create_new_screen(char* screen_name){
+	if (display_info_struct == NULL){
+		return NULL;
+	}
+
+	if (display_info_struct->screen_list == NULL){
+		return NULL;
+	}
+
+	display_screen_node* new_screen_node = display_create_screen_node();
+
+	display_screen* new_screen = malloc(sizeof(display_screen));
+	new_screen->name = screen_name;
+	display_create_window_list(new_screen);
+
+	new_screen_node->display_screen = new_screen;
+
+	if (display_info_struct->screen_list->root == NULL){
+		display_info_struct->screen_list->root = new_screen_node;
+	} else {
+		display_screen_node* cur_node = display_info_struct->screen_list->root;
+		display_screen_node* prev_node = cur_node;
+
+		while (cur_node->next_node != NULL){
+			if (strcmp(cur_node->display_screen->name, screen_name) == 0){
+				free(new_screen);
+				return NULL;
+			}
+
+			prev_node = cur_node;
+			cur_node = cur_node->next_node;
+		}
+
+		prev_node->next_node = new_screen_node;
+	}
+
+	return new_screen;
+}
+
+int display_destroy_screen(display_screen* screen){
+	if (screen == NULL){
+		return -1;
+	} 
+
+	if (screen->window_list != NULL){
+		display_destroy_window_list(screen->window_list);
+	}
+
+	free(screen);
+
+	return 0;
+}
+
+int display_handle_winch(){
+	if (display_info_struct == NULL){
+		return -1;
+	}  if (display_info_struct->current_screen == NULL){
+		return -2;
+	} if (display_info_struct->current_screen->window_list == NULL){
+		return -3;
+	}
+
+	display_window_list_node* window_node = display_info_struct->current_screen->window_list->root;
+
+	while (window_node != NULL){
+		display_parse_dimensions_format(window_node->display_window);
+
+		window_node = window_node->next_node;
+	}
+
+	return 0;
+}
+
+int display_screen_draw_windows(display_screen* screen){
+	if (screen == NULL){
+		return -1;
+	} if (screen->window_list == NULL){
+		return -2;
+	}
+
+	display_window_list_node* cur_node = screen->window_list->root;
+
+	while (cur_node != NULL){
+		werase(cur_node->display_window->ncurses_window);
+		display_draw_window(cur_node->display_window);
+
+		cur_node = cur_node->next_node;
+	}
+
+	refresh();
+
+	return 0;
+}
+
+int display_set_screen(display_screen* screen){
+	if (screen == NULL){
+		return -1;
+	} if (display_info_struct == NULL){
+		return -1;
+	}
+
+	if (display_info_struct->current_screen != screen){
+		erase();
+		display_info_struct->current_screen = screen;
+	}
+
+	return 0;
+}
+
+int display_screen_set_selected_window(display_screen* screen, display_window* window){
+	if (screen == NULL){
+		return -1;
+	} if (window == NULL){
+		return -2;
+	} if (screen->window_list == NULL){
+		return -3;
+	} if (window->selected == WINDOW_UNSELECTABLE){
+		return -4;
+	}
+
+	display_window_list_node* window_node = screen->window_list->root;
+
+	while (window_node != NULL){
+		if (window_node->display_window != window){
+			if (window_node->display_window->selected != WINDOW_UNSELECTABLE){
+				display_window_set_selected(window, WINDOW_NOT_SELECTED);
+			}
+		} else {
+			display_window_set_selected(window, WINDOW_SELECTED);
+		}
+
+		window_node = window_node->next_node;
+	}
+
+	return 0;
+}
+
+int display_screen_select_window_directional(display_screen* screen, int direction){
+	if (screen == NULL){
+		return -1;
+	} if (screen->window_list == NULL){
+		return -2;
+	} if (screen->window_list->root == NULL){
+		return -3;
+	} if ((direction != NEXT_WINDOW) && (direction != PREV_WINDOW)){
+		return -4;
+	}
+	
+	display_window_list_node* currently_selected = display_screen_get_selected_window_node(screen);
+	display_window_list_node* cur_node = screen->window_list->root;
+
+	int* comp_greater;
+	int* comp_lesser;
+
+	while (cur_node != NULL){
+		if (direction == NEXT_WINDOW){
+			comp_greater = &(cur_node->display_window->start_x);
+			comp_lesser = &(currently_selected->display_window->start_x);
+		} else {
+			comp_greater = &(currently_selected->display_window->start_x);
+			comp_lesser = &(cur_node->display_window->start_x);
+		}
+
+		if (cur_node != currently_selected && (*comp_greater > *comp_lesser) && cur_node->display_window->selected != WINDOW_UNSELECTABLE){
+			display_window_set_selected(currently_selected->display_window, WINDOW_NOT_SELECTED);
+			display_window_set_selected(cur_node->display_window, WINDOW_SELECTED);
+
+			return 0;
+		}
+
+		cur_node = cur_node->next_node;
+	}
+
+	return -5;
+}
+
+int display_screen_select_next_window(display_screen* screen){
+	if (display_screen_select_window_directional(screen, NEXT_WINDOW) != 0){
+		return -1;
+	}
+	
+	return 0;
+}
+
+int display_screen_select_previous_window(display_screen* screen){
+	if (display_screen_select_window_directional(screen, PREV_WINDOW) != 0){
+		return -1;
+	}
+
+	return 0;
+}
+
+int display_set_current_screen(display_screen* screen){
+	if (screen == NULL){
+		return -1;
+	} if (display_info_struct == NULL){
+		return -2;
+	}
+	
+	display_info_struct->current_screen = screen;
+
+	return 0;
+}
+
+display_screen* display_get_current_screen(){
+	if (display_info_struct == NULL){
+		return NULL;
+	}
+
+	return display_info_struct->current_screen;
+}
+
+int display_draw_window(display_window* window){
+	if (window == NULL){
+		return -1;
+	} if (window->ncurses_window == NULL){
+		return -2;
+	}
+
+	if (window->expand == WINDOW_EXPAND_TO_FIT_TEXT){
+		if (window->contents != NULL && window->contents->root != NULL){
+			display_content_node* content_node = window->contents->root;
+
+			while (content_node != NULL){
+				if (content_node->data == NULL || content_node->data->text_data == NULL){
+					continue;
+				}
+
+				int size_diff;
+				int new_start_x;
+				int new_width;
+
+				size_diff = window->width - (window->boxed ? 2 : 0) - strlen(content_node->data->text_data);
+
+				if (size_diff % 2 != 0){
+					size_diff --;
+				}
+
+				if (size_diff < 0){
+					fprintf(stderr, "doing something\n");
+					new_start_x = window->start_x + (size_diff / 2);
+					new_width = window->width - size_diff;
+
+					if (new_start_x < 0){
+						new_start_x = 0;
+					}
+
+					if (new_start_x + new_width >= COLS){
+						new_width = COLS - new_start_x;
+					}
+
+					window->start_x = new_start_x;
+					window->width = new_width;
+				}
+
+				content_node = content_node->next_node;
+			}
+		}
+
+		display_reset_ncurses_window(window);
+	}
+
+	if (window->boxed){
+		box(window->ncurses_window, '|', '-');
+	}
+
+	display_window_draw_contents(window);
+
+	wrefresh(window->ncurses_window);
+
+	return 0;
+}
+
+display_window_list_node* display_screen_get_selected_window_node(display_screen* screen){
+	if (screen == NULL){
+		return NULL;
+	} if (screen->window_list == NULL){
+		return NULL;
+	}
+
+	display_window_list_node* cur_node = screen->window_list->root;
+
+	while (cur_node != NULL){
+		if (cur_node->display_window->selected == WINDOW_SELECTED){
+			return cur_node;
+		}
+
+		cur_node = cur_node->next_node;
+	}
+
+	return NULL;
+}
+
+display_window* display_screen_add_new_window(display_screen* screen, char* dimensions_format){
+	if (screen == NULL){
+		return NULL;
+	} if (screen->window_list == NULL) {
+		return NULL;
+	} if (dimensions_format == NULL){
+		return NULL;
+	}
+
+	display_window* new_window;
+	
+	if ((new_window = display_create_window(dimensions_format)) == NULL){
+		return NULL;
+	}
+
+	display_window_list_node* new_node = malloc(sizeof(display_window_list_node));
+	new_node->display_window = new_window;
+	new_node->next_node = NULL;
+
+	if (screen->window_list->root == NULL){
+		screen->window_list->root = new_node;
+	} else {
+		display_window_list_node* cur_node = screen->window_list->root;	
+		display_window_list_node* prev_node = cur_node;
+
+		while (cur_node != NULL){
+			prev_node = cur_node;
+			cur_node = cur_node->next_node;
+		}
+
+		prev_node->next_node = new_node;
+	}
+
+	return new_window;
+}
+
+int display_screen_destroy_window(display_screen* screen, display_window* window){
+	if (screen == NULL){
+		return -1;
+	} if (screen->window_list == NULL){
+		return -2;
+	} if (screen->window_list->root == NULL) {
+		return -3;
+	}
+
+	display_window_list_node* cur_node = screen->window_list->root;
+	display_window_list_node* prev_node = cur_node;
+
+	while (cur_node != NULL){
+		prev_node = cur_node;
+
+		if (cur_node->display_window == window){
+			prev_node->next_node = cur_node->next_node;
+			display_destroy_window(window);
+
+			free(cur_node);
+
+			return 0;
+		}
+
+		cur_node = cur_node->next_node;
+	}
+
+	return -4;
+}
+
+int display_window_set_visibility(display_window* window, bool visible){
+	if (window == NULL){
+		return -1;
+	} if ((visible != WINDOW_VISIBLE) && (visible != WINDOW_HIDDEN)){
+		return -2;
+	}
+
+	window->visible = visible;
+
+	return 0;
+}
+
+int display_window_set_boxed(display_window* window, bool boxed){
+	if (window == NULL){
+		return -1;
+	} if ((boxed != WINDOW_VISIBLE) && (boxed != WINDOW_HIDDEN)){
+		return -2;
+	}
+
+	window->boxed = boxed;
+
+	return 0;
+}
+
+int display_window_set_expansion(display_window* window, bool expand){
+	if (window == NULL){
+		return -1;
+	} if ((expand != WINDOW_EXPAND_TO_FIT_TEXT) && (expand != WINDOW_SET_SIZE)){
+		return -2;
+	}
+
+	window->expand = expand;
+
+	return 0;
+}
+
+int display_window_set_selected(display_window* window, int selected){
+	if (window == NULL){
+		return -1;
+	} if ((selected != WINDOW_SELECTED) && (selected != WINDOW_NOT_SELECTED) && (selected != WINDOW_UNSELECTABLE)){
+		return -2;
+	}
+
+	window->selected = selected;
+
+	return 0;
+}
+
+display_content_node* display_window_get_selected_node(display_window* window){
+	if (window == NULL){
+		return NULL;
+	} if (window->contents == NULL){
+		return NULL;
+	}
+
+	display_content_node* cur_node = window->contents->root;
+
+	while (cur_node != NULL){
+		if (cur_node->selected == CONTENT_NODE_SELECTED){
+			return cur_node;
+		}
+
+		cur_node = cur_node->next_node;
+	}
+
+	return NULL;
+}
+
+int display_window_add_content_node(display_window* window, display_content_node* content_node){
+	if (window == NULL){
+		return -1;
+	} if (content_node == NULL){
+		return -2;
+	} if (window->contents == NULL){
+		return -3;
+	}
+
+	if (window->contents->root == NULL){
+		window->contents->root = content_node;
+		content_node->selected = CONTENT_NODE_SELECTED;
+	} else {
+		display_content_node* cur_node = window->contents->root;
+
+		while (cur_node->next_node != NULL){
+			cur_node = cur_node->next_node;
+		}
+
+		cur_node->next_node = content_node;
+	}
+
+	return 0;
+}
+
+int display_window_draw_contents(display_window* window){
+	if (window == NULL){
+		return -1;
+	} if (window->contents == NULL){
+		return -1;
+	}
+
+	// window expand to fit text
+
+	int start_x = window->boxed ? 1 : 0;
+	int start_y = window->boxed ? 1 : 0;
+
+	display_content_node* cur_node = window->contents->root;
+
+	for (int i = 0; i < window->content_offset && cur_node != NULL; i ++){
+		cur_node = cur_node->next_node;
+	}
+
+	while (cur_node != NULL && start_y <= window->height - (window->boxed ? 0 : 1)){
+		display_draw_content_node(window, start_x, start_y, cur_node);
+
+		start_y ++;
+
+		cur_node = cur_node->next_node;
+	}
+
+	return 0;
+}
+
+display_screen* display_window_get_screen(display_window* window){
+	if (window == NULL){
+		return NULL;
+	} if (display_info_struct == NULL){
+		return NULL;
+	} if (display_info_struct->screen_list == NULL){
+		return NULL;
+	}
+
+	display_screen_node* cur_screen = display_info_struct->screen_list->root;
+
+	while (cur_screen != NULL){
+		if (cur_screen->display_screen != NULL && cur_screen->display_screen->window_list != NULL){
+			display_window_list_node* cur_window = cur_screen->display_screen->window_list->root;
+
+			while (cur_window != NULL){
+				if (cur_window->display_window == window){
+					return cur_screen->display_screen;
+				}
+
+				cur_window = cur_window->next_node;
+			}
+		}
+
+		cur_screen = cur_screen->next_node;
+	}
+
+	return NULL;
+}
+
+int display_window_select_next_node(display_window* window){
+	if (window == NULL){
+		return -1;
+	} if (window->contents == NULL){
+		return -2;
+	} if (window->contents->root == NULL){
+		return -3;
+	}
+
+	display_content_node* currently_selected = display_window_get_selected_node(window);
+	display_content_node* new_selection = currently_selected->next_node;
+
+	if (new_selection == NULL){
+		return 0;
+	} 
+
+	display_content_node_set_selected(currently_selected, CONTENT_NODE_NOT_SELECTED);
+	display_content_node_set_selected(new_selection, CONTENT_NODE_SELECTED);
+
+	// loop if not null to see if selection (position - offset) > window height, if so update offset
+	int node_window_pos_x = 1;
+
+	display_content_node* cur_node = window->contents->root;
+	while (cur_node != NULL && cur_node != new_selection){
+		node_window_pos_x ++;
+
+		cur_node = cur_node->next_node;
+	}
+
+	node_window_pos_x -= window->content_offset;
+
+	if (node_window_pos_x >= window->height - (window->boxed ? 1 : 0)){
+		window->content_offset ++;
+	}
+
+	return 0;
+}
+
+int display_window_select_prev_node(display_window* window){
+	if (window == NULL){
+		return -1;
+	} if (window->contents == NULL){
+		return -2;
+	} if (window->contents->root == NULL){
+		return -3;
+	}
+
+	display_content_node* currently_selected = display_window_get_selected_node(window);
+	display_content_node* new_selection = NULL;
+
+	display_content_node* cur_node = window->contents->root;
+	while (cur_node != NULL && cur_node != currently_selected){
+		if (cur_node->next_node == currently_selected){
+			new_selection = cur_node;
+			break;
+		}
+
+		cur_node = cur_node->next_node;
+	}
+
+	if (new_selection == NULL){
+		return -4;
+	}
+
+	display_content_node_set_selected(currently_selected, CONTENT_NODE_NOT_SELECTED);
+	display_content_node_set_selected(new_selection, CONTENT_NODE_SELECTED);
+	
+	// loop if not null to see if selection (position - offset) > window height, if so update offset
+	int node_window_pos_x = 1;
+
+	cur_node = window->contents->root;
+	while (cur_node != NULL && cur_node != new_selection){
+		node_window_pos_x ++;
+
+		cur_node = cur_node->next_node;
+	}
+
+	if (node_window_pos_x <= window->content_offset){
+		window->content_offset --;
+	}
+
+	return 0;
+}
+
+display_window_list* display_create_window_list(display_screen* screen){
+	if (screen == NULL){
+		return NULL;
+	}
+
+	screen->window_list = malloc(sizeof(display_window_list));
+
+	return screen->window_list;
+}
+
+int display_destroy_window_list(display_window_list* window_list){
+	if (window_list == NULL){
+		return -1;
+	} 
+
+	if (window_list->root != NULL){
+		display_window_list_node* window_node = window_list->root;
+		display_window_list_node* next_node = window_node->next_node;
+
+		while (window_node != NULL){
+			next_node = window_node->next_node;
+
+			display_destroy_window(window_node->display_window);
+			free(window_node);
+
+			window_node = next_node;
+		}
+	}
+
+	free(window_list);
+
+	return 0;
+}
+
+int display_reset_ncurses_window(display_window* window){
+	if (window == NULL){
+		return -1;
+	} 
+
+	if (window->ncurses_window != NULL){
+		display_destroy_ncurses_window(window->ncurses_window);
+	}
+
+	window->ncurses_window = newwin(window->height, window->width, window->start_y, window->start_x);
+
+	return 0;
+}
+
+int display_destroy_ncurses_window(WINDOW* window){
+	if (window == NULL){
+		return -1;
+	}
+
+	werase(window);
+	delwin(window);
+
+	return 0;
+}
+
+int display_parse_dimensions_format(display_window* window){
 	/*
 	 *
 	 * parse a formatted string into window startx, starty, width, height
@@ -119,6 +837,10 @@ void display_parse_dimensions_format(display_window* window){
 	 * 
 	 *
 	 * ADD SUPPORT FOR WINDOW EXPANSION IF TOO SMALL FOR TEXT */
+
+	if (window == NULL) {
+		return -1;
+	}
 
 	int lines = LINES;
 	int cols = COLS;
@@ -192,761 +914,309 @@ void display_parse_dimensions_format(display_window* window){
 				break;
 		}
 
-
 		*field = ((atoi(numerator) * mult) / atoi(denominator)) + atoi(offset);
 
-		display_destroy_ncurses_window(window->window);
-		window->window = newwin(window->height, window->width, window->start_y, window->start_x);
+		display_reset_ncurses_window(window);
 
 		position ++;
 	}
-}
-
-Screen display_get_current_screen(){
-	return window_list->current_screen;
-}
-
-int display_set_screen(Screen screen){
-	display_window_list_node* cur_node = window_list->root;
-
-	while(cur_node != NULL){
-		if (cur_node->display_window->associated_screen == window_list->current_screen){
-			werase(cur_node->display_window->window);
-			wrefresh(cur_node->display_window->window);
-		}
-
-		cur_node = cur_node->next_node;
-	}
-
-	window_list->current_screen = screen;
 
 	return 0;
 }
 
-display_window* display_create_window(Screen screen, bool selectable, char* dimension_format_string){
-	display_window* new_display_window = malloc(sizeof(display_window));
-
-	new_display_window->dimensions_format = dimension_format_string;
-	display_parse_dimensions_format(new_display_window);
-
-	new_display_window->window = newwin(new_display_window->height, new_display_window->width, new_display_window->start_y, new_display_window->start_x);
-	
-	new_display_window->boxed = false;
-	new_display_window->horizontal_edges = '\0';
-	new_display_window->vertical_edges = '\0';
-
-	new_display_window->selectable = selectable;
-
-	new_display_window->associated_screen = screen;
-
-	new_display_window->mode = UNKNOWN;
-
-	new_display_window->expand_to_fit_text = false;
-
-	display_window_list_node* new_window_node = malloc(sizeof(display_window_list_node));
-
-	new_window_node->display_window = new_display_window;
-	new_window_node->next_node = NULL;
-
-	if (window_list->root == NULL){
-		window_list->root = new_window_node;
-		new_window_node->display_window->selected = new_window_node->display_window->selectable ? true : false;
-	} else {
-		display_window_list_node* cur_node = window_list->root;
-
-		while (cur_node->next_node != NULL){
-			cur_node = cur_node->next_node;
-		}
-
-		cur_node->next_node = new_window_node;
-		new_window_node->display_window->selected = false;
+display_window* display_create_window(char* dimensions_format){
+	if (dimensions_format == NULL){
+		return NULL;
 	}
 
-	return new_display_window;
+	display_window* new_window = malloc(sizeof(display_window));
+	
+	new_window->dimensions_format = dimensions_format;
+	display_parse_dimensions_format(new_window);
+
+	new_window->visible = WINDOW_VISIBLE;
+	new_window->boxed = WINDOW_NOT_BOXED;
+	new_window->expand = WINDOW_SET_SIZE;
+	new_window->selected = WINDOW_NOT_SELECTED;
+
+	new_window->content_offset = 0;
+
+	display_window_init_contents(new_window);
+
+	return new_window;
 }
 
-int display_window_box(display_window* window, char vertical_edges, char horizontal_edges){
-	window->boxed = true;
-	window->vertical_edges = vertical_edges;
-	window->horizontal_edges = horizontal_edges;
+int display_window_init_contents(display_window* window){
+	if (window == NULL){
+		return -1;
+	} if (window->contents != NULL){
+		return -2;
+	}
 
-	box(window->window, horizontal_edges, vertical_edges);
+	window->contents = malloc(sizeof(display_window_contents));
 
 	return 0;
 }
 
 int display_destroy_window(display_window* window){
-	display_terminate_window_contents(window);
-	display_destroy_ncurses_window(window->window);
+	if (window->ncurses_window != NULL){
+		display_destroy_ncurses_window(window->ncurses_window);
+	}
+
+	if (window->contents != NULL){
+		display_window_destroy_content_nodes(window);
+	}
 
 	free(window);
 
 	return 0;
 }
 
-int display_window_select_next_node(display_window_list_node* window_node){
-	if (window_node == NULL){
-		return -3;
-	}
 
-	display_window_content_node* selected_node;
-	if ((selected_node = display_window_get_current_selection(window_node)) == NULL){
+int display_window_destroy_content_nodes(display_window* window){
+	if (window->contents == NULL){
 		return -1;
-	}
-
-	if (selected_node->next_node != NULL){
-		int total_lines = 0;
-		display_window_content_node* tmp_node = window_node->display_window->content;
-
-		for (int i = 0; tmp_node != NULL && i < window_node->display_window->content_offset; i ++){
-			tmp_node = tmp_node->next_node;
-		}
-
-		while (tmp_node != selected_node->next_node){
-			total_lines ++;
-			count_newlines(tmp_node->data, &total_lines);
-			tmp_node = tmp_node->next_node;
-		}
-
-		if (total_lines >= window_node->display_window->height - (window_node->display_window->boxed ? 2 : 0)){
-			werase(window_node->display_window->window);
-			window_node->display_window->content_offset ++;
-		}
-
-		selected_node->selected = false;
-		selected_node->next_node->selected = true;
-	} else {
+	} if (window->contents->root == NULL){
 		return -2;
 	}
 
-	return 0;
-}
-
-int display_window_select_previous_node(display_window_list_node* window_node){
-	if (window_node == NULL){
-		return -3;
-	}
-
-	display_window_content_node* selected_node;
-	if ((selected_node = display_window_get_current_selection(window_node)) == NULL){
-		return -1;
-	}
-
-	if (selected_node->prev_node != NULL){
-		display_window_content_node* tmp_node = window_node->display_window->content;
-
-		for (int i = 0; tmp_node != NULL && i < window_node->display_window->content_offset - 1; i ++){
-			tmp_node = tmp_node->next_node;
-		}
-
-		if (tmp_node == selected_node->prev_node){
-			window_node->display_window->content_offset --;
-			werase(window_node->display_window->window);
-		}
-
-		selected_node->selected = false;
-		selected_node->prev_node->selected = true;
-	} else {
-		return -2;
-	}
-
-	return 0;
-}
-
-display_window_content_node* display_window_get_current_selection(display_window_list_node* window_node){
-	if (window_node == NULL){
-		return NULL;
-	}
-
-	display_window_content_node* cur_node = window_node->display_window->content;
-
-	while (cur_node != NULL && cur_node->selected == false){
-		cur_node = cur_node->next_node;
-	}
-
-	return cur_node;
-}
-
-int display_set_selected_window(display_window* window){
-	if (window == NULL){
-		return -1;
-	}
-
-	display_window_list_node* window_node = window_list->root;
-
-	while (window_node != NULL){
-		if (window_node->display_window->associated_screen == window->associated_screen){
-			if (window_node->display_window != window){
-				window_node->display_window->selected = false;
-			}
-		}
-		window_node = window_node->next_node;
-	}
-
-	window->selected = true;
-
-	return 0;
-}
-
-int display_content_node_set_interaction(display_window_content_node* content_node, void (*interact_function)(display_window_content_node*, display_window*)){
-	content_node->handle_interact = interact_function;
-
-	return 0;
-}
-
-void display_handle_interaction(){
-	display_window_content_node* selected_node = display_window_get_current_selection(display_get_current_window());
-
-	if (selected_node->handle_interact != NULL){
-		(*(selected_node->handle_interact))(selected_node, display_get_current_window()->display_window);
-	}
-}
-
-display_window_list_node* display_get_current_window(){
-	display_window_list_node* selected_window = window_list->root;
-
-	while (selected_window != NULL && !(selected_window->display_window->associated_screen == window_list->current_screen && selected_window->display_window->selected == true)){
-		selected_window = selected_window->next_node;
-	}
-
-	return selected_window;
-}
-
-int display_select_next_window(){
-	display_window_list_node* cur_selection = display_get_current_window();
-
-	if (cur_selection == NULL){
-		return -1;
-	}
-
-	display_window_list_node* next_selection = window_list->root;
-
-	// find which window is entirely to the right of current window
-	while (next_selection != NULL){
-		if (next_selection->display_window->associated_screen == window_list->current_screen && next_selection->display_window->selectable){
-			if (next_selection->display_window->start_x > cur_selection->display_window->start_x){
-				cur_selection->display_window->selected = false;
-				next_selection->display_window->selected = true;
-
-				return 0;
-			}
-		}
-		next_selection = next_selection->next_node;
-	}
-
-	return -1;
-}
-
-int display_select_previous_window(){
-	display_window_list_node* cur_selection = display_get_current_window();
-
-	if (cur_selection == NULL){
-		return -1;
-	}
-
-	display_window_list_node* next_selection = window_list->root;
-
-	// find which window is entirely to the right of current window
-	while (next_selection != NULL){
-		if (next_selection->display_window->associated_screen == window_list->current_screen && next_selection->display_window->selectable){
-			if (next_selection->display_window->start_x < cur_selection->display_window->start_x){
-				cur_selection->display_window->selected = false;
-				next_selection->display_window->selected = true;
-				return 0;
-			}
-		}
-		next_selection = next_selection->next_node;
-	}
-
-	return -1;
-}
-
-int display_get_user_input(display_window* input_window, int text_startx, int text_starty, char* command_buffer, int buffer_length);
-	/*
-	 *
-	 * tmp store the content nodes from input window and clear the window, then do ncurses stuff then change back
-	 * maybe do this in a wrapper because not necessarily wanted for every
-	 *
-	 */
-
-int display_handle_command(int* SIGINT_FLAG, display_window* command_window, display_window* results_window){
-	char command_buffer[256] = {0};
-	int command_buffer_pos = 0;
-
-	bool execute_command = false;
-
-	WINDOW* ncurses_window = command_window->window;
-
-	wmove(ncurses_window, 0, 0);
-	wprintw(ncurses_window, ":");
-	wmove(ncurses_window, 0, 1);
-	
-	wattrset(ncurses_window, COLOR_PAIR(2));
-	wprintw(ncurses_window, " ");
-	wattrset(ncurses_window, COLOR_PAIR(1));
-
-	bool done = false;
-	while(!done){
-		if (!SIGINT_FLAG){
-			return -1;
-		}
-
-		display_draw_window(command_window);
-
-		int ch = getch();
-
-		switch(ch){
-			case KEY_RESIZE:
-				display_handle_winch();
-				break;
-			case '\n':
-			case KEY_ENTER:
-			case 13:
-				done = true;
-				execute_command = true;
-				break;
-			case 27:
-				done = true;
-				break;
-			case KEY_BACKSPACE:
-			case 127:
-			case '\b':
-				if (command_buffer_pos > 0){
-					command_buffer[command_buffer_pos] = 0;
-
-					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, " ");
-
-					command_buffer_pos --;
-
-					wattrset(ncurses_window, COLOR_PAIR(2));
-					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, " ");
-					wattrset(ncurses_window, COLOR_PAIR(1));
-				}
-				break;
-			default:
-				if (command_buffer_pos < 256 && 32 <= ch && ch <= 126){
-					command_buffer[command_buffer_pos] = ch;
-
-					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, "%c", ch);
-
-					command_buffer_pos ++;
-
-					wattrset(ncurses_window, COLOR_PAIR(2));
-					mvwprintw(ncurses_window, 0, 1 + command_buffer_pos, " ");
-					wattrset(ncurses_window, COLOR_PAIR(1));
-				}
-				break;
-		}
-	}
-
-	/*
-	 *
-	 * total rewrite needed
-	 * just start from scratch
-	 * try and error proof it - think of everything
-	 * also rewrite the cpp funcs when its time
-	 * for now this is just proof of concept
-	 *
-	 *
-	 */
-	if (execute_command){
-		char command[256] = {'\0'};
-
-		char args[256] = {'\0'};
-
-		int pos = 0;
-		bool on_args = false;
-
-		for (int i = 0; command_buffer[i] != '\0'; i ++){
-			if (!on_args && command_buffer[i] == ' '){
-				on_args = true;
-				pos = 0;
-				continue;
-			}
-
-			if (!on_args){
-				command[pos] = command_buffer[i];
-			} else {
-				args[pos] = command_buffer[i];
-			}
-
-			pos ++;
-		}
-
-
-		if (strcmp(command, "search") == 0){
-			if (strlen(args) != 0){
-				//search
-			}
-		} else if (strcmp(command, "reset") == 0){
-		} else if (strcmp(command, "q") == 0){
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-int display_window_select_first_node(display_window* window){
-	display_window_content_node* root = window->content;
-
-	if (root != NULL){
-		root->selected = true;
-		root = root->next_node;
-	}
-
-	while (root != NULL){
-		root->selected = false;
-
-		root = root->next_node;
-	}
-
-	return 0;
-}
-
-int display_window_set_contents(display_window* window, display_window_content_node* content_node){
-	if (window->content != NULL){
-		display_terminate_window_contents(window);
-	}
-
-	window->content = content_node;
-	window->content_offset = 0;
-	display_window_select_first_node(window);
-
-	werase(window->window);
-
-	return 0;
-}
-
-int display_set_window_screen(display_window* window, Screen screen){
-	window->associated_screen = screen;
-
-	display_draw_window(window);
-
-	return 0;
-}
-
-int display_move_window(display_window* window, int new_begin_x, int new_begin_y){
-	display_window_change_attributes(window, new_begin_x, new_begin_y, window->width, window->height);
-
-	return 0;
-}
-
-int display_resize_window(display_window* window, int new_width, int new_height){
-	display_window_change_attributes(window, window->start_x, window->start_y, new_width, new_height);
-
-	return 0;
-}
-
-int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height){
-	display_destroy_ncurses_window(window->window);
-
-	window->width = new_width;
-	window->height = new_height;
-	window->start_x = new_start_x;
-	window->start_y = new_start_y;
-
-	window->window = newwin(new_height, new_width, new_start_y, new_start_x);
-	if (window->boxed)
-		display_window_box(window, window->vertical_edges, window->horizontal_edges);
-
-	return 0;
-}
-
-int display_destroy_ncurses_window(WINDOW* window){
-	werase(window);
-	wrefresh(window);
-	delwin(window);
-
-	return 0;
-}
-
-int display_draw_window(display_window* window){
-	if (window_list->current_screen != window->associated_screen){
-		werase(window->window);
-	} else {
-		if (window->boxed)
-			display_window_box(window, window->vertical_edges, window->horizontal_edges);
-
-		display_draw_window_contents(window);
-	}
-
-	wrefresh(window->window);
-
-	return 0;
-}
-
-int display_draw_all_windows(){
-	display_window_list_node* cur_node = window_list->root;
+	display_content_node* cur_node = window->contents->root;
+	display_content_node* next_node;
 
 	while (cur_node != NULL){
-		if (cur_node->display_window->associated_screen == window_list->current_screen)
-			display_draw_window(cur_node->display_window);
+		next_node = cur_node->next_node;
 
-		cur_node = cur_node->next_node;
-	}
-
-	return 0;
-}
-
-int display_draw_window_contents(display_window* window){
-	int startx = window->boxed ? 1 : 0;
-	int starty = window->boxed ? 1 : 0;
-
-	display_window_content_node* content_node = window->content;
-
-	/*
-	 *
-	 * errors:
-	 * - not a solution BUT should enforce minimum terminal size
-	 *
-	 */
-	if (window->expand_to_fit_text){
-		while (content_node != NULL){
-			int size_diff;
-			int new_startx;
-			int new_width;
-
-			size_diff = strlen(content_node->data) - (window->width - (window->boxed ? 3 : 0));
-
-			if (size_diff > 0){
-				new_startx = window->start_x - (size_diff / 2);
-				new_width = window->width + size_diff;
-
-				if (new_startx < 0){
-					new_startx = 0;
-				}
-
-				if ((new_startx + new_width) >= COLS){
-					new_width = (COLS - new_startx);
-				}
-				display_window_change_attributes(window, new_startx, window->start_y, new_width, window->height);
-			}
-
-			content_node = content_node->next_node;
-		}
-
-		content_node = window->content;
-	}
-
-	for (int i = 0; i < window->content_offset && content_node != NULL; i ++){
-		content_node = content_node->next_node;
-	}
-
-	while(content_node != NULL){
-		if (content_node->mode == window->mode){
-			if (content_node->data != NULL){
-				/*
-				 *
-				 * NEWLINES IN CONTENT STRINGS NOT FULLY SUPPORTED, USE A NEW CONTENT NODE
-				 *
-				 */
-				int newline_count = 0;
-				count_newlines(content_node->data, &newline_count);
-
-				if (starty + newline_count > (window->height - (window->boxed ? 2 : 0))){
-					break;
-				}
-
-				int window_available_width = window->width - (window->boxed ? 2 : 0);
-
-				char trunc_string[window_available_width + 1];
-
-				string_truncate_middle(content_node->data, window_available_width, trunc_string);
-
-				int alignment_start_x = startx;
-				if(content_node->alignment == CENTER){
-					alignment_start_x = ((window_available_width - strlen(trunc_string)) / 2) + (window->boxed);
-
-					if (alignment_start_x < 0){
-						alignment_start_x = 0;
-					}
-				}
-
-				if (content_node->associated_window->selectable && content_node->selected && content_node->associated_window->selected){
-					wattron(window->window, COLOR_PAIR(2));
-				} else {
-					wattron(window->window, COLOR_PAIR(1));
-				}
-				mvwprintw(window->window, starty, alignment_start_x, trunc_string);
-				wattron(window->window, COLOR_PAIR(1));
-				starty += newline_count;
-			}
-
-			starty ++;
-		}
-
-		content_node = content_node->next_node;
-	}
-
-	return 0;
-}
-
-int display_terminate_window_contents(display_window* window){
-	display_window_content_node* cur_node = window->content;
-
-	while (cur_node != NULL){
-		display_window_content_node* next_node = cur_node->next_node;
-
-		if (cur_node->data != NULL){
-			free(cur_node->data);
-		}
-
-		free(cur_node);
+		display_destroy_content_node(cur_node);
 
 		cur_node = next_node;
 	}
 
-	window->content = NULL;
+	free(window->contents);
 
-	werase(window->window);
 	window->content_offset = 0;
 
 	return 0;
 }
 
-display_window_content_node* display_window_add_content_node(display_window* window, char* data){
-	display_window_content_node* cur_node;
+display_content_node* display_create_content_node(){
+	display_content_node* new_content_node = malloc(sizeof(display_content_node));
 
-	if (window->content != NULL){
-		cur_node = window->content;
+	new_content_node->alignment = CONTENT_NODE_ALIGN_LEFT;
+	new_content_node->next_node = NULL;
+	new_content_node->handle_interact = NULL;
+	new_content_node->selected = 0;
 
-		while (cur_node->next_node != NULL){
-			cur_node = cur_node->next_node;
-		}
+	display_content_node_init_data(new_content_node);
 
-		cur_node->next_node = display_add_content_node(NULL);
-		cur_node->next_node->prev_node = cur_node;
-
-		cur_node = cur_node->next_node;
-		cur_node->selected = false;
-	} else {
-		window->content = display_add_content_node(NULL);
-		window->content->prev_node = NULL;
-
-		cur_node = window->content;
-		cur_node->selected = window->selectable ? true : false;
-	}
-
-	cur_node->associated_window = window;
-
-	if (strlen(data) != 0){
-		cur_node->data = malloc(strlen(data) + 1);
-		strcpy(cur_node->data, data);
-	}
-
-	return cur_node;
+	return new_content_node;
 }
 
-display_window_content_node* display_add_content_node(display_window_content_node* existing_node){
-	display_window_content_node* cur_node = malloc(sizeof(display_window_content_node));
-
-	cur_node->next_node = NULL;
-
-	if (existing_node == NULL){
-		cur_node->prev_node = NULL;
-	} else {
-		cur_node->prev_node = existing_node;
-		if (existing_node->next_node != NULL){
-			cur_node->next_node = existing_node->next_node;
-		}
-		existing_node->next_node = cur_node;
+int display_content_node_set_interaction(display_content_node* content_node, void (*handle_interact)(display_content_node* content_node)){
+	if (content_node == NULL){
+		return -1;
+	} else if (handle_interact == NULL){
+		return -2;
 	}
 
-	cur_node->associated_window = NULL;
-
-	cur_node->alignment = LEFT;
-	cur_node->color_pair = 1;
-
-	cur_node->selected = false;
-
-	cur_node->handle_interact = NULL;
-
-	cur_node->mode = UNKNOWN;
-
-	cur_node->data = NULL;
-
-	return cur_node;
-}
-
-void display_set_content_window(display_window_content_node* root, display_window* window){
-	while (root != NULL){
-		root->associated_window = window;
-		root = root->next_node;
-	}
-}
-
-int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment){
-	content_node->alignment = new_alignment;
+	content_node->handle_interact = handle_interact;
 
 	return 0;
 }
 
-int display_set_window_expansion(display_window* window, bool expand_to_fit_text){
-	window->expand_to_fit_text = expand_to_fit_text;
+int display_handle_interact(display_content_node* content_node){
+	if (content_node->handle_interact != NULL){
+		(*(content_node->handle_interact))(content_node);
+	}
+	
+	return 0;
+}
+
+int display_destroy_content_node(display_content_node* content_node){
+	if (content_node == NULL){
+		return -1;
+	}
+
+	if (content_node->data != NULL){
+		free(content_node->data);
+	}
+
+	free(content_node);
 
 	return 0;
 }
 
-int display_set_contend_node_color(display_window_content_node* content_node, int color_pair){
-	content_node->color_pair = color_pair;
+int display_set_content_node_alignment(display_content_node* content_node, content_node_alignment alignment){
+	if (content_node == NULL){
+		return -1;
+	} 
+
+	content_node->alignment = alignment;
 
 	return 0;
 }
 
-/*
- *
- * needs some maintanance!!!
- * i wrote this very poorly!
- *
- */
-int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node){
-	display_window_content_node* cur_node = window->content;
+int display_content_node_set_data(display_content_node* content_node, display_content_node_data* data){
+	if (content_node == NULL){
+		return -1;
+	} if (data == NULL){
+		return -2;
+	}
 
-	while(cur_node != target_node){
-		if(cur_node->next_node != NULL){
-			cur_node = cur_node->next_node;
-		} else {
-			return -1;
+	if (content_node->data != NULL){
+		display_content_node_terminate_data(content_node);
+	}
+
+	content_node->data = data;
+
+	return 0;
+}
+
+int display_content_node_clear_data(display_content_node* content_node){
+	if (content_node == NULL){
+		return -1;
+	} if (content_node->data == NULL){
+		return -1;
+	}
+
+	free(content_node->data);
+
+	return 0;
+}
+
+int display_content_node_set_selected(display_content_node* content_node, int selected){
+	if (content_node == NULL){
+		return -1;
+	} if ((selected != CONTENT_NODE_SELECTED) && (selected != CONTENT_NODE_NOT_SELECTED) && (selected != CONTENT_NODE_UNSELECTABLE)){
+		return -2;
+	}
+
+	content_node->selected = selected;
+
+	return 0;
+}
+
+display_window* display_content_node_get_window(display_content_node* content_node){
+	if (content_node == NULL){
+		return NULL;
+	} if (display_info_struct == NULL){
+		return NULL;
+	} if (display_info_struct->screen_list == NULL){
+		return NULL;
+	}
+
+	display_screen_node* screen_node = display_info_struct->screen_list->root;
+
+	while (screen_node != NULL){
+		if (screen_node->display_screen != NULL && screen_node->display_screen->window_list != NULL && screen_node->display_screen->window_list->root != NULL){
+			display_window_list_node* window_node = screen_node->display_screen->window_list->root;
+
+			while (window_node != NULL){
+				if (window_node->display_window != NULL && window_node->display_window->contents != NULL && window_node->display_window->contents->root != NULL){
+					display_content_node* test_content_node = window_node->display_window->contents->root;
+
+					while (test_content_node != NULL){
+						if (test_content_node == content_node){
+							return window_node->display_window;
+						}
+
+						test_content_node = test_content_node->next_node;
+					}
+				}
+				
+				window_node = window_node->next_node;
+			}
 		}
+
+		screen_node = screen_node->next_node;
 	}
 
-	free(cur_node->data);
+	return NULL;
+}
 
-	// make prev and next node reference each other:
-	//
-	// if cur_node does not have a previous node, it is the root node
-	if (cur_node->prev_node != NULL){
-		cur_node->prev_node->next_node = cur_node->next_node;
-	} else {
-		window->content = cur_node->next_node;
-	}
-	// only change next_node->prev_node if next_node exists
-	if (cur_node->next_node != NULL){
-		cur_node->next_node->prev_node = cur_node->prev_node;
+display_content_node* display_new_text_content_node(display_window* window, char* text){
+	if (window == NULL){
+		return NULL;
+	} if (window->contents == NULL){
+		return NULL;
+	} 
+
+	display_content_node* content_node = display_create_content_node();
+
+	display_content_node_data_set_text(content_node->data, text);
+
+	display_window_add_content_node(window, content_node);
+
+	return content_node;
+}
+
+int display_content_node_data_set_text(display_content_node_data* content_data, char* text_data){
+	if (content_data == NULL){
+		return -1;
+	} if (text_data == NULL){
+		return -2;
 	}
 
-	free(cur_node);
+	content_data->text_data = text_data;
 
 	return 0;
 }
 
-int display_destroy_content_node(display_window_content_node* content_node){
-	fprintf(stderr, "did i make it here\n");
-
-	while (content_node != NULL){
-		display_window_content_node* next_node = content_node->next_node;
-
-		if (content_node->data != NULL){
-			free(content_node->data);
-		}
-
-		free(content_node);
-
-		content_node = next_node;
-
-		fprintf(stderr, "how about here\n");
+int display_draw_content_node(display_window* window, int start_x, int start_y, display_content_node* content_node){
+	if (window == NULL){
+		return -1;
+	} if (content_node == NULL){
+		return -2;
+	} if (content_node->data == NULL){
+		return -3;
+	} if (start_y >= window->height - (window->boxed ? 1 : 0) || start_x >= window->width - (window->boxed ? 1 : 0)){
+		return -4;
 	}
+
+	int window_available_width = window->width - (window->boxed ? 2 : 0);
+
+	char trunc_string[window_available_width + 1];
+
+	string_truncate_middle(content_node->data->text_data, window_available_width, trunc_string);
+
+	int alignment_start_x = start_x;
+	if(content_node->alignment == CONTENT_NODE_ALIGN_CENTER){
+		alignment_start_x = ((window_available_width - strlen(trunc_string)) / 2) + (window->boxed);
+	}
+
+	if ((window->selected == WINDOW_SELECTED) && (content_node->selected == CONTENT_NODE_SELECTED)){
+		wattron(window->ncurses_window, COLOR_PAIR(2));
+	}
+	mvwprintw(window->ncurses_window, start_y, alignment_start_x, trunc_string);
+	wattron(window->ncurses_window, COLOR_PAIR(1));
+
+	return 0;
+}
+
+int display_content_node_init_data(display_content_node* content_node){
+	if (content_node == NULL){
+		return -1;
+	} if (content_node->data != NULL){
+		return -2;
+	}
+
+	display_content_node_data* new_data = malloc(sizeof(display_content_node_data));
+
+	new_data->text_data = NULL;
+
+	content_node->data=new_data;
+
+	return 0;
+}
+
+int display_content_node_terminate_data(display_content_node* content_node){
+	if (content_node == NULL){
+		return -1;
+	} if (content_node->data == NULL){
+		return -2;
+	}
+
+	free(content_node->data);
+	content_node->data = NULL;
 
 	return 0;
 }

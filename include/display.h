@@ -1,86 +1,73 @@
-#ifndef display_h
-#define display_h
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
-#include <ncurses.h>
+#include <curses.h>
+#include <stdbool.h>
 
-#define WINDOW_SELECTABLE true
-#define WINDOW_NOT_SELECTABLE false
+#define WINDOW_VISIBLE true
+#define WINDOW_HIDDEN false
+
+#define WINDOW_BOXED true
+#define WINDOW_NOT_BOXED false
+
 #define WINDOW_EXPAND_TO_FIT_TEXT true
+#define WINDOW_SET_SIZE false
 
-/*
- *
- * enum for mode types
- *
- */
-typedef enum Mode {
-	UNKNOWN,
-	HELP_LINE,
-	QUIT_CONFIRM
-} Mode;
+#define CONTENT_NODE_UNSELECTABLE -1
+#define CONTENT_NODE_NOT_SELECTED 0
+#define CONTENT_NODE_SELECTED 1
 
-typedef enum Screen {
-	MENU,
-	MAIN,
-	EXIT,
-	HIDDEN
-} Screen;
+#define WINDOW_UNSELECTABLE -1
+#define WINDOW_NOT_SELECTED 0
+#define WINDOW_SELECTED 1
 
-typedef enum Alignment {
-	LEFT,
-	CENTER
-} Alignment;
+#define NEXT_WINDOW 1
+#define PREV_WINDOW -1
 
-struct display_window;
+typedef enum content_node_alignment{
+	CONTENT_NODE_ALIGN_LEFT,
+	CONTENT_NODE_ALIGN_CENTER
+} content_node_alignment;
 
-typedef struct display_window_content_node {
-	struct display_window_content_node* next_node;
-	struct display_window_content_node* prev_node;
 
-	struct display_window* associated_window;
+typedef struct display_content_node_data{
+	char* text_data;
+} display_content_node_data;
 
-	Alignment alignment;
-	int color_pair;
+typedef struct display_content_node {
+	struct display_content_node* next_node;
 
-	bool selected;
-	
-	/*
-	 * pointer to "interaction" function should go next
-	 * this function will contain the code to run if enter is pressed while a content node is selected
-	 * not sure how to integrate exactly
-	 */
+	content_node_alignment alignment;
+	int selected;
 
-	void (*handle_interact)(struct display_window_content_node*, struct display_window*);
+	void (*handle_interact)(struct display_content_node* content_node);
 
-	Mode mode;
+	display_content_node_data* data;
+} display_content_node;
 
-	char* data;
-} display_window_content_node;
+typedef struct display_window_contents {
+	display_content_node* root;
+} display_window_contents;
+
 
 typedef struct display_window {
+	char* dimensions_format;
+
 	int start_x;
 	int start_y;
 	int width;
 	int height;
 
-	char* dimensions_format;
-
-	Screen associated_screen;
-
+	bool visible;
 	bool boxed;
-	char horizontal_edges;
-	char vertical_edges;
+	bool expand;
 
-	bool selectable;
-	bool selected;
+	int selected;
 
-	bool expand_to_fit_text;
+	WINDOW* ncurses_window;
 
-	Mode mode;
-
-	WINDOW* window;
-
-	display_window_content_node* content;
 	int content_offset;
+	display_window_contents* contents;
 } display_window;
 
 typedef struct display_window_list_node {
@@ -91,224 +78,224 @@ typedef struct display_window_list_node {
 
 typedef struct display_window_list {
 	display_window_list_node* root;
+	
+}	display_window_list;
 
-	Screen current_screen;
-} display_window_list;
 
-int display_destroy_content_node(display_window_content_node* content_node);
+typedef struct display_screen {
+	char* name;
 
-int display_content_node_change_window(display_window_content_node* content_node, display_window* window);
+	display_window_list* window_list;
+} display_screen;
 
-/*
- * @brief intializes ncurses and display_window
- *
- * @return 0 on success, -1 on error
- *
- * @details
- * should only be called at the very start of using ncurses
- * intializes a list of display_windows
- */
+typedef struct display_screen_node{
+	struct display_screen_node* next_node;
+
+	display_screen* display_screen;
+} display_screen_node;
+
+typedef struct display_screen_list {
+	display_screen_node* root;
+} display_screen_list;
+
+
+typedef struct display_info {
+	display_screen_list* screen_list;
+	display_screen* current_screen;
+} display_info;
+
+
+// initializes display - call at begining of use
 int display_init();
 
-/*
- * @brief terminates ncurses and display_window
- *
- * @return 0 on success, -1 on error
- *
- * @details
- * only call when done with ncurses
- * terminates each display_window in display_window_list
- */
+// initializes ncurses-specific stuff, called by display_init()
+int display_ncurses_init();
+
+// termiantes display - call at end of use
 int display_terminate();
 
-void display_set_content_window(display_window_content_node* root, display_window* window);
-int display_content_node_set_data(display_window_content_node* node, char* data_str);
-int display_window_set_contents(display_window* window, display_window_content_node* content_node);
+// terminates ncurses-specific stuff, called by display_terminate()
+int display_ncurses_terminate();
 
-Screen display_get_current_screen();
-void display_parse_dimensions_format(display_window* window);
-int display_set_screen(Screen screen);
 
-/*
- * @brief creates a display_window object with provided parameters
- *
- * @param start_x top left x coordinate (must be within bounds [0, COLS])
- * @param start_y top left y coordinate (must be within bounds [0, LINES])
- * @param height height of window
- * @param width witdth of window
- *
- * @return pointer to new display_window on success, NULL on error
- *
- * @details
- * creates a display_window struct, a wrapper for ncurses window which allows for further functionality such as resizing and moving
- */
-display_window* display_create_window(Screen screen, bool selectable, char* dimension_format_string);
+// inits internal display struct, called by display_init
+int display_intitialize_display_info();
 
-int display_window_box(display_window* window, char vertical_edges, char horizontal_edges);
+// terminates internal display struct, called by display_terminate
+int display_terminate_display_info();
 
-int display_window_select_next_node(display_window_list_node* window_node);
-int display_window_select_previous_node(display_window_list_node* window_node);
 
-display_window_content_node* display_window_get_current_selection(display_window_list_node* window_node);
+// initializes internal screen list, called internally
+display_screen_list* display_initialize_screen_list();
 
-int display_set_selected_window(display_window* window);
+// terminates screen list, called internally
+int display_terminate_screen_list(display_screen_list* screen_list);
 
-int display_content_node_set_interaction(display_window_content_node* content_node, void (*interact_function)(display_window_content_node*, display_window*));
-void display_handle_interaction();
 
-display_window_list_node* display_get_current_window();
+// creates a node in the internal screen list
+display_screen_node* display_create_screen_node();
 
-int display_select_next_window();
-int display_select_previous_window();
+// destroys a node in the internal screen list
+int display_destroy_screen_node(display_screen_node* screen_node);
 
-int display_set_window_screen(display_window* window, Screen screen);
 
-int display_handle_command(int* SIGINT_FLAG, display_window* command_window, display_window* results_window);
-int display_setup_song_list(display_window* window);
+// gets the currently selected content node
+display_content_node* display_get_selected_content_node();
 
-/*
- * @brief destroys a desplay_window
- *
- * @param window display_window to destroy
- *
- * @return 0 on success
- *
- * @details
- * calls delwin on the WINDOW* in display_window and frees the memory of display_window
- */
-int display_destroy_window(display_window* window);
 
-/*
- * @brief resizes a display_window
- *
- * @param window display_window to resize
- * @param new_width new width of display window
- * @param new_height new height of display window
- *
- * @return 0 on success
- *
- * @details
- * resizes the display_window by changing the parameters in the struct,
- * and then clearing the box of it's WINDOW and deleting that WINDOW,
- * before finally making a new WINDOW with the new parameters and
- * displaying it to the screen
- */
-int display_resize_window(display_window* window, int new_width, int new_height);
+// create a new screen with name screen_name
+display_screen* display_create_new_screen(char* screen_name);
 
-/*
- * @brief moves a display_window
- *
- * @param window display_window to move
- * @param new_begin_x new top left x of display window
- * @param new_begin_y new top left y of display window
- *
- * @return 0 on success
- *
- * @details
- * moves the display_window by changing the parameters in the struct,
- * and then clearing the box of it's WINDOW and deleting that WINDOW,
- * before finally making a new WINDOW with the new parameters and
- * displaying it to the screen
- */
-int display_move_window(display_window* winodw, int new_begin_x, int new_begin_y);
+// destroys a screen
+int display_destroy_screen(display_screen* screen);
 
-/*
- * @brief destroys an ncurses window
- *
- * @param window ncurses window to destroy
- *
- * @return 0 on success
- *
- * @details
- * destroys an ncurses window and does visual cleanup
- */
-int display_destroy_ncurses_window(WINDOW* window);
+// draws all windows in a screen
+int display_screen_draw_windows(display_screen* screen);
 
-/*
- * @brief changes the size and position of a display_window
- *
- * @param window display_window to change attributes of
- * @param new_start_x new top left corner x coordinate
- * @param new_start_y new top left corner y coordinate
- * @param new_width new width
- * @param new_new new height
- *
- * @return 0 on success
- */
-int display_window_change_attributes(display_window* window, int new_start_x, int new_start_y, int new_width, int new_height);
+// sets the currently displayed screen 
+int display_set_screen(display_screen* screen);
 
-/*
- * @brief draws a display_window to the screen
- *
- * @param window display_window to draw
- *
- * @return 0 on success
- *
- * @details
- * calls display_draw_window_contents and then draws the window and refreshes
- */
+// sets which window is slected within a screen, unselects other windows in that screen
+int display_screen_set_selected_window(display_screen* screen, display_window* window);
+
+
+// selects the next window in a screen (horizontally)
+int display_screen_select_next_window(display_screen* screen);
+
+// selects the previous window in a screen (horizontally)
+int display_screen_select_previous_window(display_screen* screen);
+
+// select a window in the given direction (horizontally)
+int display_screen_select_window_directional(display_screen* screen, int direction);
+
+// get the currently selected content node in a screen
+display_content_node* display_screen_get_selected_content_node();
+
+// draw a window
 int display_draw_window(display_window* window);
 
-int display_draw_all_windows();
 
-/*
- * @brief displays the contents of a window
- *
- * @param window display_window to draw the contents o
- *
- * @return 0 on succeess
- *
- * @details
- * not yet functioning fully, but hopefully will draw the contents of a 
- * window from the contents struct linked list
- */
-int display_draw_window_contents(display_window* window);
+// set which screen is currently displayed
+int display_set_current_screen(display_screen* screen);
 
-/*
- * @brief destorys a display_windows contents data structure
- *
- * @param window display_window whose contents to destroy
- *
- * @return 0 on success
- *
- * @details
- * frees all associated memory for every node in the contents linked list
- */
-int display_terminate_window_contents(display_window* window);
+// get which screen is currently being displayed
+display_screen* display_get_current_screen();
 
-/*
- * @brief adds a node to a display window's content struct
- *
- * @param window display_window to add content node to
- * @param mode mode for content to be displayed on
- * @param data string data to put in new content node
- *
- * @return 0 on success
- *
- * @details
- * allocates memory, ensures references from previous node points correctly. also uses strcpy
- */
-display_window_content_node* display_window_add_content_node(display_window* window, char* data);
+// get which window node in a screen is selected
+display_window_list_node* display_screen_get_selected_window_node(display_screen* screen);
 
-display_window_content_node* display_add_content_node(display_window_content_node* existing_node);
+// add a new window to a screen with the given dimension format string
+display_window* display_screen_add_new_window(display_screen* screen, char* dimensions_format);
 
-int display_set_content_node_alignment(display_window_content_node* content_node, Alignment new_alignment);
-int display_set_contend_node_color(display_window_content_node* content_node, int color_pair);
+// destroy a window in a screen
+int display_screen_destroy_window(display_screen* screen, display_window* window);
 
-int display_set_window_expansion(display_window* window, bool expand_to_fit_text);
+// set a window's visibility
+int display_window_set_visibility(display_window* window, bool visible);
 
-void display_handle_winch();
+// set if a window is boxed
+int display_window_set_boxed(display_window* window, bool boxed);
 
-/*
- * @brief destorys a content node from a display window
- *
- * @param window window to destroy content node 
- * @param target_node content node to destroy
- *
- * @return 0 on success, -1 if node is not in display window's linked list
- *
- * @details
- * frees memory associated with node, and moves previous and next node's pointers to correctly reflect lack of node
- */
-int display_window_destroy_content_node(display_window* window, display_window_content_node* target_node);
+// set if a window expands to fit text
+int display_window_set_expansion(display_window* window, bool expand);
+
+// set if a window is selected or not
+int display_window_set_selected(display_window* window, int selected);
+
+// get the currently selected content node of a window
+display_content_node* display_window_get_selected_node(display_window* window);
+
+// add a content node to a window
+int display_window_add_content_node(display_window* window, display_content_node* content_node);
+
+// draw the content nodes of a window
+int display_window_draw_contents(display_window* window);
+
+// get which screen a window is associated with
+display_screen* display_window_get_screen(display_window* window);
+
+// get which node is selected in a window
+display_content_node* display_window_get_selected_node(display_window* window);
+
+// select the next node of a window
+int display_window_select_next_node(display_window* window);
+
+// select the previous node of a window
+int display_window_select_prev_node(display_window* window);
+
+// create a new window list for a screen, used internally
+display_window_list* display_create_window_list(display_screen* screen);
+
+// destroy a window list, used internally
+int display_destroy_window_list(display_window_list* window_list);
+
+// handle SIGWINCh
+int display_handle_winch();
+
+// redraw the ncurses window for a display window using that display window's parameters
+int display_reset_ncurses_window(display_window* window);
+
+// destroy a ncurses window and clears its space
+int display_destroy_ncurses_window(WINDOW* window);
+
+// parse a dimension format string for a window, used internally
+int display_parse_dimensions_format(display_window* window);
+
+// create a new window with a given format string
+display_window* display_create_window(char* dimensions_format);
+
+// initialiaze the content struct for a screen, used internally
+int display_window_init_contents(display_window* window);
+
+// destroys a display window
+int display_destroy_window(display_window* window);
+
+// destroy the content nodes of a display window
+int display_window_destroy_content_nodes(display_window* window);
+
+// create a new content node, used mostly internally
+display_content_node* display_create_content_node();
+
+// set the interaction function for a content node
+int display_content_node_set_interaction(display_content_node* content_node, void (*handle_interact)(display_content_node* content_node));
+
+// handle a display interaction function (call it) for a content node, will do nothing if there is no function assigned
+int display_handle_interact(display_content_node* content_node);
+
+// destroy a content node
+int display_destroy_content_node(display_content_node* content_node);
+
+// set a content node's alignment
+int display_set_content_node_alignment(display_content_node* content_node, content_node_alignment alignment);
+
+// sets the data struct for a content node
+int display_content_node_set_data(display_content_node* content_node, display_content_node_data* data);
+
+// clears the data struct for a content node and destroys it
+int display_content_node_clear_data(display_content_node* content_node);
+
+// set if a content node is selected
+int display_content_node_set_selected(display_content_node* content_node, int selected);
+
+// get which window is associated with a content node
+display_window* display_content_node_get_window(display_content_node* content_node);
+
+// create a new content node with the given text, meant to save time when created content nodes with hard coded string data
+display_content_node* display_new_text_content_node(display_window* window, char* text);
+
+
+// set the string text of a content node's data struct
+int display_content_node_data_set_text(display_content_node_data* content_data, char* data_text);
+
+// draws a content node to the string in a window, called internally
+int display_draw_content_node(display_window* window, int start_x, int start_y, display_content_node* content_node);
+
+
+// initializes the data struct for a content node, called internally
+int display_content_node_init_data(display_content_node* content_node);
+
+// terminate the data struct for a content node, called internally
+int display_content_node_terminate_data(display_content_node* content_node);
+
+
 #endif

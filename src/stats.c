@@ -1,156 +1,155 @@
 #include "stats.h"
-#include "utils.h"
 #include <unistd.h>
-#include <signal.h>
-#include <stdlib.h>
 
-int SIGINT_FLAG = 0;
+bool IN_MAIN_LOOP = true;
+display_screen* MAIN_SCREEN;
+display_screen* QUIT_SCREEN;
 
-int DONE = 0;
-int main (){
-	init();
+int main(){
+	display_init();
+	
+	MAIN_SCREEN = display_create_new_screen("MAIN");
+	display_set_current_screen(MAIN_SCREEN);
 
-	display_window* list_title_window = display_create_window(MAIN, WINDOW_NOT_SELECTABLE, "0:0:w1/2:3");
-	display_window_box(list_title_window, '-', '|');
-	display_window_content_node* list_title_node = display_window_add_content_node(list_title_window, "Listening History");
-	display_set_content_node_alignment(list_title_node, CENTER);
+	display_window* LIST_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:0:w1/2:3");
+	display_window_set_boxed(LIST_TITLE_WINDOW, WINDOW_BOXED);
+	display_window_set_selected(LIST_TITLE_WINDOW, WINDOW_UNSELECTABLE);
+	display_content_node* list_title_node = display_new_text_content_node(LIST_TITLE_WINDOW, "Listening History");
+	display_set_content_node_alignment(list_title_node, CONTENT_NODE_ALIGN_CENTER);
 
-	display_window* info_title_window = display_create_window(MAIN, WINDOW_NOT_SELECTABLE, "w1/2:0:w1/2:3");
-	display_window_box(info_title_window, '-', '|');
-	display_window_content_node* info_title_node = display_window_add_content_node(info_title_window, "Song Listen Information");
-	display_set_content_node_alignment(info_title_node, CENTER);
+	display_window* INFO_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:0:w1/2:3");
+	display_window_set_boxed(INFO_TITLE_WINDOW, WINDOW_BOXED);
+	display_window_set_selected(INFO_TITLE_WINDOW, WINDOW_UNSELECTABLE);
+	display_content_node* info_title_node = display_new_text_content_node(INFO_TITLE_WINDOW, "Song Play Info");
+	display_set_content_node_alignment(info_title_node, CONTENT_NODE_ALIGN_CENTER);
 
-	display_window* list_window = display_create_window(MAIN, WINDOW_SELECTABLE, "0:2:w1/2:h-4");
-	display_window_box(list_window, '-', '|');
+	display_window* LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:2:w1/2:h-4");
+	display_window_set_boxed(LIST_WINDOW,  WINDOW_BOXED);
+	display_new_text_content_node(LIST_WINDOW, "Song Play Info");
+	display_new_text_content_node(LIST_WINDOW, "Song Play Info");
 
-	display_window* info_window = display_create_window(MAIN, WINDOW_SELECTABLE, "w1/2:2:w1/2:h-4");
-	display_window_box(info_window, '-', '|');
+	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:2:w1/2:h-4");
+	display_window_set_boxed(INFO_WINDOW , WINDOW_BOXED);
+	display_new_text_content_node(INFO_WINDOW, "test");
+	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
+	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
+	display_new_text_content_node(INFO_WINDOW, "test2");
+	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
+	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
+	display_new_text_content_node(INFO_WINDOW, "test3");
+	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
+	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
+	//display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+	INFO_WINDOW->selected = WINDOW_SELECTED;
 
-	display_window* help_window = display_create_window(MAIN, WINDOW_NOT_SELECTABLE, "0:h-2:w:2");
-	display_set_content_node_alignment(display_window_add_content_node(help_window, "[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit"), CENTER);
+	display_window* HELP_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-2:w:2");
+	display_content_node* help_node = display_new_text_content_node(HELP_WINDOW, "[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit");
+	display_window_set_selected(HELP_WINDOW, WINDOW_UNSELECTABLE);
+	display_set_content_node_alignment(help_node, CONTENT_NODE_ALIGN_CENTER);
 
-	display_window* command_window = display_create_window(HIDDEN, WINDOW_NOT_SELECTABLE, "0:h-2:w:2");
 
-	display_window* quit_window = display_create_window(EXIT, WINDOW_NOT_SELECTABLE, "w1/3:h1/2-3:w1/3:6");
-	display_set_content_node_alignment(display_window_add_content_node(quit_window, "Are you sure you want to quit"), CENTER);
-	display_set_content_node_alignment(display_window_add_content_node(quit_window, "Select option or press [q] to confirm."), CENTER);
-	display_set_window_expansion(quit_window, WINDOW_EXPAND_TO_FIT_TEXT);
-	display_window_box(quit_window, '-', '|');
+	QUIT_SCREEN = display_create_new_screen("QUIT");
 
-	display_window* yes_window = display_create_window(EXIT, WINDOW_SELECTABLE, "w1/2-4:h1/2+1:3:1");
-	display_window_content_node* yes_node = display_window_add_content_node(yes_window, "Yes");
-	display_content_node_set_interaction(yes_node, handle_interact_quit_yes);
-	display_set_content_node_alignment(yes_node, CENTER);
+	display_window* QUIT_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/3:h1/2-3:w1/3:6");
+	display_window_set_boxed(QUIT_WINDOW , WINDOW_BOXED);
+	display_window_set_expansion(QUIT_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
+	display_window_set_selected(QUIT_WINDOW, WINDOW_UNSELECTABLE);
+	display_content_node* quit_node_1 = display_new_text_content_node(QUIT_WINDOW, "Are you sure you want to quit");
+	display_set_content_node_alignment(quit_node_1, CONTENT_NODE_ALIGN_CENTER);
+	display_content_node* quit_node_2 = display_new_text_content_node(QUIT_WINDOW, "Select option or press [q] to confirm.");
+	display_set_content_node_alignment(quit_node_2, CONTENT_NODE_ALIGN_CENTER);
 
-	display_window* no_window = display_create_window(EXIT, WINDOW_SELECTABLE, "w1/2+1:h1/2+1:2:1");
-	display_window_content_node* no_node = display_window_add_content_node(no_window, "No");
-	display_content_node_set_interaction(no_node, handle_interact_quit_no);
-	display_set_content_node_alignment(no_node, CENTER);
+	display_window* QUIT_YES_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/2-4:h1/2+1:3:1");
+	display_content_node* quit_yes_node = display_new_text_content_node(QUIT_YES_WINDOW, "Yes");
+	display_content_node_set_interaction(quit_yes_node, quit_yes_button_interact);
 
-	display_set_selected_window(list_window);
+	
+	display_window* QUIT_NO_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/2+1:h1/2+1:2:1");
+	display_content_node* quit_no_node = display_new_text_content_node(QUIT_NO_WINDOW, "No");
+	display_content_node_set_interaction(quit_no_node, quit_no_button_interact);
 
-	while(!DONE){
-		if (SIGINT_FLAG != 0){
+
+	bool SIGINT_FLAG = false;
+	while (IN_MAIN_LOOP){
+		if (SIGINT_FLAG){
 			break;
-		} 
+		}
 
-		display_draw_all_windows();
+		display_screen_draw_windows(display_get_current_screen());
 
-		int ch = getch();
+		int user_in = getch();
 
-		switch(ch){
+		if (user_in == ERR){
+			continue;
+		}
+
+		switch (user_in){
 			case KEY_RESIZE:
 				display_handle_winch();
 				break;
 			case 'j':
 			case KEY_DOWN:
-				display_window_select_next_node(display_get_current_window());
+				display_window_select_next_node(display_screen_get_selected_window_node(display_get_current_screen())->display_window);
 				break;
 			case 'k':
 			case KEY_UP:
-				display_window_select_previous_node(display_get_current_window());
+				display_window_select_prev_node(display_screen_get_selected_window_node(display_get_current_screen())->display_window);
 				break;
 			case 'h':
 			case KEY_LEFT:
-				display_select_previous_window();
+				display_screen_select_previous_window(display_get_current_screen());
 				break;
 			case 'l':
 			case KEY_RIGHT:
-				display_select_next_window();
+				display_screen_select_next_window(display_get_current_screen());
 				break;
 			case '\n':
 			case KEY_ENTER:
 			case 13:
-				display_handle_interaction();
+				display_handle_interact(display_get_selected_content_node());
 				break;
 			case ':':
-				display_set_window_screen(help_window, HIDDEN);
-				display_set_window_screen(command_window, MAIN);
-
-				if (display_handle_command(&SIGINT_FLAG, command_window, list_window) == -1){
-					DONE = true;
-				}
-
-				display_set_window_screen(help_window, MAIN);
-				display_set_window_screen(command_window, HIDDEN);
 				break;
-			default:
-				switch (display_get_current_screen()){
-					case HIDDEN:
-						break;
-					case MENU:
-						break;
-					case MAIN:
-						switch(ch){
-							case 'Q':
-							case 'q':
-							case 27:
-								display_set_screen(EXIT);
-								display_set_selected_window(no_window);
-								break;
-						}
-						break;
-					case EXIT:
-						switch(ch){
-							case 'Q':
-							case 'q':
-								DONE = 1;
-								break;
-							case 27:
-								display_set_screen(MAIN);
-								break;
-							default:
-								break;
-						}
-						break;
+			default: {
+				display_screen* current_screen = display_get_current_screen();
+
+				if (current_screen == MAIN_SCREEN){
+					switch (user_in) {
+						case 'Q':
+						case 'q':
+						case 27:
+							display_set_screen(QUIT_SCREEN);
+							display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
+							break;
+					}
+				} else if (current_screen == QUIT_SCREEN){
+					switch(user_in){
+						case 'Q':
+						case 'q':
+							IN_MAIN_LOOP = false;
+							break;
+						case 27:
+							display_set_screen(MAIN_SCREEN);
+							break;
+					}
 				}
-				break;
+			}
 		}
 	}
 
 	display_terminate();
-
 	return 0;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void handle_interact_quit_yes(display_window_content_node* node, display_window* window){
-	DONE = 1;
-}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void handle_interact_quit_no(display_window_content_node* node, display_window* window){
-	display_set_screen(MAIN);
+void quit_yes_button_interact(display_content_node* content_node){
+	IN_MAIN_LOOP = false;
 }
 
-void init(){
-	display_init();
-	
-	signal(SIGINT, handle_interrupt);
-}
-
-void handle_interrupt(){
-	SIGINT_FLAG = 1;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void quit_no_button_interact(display_content_node* content_node){
+	display_set_screen(MAIN_SCREEN);
 }
