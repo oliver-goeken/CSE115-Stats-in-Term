@@ -1,15 +1,22 @@
-#include <err.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "parse_db_funcs.h"
-#include "sqlite3.h"
 // install cJSON : sudo apt install libcjson-dev
 //install sqlite3 : sudo apt install sqlite3
 
 
 // NOTE: TO LOAD THIS, YOU NEED TO LINK USING -lcjson -lsqlite3 flags
+
+void free_song_list(song_list* list) {
+    for (int i = 0; i < list->num_songs; i++) {
+        free(list->songs[i].artist);
+        free(list->songs[i].track);
+        free(list->songs[i].album);
+        free(list->songs[i].timestamp);
+        free(list->songs[i].track_uri);
+    }
+    free(list->songs);
+    list->songs = NULL;
+    list->num_songs = 0;
+}
 
 int create_db()
 {
@@ -78,18 +85,18 @@ char* read_json (char* file)
     return load_data ; 
 }
 
-void json_import_to_db(sqlite3* database, char* file_name)
+int json_import_to_db(sqlite3* database, char* file_name)
 {
-    if (!database || !file_name) return ;
+    if (!database || !file_name) return 1 ;
 
     char* json_data = read_json(file_name) ;
-    if (!json_data) return ; 
+    if (!json_data) return 1; 
 
     cJSON* root = cJSON_Parse(json_data) ; 
     if (!root) 
     {
         free(json_data) ; 
-        return ; 
+        return 1; 
     }
     // 1) Set up the command to add stuff to the sql
     sqlite3_stmt* cmd = NULL; 
@@ -99,7 +106,7 @@ void json_import_to_db(sqlite3* database, char* file_name)
     if (rem_con != 0) { // if it can't open!
         cJSON_Delete(root) ;
         free(json_data) ;
-        return ; 
+        return 1; 
     }
         
     // 2) start parsing!
@@ -108,7 +115,7 @@ void json_import_to_db(sqlite3* database, char* file_name)
         sqlite3_finalize(cmd) ;
         cJSON_Delete(root) ;
         free(json_data) ;
-        return ; 
+        return 1; 
     }
     bool success = true ; 
     cJSON* elem = NULL ; 
@@ -148,4 +155,42 @@ void json_import_to_db(sqlite3* database, char* file_name)
     free(json_data) ; 
 
 }
+
+
+song_list get_total_played_per_artist(sqlite3* database, char* artist_name)
+{
+    // goal: this function is used to get the unique artist names and then count the amount of songs the user has listened to for that specific artist
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_unique_artist_cmd = "SELECT * FROM spotifyHistory WHERE artist = ? COLLATE NOCASE;" ; 
+
+    // initialize song list and song info struct to store the songs that match the query
+    song_list list = { .songs = NULL, .num_songs = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_unique_artist_cmd, -1, &cmd, NULL) != 0) return list;
+
+    sqlite3_bind_text(cmd, 1, artist_name, -1, SQLITE_TRANSIENT); 
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.num_songs + 1 ; 
+        song_info* temp = list.songs = realloc(list.songs, count * sizeof(song_info)) ;
+        if (!temp) break ; 
+        list.songs = temp ;
+        list.num_songs = count ;
+
+        song_info* info = &list.songs[list.num_songs - 1] ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->track = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->album = strdup((char*) sqlite3_column_text(cmd, 2)) ;
+        info->ms_played = sqlite3_column_int(cmd, 3) ;
+        info->timestamp = strdup((char*) sqlite3_column_text(cmd, 4)) ;
+        info->track_uri = strdup((char*) sqlite3_column_text(cmd, 5)) ;
+            
+    }
+        
+    sqlite3_finalize(cmd) ;
+    return list ;
+
+}
+
 
