@@ -75,7 +75,7 @@ char* read_json (char* file)
     // 3) save enough mem to go through full file & read the full file
     char* load_data = malloc (file_len + 1) ; 
     if (!load_data) {fclose(f) ; return NULL ;}
-    if (fread(load_data, 1, (size_t) file_len, f) != file_len) {free(load_data) ; fclose(f) ; return NULL ;}
+    if (fread(load_data, 1, (size_t) file_len, f) != (size_t) file_len) {free(load_data) ; fclose(f) ; return NULL ;}
 
     // 4) close and exit properly
     fclose(f) ;
@@ -153,6 +153,8 @@ int json_import_to_db(sqlite3* database, char* file_name)
     sqlite3_finalize(cmd) ; 
     cJSON_Delete(root) ; 
     free(json_data) ; 
+
+    return 0 ; 
 
 }
 
