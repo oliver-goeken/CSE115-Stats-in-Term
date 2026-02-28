@@ -8,8 +8,8 @@
 
 int create_db(); 
 
-char* read_json (const char* file) ; 
+char* read_json (char* file) ; 
 
-void json_import_to_db(sqlite3* database, const char* file) ; 
+void json_import_to_db(sqlite3* database, char* file) ; 
 
 #endif
