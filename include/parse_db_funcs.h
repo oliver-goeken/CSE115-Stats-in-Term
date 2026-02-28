@@ -35,5 +35,5 @@ char* read_json (char* file) ;
 
 int json_import_to_db(sqlite3* database, char* file) ; 
 
-song_list get_total_played_per_artist(sqlite3* database, char* artist_name) ;
+song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name) ;
 #endif

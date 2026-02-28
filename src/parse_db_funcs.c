@@ -157,7 +157,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
 }
 
 
-song_list get_total_played_per_artist(sqlite3* database, char* artist_name)
+song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
 {
     // goal: this function is used to get the unique artist names and then count the amount of songs the user has listened to for that specific artist
     sqlite3_stmt* cmd = NULL ;
@@ -192,5 +192,8 @@ song_list get_total_played_per_artist(sqlite3* database, char* artist_name)
     return list ;
 
 }
+
+
+
 
 
