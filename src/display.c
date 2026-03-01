@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// bit shifting from https://www.chiefdelphi.com/t/extracting-individual-bits-in-c/48028
+#define get_bit(bitmap, pos)  (( bitmap & (1 << (pos - 1)) ? 1 : 0 ))
+
 static display_info* display_info_struct;
 
 int display_init(){
@@ -258,7 +261,7 @@ int display_screen_draw_windows(display_screen* screen){
 		cur_node = cur_node->next_node;
 	}
 
-	refresh();
+	doupdate();
 
 	return 0;
 }
@@ -432,12 +435,34 @@ int display_draw_window(display_window* window){
 	}
 
 	if (window->boxed){
-		box(window->ncurses_window, '|', '-');
+		//box(window->ncurses_window, '|', '-');
+		display_box_window(window);
 	}
 
 	display_window_draw_contents(window);
 
-	wrefresh(window->ncurses_window);
+	wnoutrefresh(window->ncurses_window);
+
+	return 0;
+}
+
+int display_box_window(display_window* window){
+	if (window == NULL){
+		return -1;
+	} if (window->ncurses_window == NULL){
+		return -2;
+	}
+
+	uint8_t box_sides = window->box_sides;
+
+	wborder(window->ncurses_window, get_bit(box_sides, 6) ? ACS_VLINE : ' ', 
+									get_bit(box_sides, 7) ? ACS_VLINE : ' ', 
+									get_bit(box_sides, 5) ? ACS_HLINE : ' ', 
+									get_bit(box_sides, 8) ? ACS_HLINE : ' ',
+									get_bit(box_sides, 1) ? ACS_ULCORNER : ' ', 
+									get_bit(box_sides, 2) ? ACS_URCORNER : ' ', 
+									get_bit(box_sides, 3) ? ACS_LLCORNER : ' ', 
+									get_bit(box_sides, 4) ? ACS_LRCORNER : ' ');
 
 	return 0;
 }
@@ -548,6 +573,16 @@ int display_window_set_boxed(display_window* window, bool boxed){
 	}
 
 	window->boxed = boxed;
+
+	return 0;
+}
+
+int display_window_set_box_sides(display_window* window, uint8_t sides){
+	if (window == NULL){
+		return -1;
+	}
+
+	window->box_sides = sides;
 
 	return 0;
 }
@@ -935,9 +970,11 @@ display_window* display_create_window(char* dimensions_format){
 	display_parse_dimensions_format(new_window);
 
 	new_window->visible = WINDOW_VISIBLE;
-	new_window->boxed = WINDOW_NOT_BOXED;
 	new_window->expand = WINDOW_SET_SIZE;
 	new_window->selected = WINDOW_NOT_SELECTED;
+
+	new_window->boxed = WINDOW_NOT_BOXED;
+	new_window->box_sides = 0b11111111;
 
 	new_window->content_offset = 0;
 
