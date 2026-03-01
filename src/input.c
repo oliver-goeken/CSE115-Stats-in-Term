@@ -1,4 +1,5 @@
 #include "input.h"
+#include "parse_db_funcs.h"
 #include <string.h>
 
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size){
@@ -102,7 +103,6 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 	char args_buff[max_input_size];
 
 	input_separate_command_and_args(in_buff, command_buff, args_buff, max_input_size);
-	fprintf(stderr, "commands: [%s], args: [%s]\n", command_buff, args_buff);
 
 	if (strcmp(command_buff, "q") == 0){
 		return COMMAND_QUIT;
