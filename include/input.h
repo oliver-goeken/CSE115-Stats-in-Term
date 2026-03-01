@@ -18,7 +18,7 @@ int input_separate_command_and_args(char* input_buffer, char* command_buffer, ch
 // this means:
 // - leading spaces
 // - trailing spaces
-// - any instances of two spaces in a row
+// - any instances of multiple spaces in a row
 int input_command_remove_excess_space(char* input_buffer, int buffer_size);
 
 #endif
