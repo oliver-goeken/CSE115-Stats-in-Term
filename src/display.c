@@ -45,8 +45,9 @@ int display_ncurses_init(){
 	timeout(33);
 
 	start_color();
-	init_pair(1, COLOR_WHITE, COLOR_BLACK);
-	init_pair(2, COLOR_BLACK, COLOR_WHITE);
+	init_pair(COLOR_PAIR_DEFAULT, COLOR_WHITE, COLOR_BLACK);
+	init_pair(COLOR_PAIR_SELECTED, COLOR_BLACK, COLOR_WHITE);
+	init_pair(COLOR_PAIR_ERROR, COLOR_WHITE, COLOR_RED);
 
 	refresh();
 
@@ -393,55 +394,59 @@ int display_draw_window(display_window* window){
 		return -2;
 	}
 
-	if (window->expand == WINDOW_EXPAND_TO_FIT_TEXT){
-		if (window->contents != NULL && window->contents->root != NULL){
-			display_content_node* content_node = window->contents->root;
+	if (window->visible == WINDOW_VISIBLE){
+		if (window->expand == WINDOW_EXPAND_TO_FIT_TEXT){
+			if (window->contents != NULL && window->contents->root != NULL){
+				display_content_node* content_node = window->contents->root;
 
-			while (content_node != NULL){
-				if (content_node->data == NULL || content_node->data->text_data == NULL){
-					continue;
-				}
-
-				int size_diff;
-				int new_start_x;
-				int new_width;
-
-				size_diff = window->width - (window->boxed ? 2 : 0) - strlen(content_node->data->text_data);
-
-				if (size_diff % 2 != 0){
-					size_diff --;
-				}
-
-				if (size_diff < 0){
-					fprintf(stderr, "doing something\n");
-					new_start_x = window->start_x + (size_diff / 2);
-					new_width = window->width - size_diff;
-
-					if (new_start_x < 0){
-						new_start_x = 0;
+				while (content_node != NULL){
+					if (content_node->data == NULL || content_node->data->text_data == NULL){
+						continue;
 					}
 
-					if (new_start_x + new_width >= COLS){
-						new_width = COLS - new_start_x;
+					int size_diff;
+					int new_start_x;
+					int new_width;
+
+					size_diff = window->width - (window->boxed ? 2 : 0) - strlen(content_node->data->text_data);
+
+					if (size_diff % 2 != 0){
+						size_diff --;
 					}
 
-					window->start_x = new_start_x;
-					window->width = new_width;
-				}
+					if (size_diff < 0){
+						fprintf(stderr, "doing something\n");
+						new_start_x = window->start_x + (size_diff / 2);
+						new_width = window->width - size_diff;
 
-				content_node = content_node->next_node;
+						if (new_start_x < 0){
+							new_start_x = 0;
+						}
+
+						if (new_start_x + new_width >= COLS){
+							new_width = COLS - new_start_x;
+						}
+
+						window->start_x = new_start_x;
+						window->width = new_width;
+					}
+
+					content_node = content_node->next_node;
+				}
 			}
+
+			display_reset_ncurses_window(window);
 		}
 
-		display_reset_ncurses_window(window);
-	}
+		if (window->boxed){
+			//box(window->ncurses_window, '|', '-');
+			display_box_window(window);
+		}
 
-	if (window->boxed){
-		//box(window->ncurses_window, '|', '-');
-		display_box_window(window);
+		display_window_draw_contents(window);
+	} else {
+		werase(window->ncurses_window);
 	}
-
-	display_window_draw_contents(window);
 
 	wnoutrefresh(window->ncurses_window);
 
@@ -688,11 +693,35 @@ int display_window_draw_contents(display_window* window){
 		cur_node = cur_node->next_node;
 	}
 
+	display_content_node* prev_node = cur_node;
+
 	while (cur_node != NULL && start_y <= window->height - (window->boxed ? 0 : 1)){
+		if (cur_node->timeout != 0){
+			time_t current_time;
+			time(&current_time);
+
+			if (cur_node->timeout < current_time){
+				display_content_node* next_node = cur_node->next_node;
+
+				if (window->contents->root == prev_node){
+					window->contents->root = next_node;
+				} else {
+					prev_node->next_node = next_node;
+				}
+
+				display_destroy_content_node(cur_node);
+
+				cur_node = next_node;
+
+				continue;
+			}
+		}
+		
 		display_draw_content_node(window, start_x, start_y, cur_node);
 
 		start_y ++;
 
+		prev_node = cur_node;
 		cur_node = cur_node->next_node;
 	}
 
@@ -1015,14 +1044,13 @@ int display_destroy_window(display_window* window){
 	}
 
 	if (window->contents != NULL){
-		display_window_destroy_content_nodes(window);
+		display_terminate_window_contents(window);
 	}
 
 	free(window);
 
 	return 0;
 }
-
 
 int display_window_destroy_content_nodes(display_window* window){
 	if (window->contents == NULL){
@@ -1042,6 +1070,18 @@ int display_window_destroy_content_nodes(display_window* window){
 		cur_node = next_node;
 	}
 
+	window->contents->root = NULL;
+
+	return 0;
+}
+
+int display_terminate_window_contents(display_window* window){
+	if (window->contents == NULL){
+		return -1;
+	} 
+
+	display_window_destroy_content_nodes(window);
+
 	free(window->contents);
 
 	window->content_offset = 0;
@@ -1057,9 +1097,34 @@ display_content_node* display_create_content_node(){
 	new_content_node->handle_interact = NULL;
 	new_content_node->selected = 0;
 
+	new_content_node->timeout = 0;
+	time(&(new_content_node->time_created));
+
 	display_content_node_init_data(new_content_node);
 
 	return new_content_node;
+}
+
+int display_content_node_set_timeout(display_content_node* content_node, long time_after_creation){
+	if (content_node == NULL){
+		return -1;
+	} if (time_after_creation < 0){
+		return -2;
+	}
+
+	content_node->timeout = content_node->time_created + time_after_creation;
+
+	return 0;
+}
+
+int display_content_node_set_color_pair(display_content_node* content_node, int color_pair_num){
+	if (content_node == NULL){
+		return -1;
+	}
+
+	content_node->data->color_pair_num = color_pair_num;
+
+	return 0;
 }
 
 int display_content_node_set_interaction(display_content_node* content_node, void (*handle_interact)(display_content_node* content_node)){
@@ -1235,10 +1300,12 @@ int display_draw_content_node(display_window* window, int start_x, int start_y, 
 	}
 
 	if ((window->selected == WINDOW_SELECTED) && (content_node->selected == CONTENT_NODE_SELECTED)){
-		wattron(window->ncurses_window, COLOR_PAIR(2));
+		wattron(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_SELECTED));
+	} else {
+		wattron(window->ncurses_window, COLOR_PAIR(content_node->data->color_pair_num));
 	}
 	mvwprintw(window->ncurses_window, start_y, alignment_start_x, trunc_string);
-	wattron(window->ncurses_window, COLOR_PAIR(1));
+	wattron(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_DEFAULT));
 
 	return 0;
 }
@@ -1253,6 +1320,7 @@ int display_content_node_init_data(display_content_node* content_node){
 	display_content_node_data* new_data = malloc(sizeof(display_content_node_data));
 
 	new_data->text_data = NULL;
+	new_data->color_pair_num = COLOR_PAIR_DEFAULT;
 
 	content_node->data=new_data;
 

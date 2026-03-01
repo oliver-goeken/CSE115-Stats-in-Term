@@ -3,6 +3,7 @@
 
 #include <curses.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define WINDOW_VISIBLE true
 #define WINDOW_HIDDEN false
@@ -24,6 +25,10 @@
 #define NEXT_WINDOW 1
 #define PREV_WINDOW -1
 
+#define COLOR_PAIR_DEFAULT 1
+#define COLOR_PAIR_SELECTED 2
+#define COLOR_PAIR_ERROR 3
+
 typedef enum content_node_alignment{
 	CONTENT_NODE_ALIGN_LEFT,
 	CONTENT_NODE_ALIGN_CENTER
@@ -32,6 +37,8 @@ typedef enum content_node_alignment{
 
 typedef struct display_content_node_data{
 	char* text_data;
+
+	int color_pair_num;
 } display_content_node_data;
 
 typedef struct display_content_node {
@@ -39,6 +46,9 @@ typedef struct display_content_node {
 
 	content_node_alignment alignment;
 	int selected;
+
+	time_t time_created;
+	time_t timeout;
 
 	void (*handle_interact)(struct display_content_node* content_node);
 
@@ -270,11 +280,20 @@ int display_window_init_contents(display_window* window);
 // destroys a display window
 int display_destroy_window(display_window* window);
 
-// destroy the content nodes of a display window
+// destroys a chain of content nodes beginning at first in window
 int display_window_destroy_content_nodes(display_window* window);
+
+// destroy the content nodes of a display window
+int display_terminate_window_contents(display_window* window);
 
 // create a new content node, used mostly internally
 display_content_node* display_create_content_node();
+
+// sets the timeout for a content node
+int display_content_node_set_timeout(display_content_node* content_node, long time_after_creation);
+
+// sets which color pair a content node is displayed with
+int display_content_node_set_color_pair(display_content_node* content_node, int color_pair_num);
 
 // set the interaction function for a content node
 int display_content_node_set_interaction(display_content_node* content_node, void (*handle_interact)(display_content_node* content_node));
