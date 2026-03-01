@@ -47,9 +47,9 @@ int get_input(display_window* window, int start_x, int start_y, char* input_buff
 
 					input_buffer_pos --;
 
-					wattrset(window->ncurses_window, COLOR_PAIR(2));
+					wattrset(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_SELECTED));
 					mvwprintw(window->ncurses_window, start_y, start_x + input_buffer_pos, " ");
-					wattrset(window->ncurses_window, COLOR_PAIR(1));
+					wattrset(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_DEFAULT));
 				}
 				break;
 			default:
@@ -60,9 +60,9 @@ int get_input(display_window* window, int start_x, int start_y, char* input_buff
 
 					input_buffer_pos ++;
 
-					wattrset(window->ncurses_window, COLOR_PAIR(2));
+					wattrset(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_SELECTED));
 					mvwprintw(window->ncurses_window, start_y, start_x + input_buffer_pos, " ");
-					wattrset(window->ncurses_window, COLOR_PAIR(1));
+					wattrset(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_DEFAULT));
 				}
 				break;
 		}
@@ -73,6 +73,9 @@ int get_input(display_window* window, int start_x, int start_y, char* input_buff
 			input_buffer[input_buffer_pos] = '\0';
 		}
 	}
+
+	werase(window->ncurses_window);
+	wrefresh(window->ncurses_window);
 
 	return 0;
 }
@@ -86,12 +89,18 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 		return -3;
 	}
 
+	if (window->contents != NULL && window->contents->root != NULL){
+		display_window_destroy_content_nodes(window);
+	}
+
+	werase(window->ncurses_window);
+
 	wmove(window->ncurses_window, start_y, start_x);
 	wprintw(window->ncurses_window, ":");
 	wmove(window->ncurses_window, start_y, ++ start_x);
-	wattrset(window->ncurses_window, COLOR_PAIR(2));
+	wattrset(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_SELECTED));
 	wprintw(window->ncurses_window, " ");
-	wattrset(window->ncurses_window, COLOR_PAIR(1));
+	wattrset(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_DEFAULT));
 
 	int max_input_size = 256;
 	char in_buff[max_input_size];
@@ -106,7 +115,11 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 
 	if (strcmp(command_buff, "q") == 0){
 		return COMMAND_QUIT;
-	} 
+	} else if (strcmp(command_buff, "search") == 0){
+		
+	} else {
+		return COMMAND_NOT_RECOGNIZED;
+	}
 	
 	return 0;
 }
@@ -174,6 +187,24 @@ int input_command_remove_excess_space(char* input_buffer, int buffer_size){
 			}
 		}
 	}
+
+	return 0;
+}
+
+int input_display_command_error(display_window* window, char* msg){
+	if (window == NULL){
+		return -1;
+	} if (window->contents == NULL){
+		return -2;
+	}
+
+	if (window->contents->root != NULL){
+		display_window_destroy_content_nodes(window);
+	}
+
+	display_content_node* msg_node = display_new_text_content_node(window, msg);
+	display_content_node_set_timeout(msg_node, 4);
+	display_content_node_set_color_pair(msg_node, COLOR_PAIR_ERROR);
 
 	return 0;
 }

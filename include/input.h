@@ -4,6 +4,7 @@
 #include "display.h"
 
 #define COMMAND_QUIT -100
+#define COMMAND_NOT_RECOGNIZED -200
 
 // gets input from the user
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size);
@@ -20,5 +21,8 @@ int input_separate_command_and_args(char* input_buffer, char* command_buffer, ch
 // - trailing spaces
 // - any instances of multiple spaces in a row
 int input_command_remove_excess_space(char* input_buffer, int buffer_size);
+
+// display an error message if command goes wrong or isn't recognized
+int input_display_command_error(display_window* window, char* msg);
 
 #endif
