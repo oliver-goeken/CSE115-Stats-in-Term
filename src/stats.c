@@ -1,4 +1,5 @@
 #include "stats.h"
+#include "input.h"
 #include <unistd.h>
 
 bool IN_MAIN_LOOP = true;
@@ -45,6 +46,10 @@ int main(){
 	display_content_node* help_node = display_new_text_content_node(HELP_WINDOW, "[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit");
 	display_window_set_selected(HELP_WINDOW, WINDOW_UNSELECTABLE);
 	display_set_content_node_alignment(help_node, CONTENT_NODE_ALIGN_CENTER);
+
+	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-2:w:2");
+	display_window_set_selected(COMMAND_WINDOW, WINDOW_UNSELECTABLE);
+	display_window_set_visibility(COMMAND_WINDOW, WINDOW_HIDDEN);
 
 
 	QUIT_SCREEN = display_create_new_screen("QUIT");
@@ -107,8 +112,6 @@ int main(){
 			case 13:
 				display_handle_interact(display_get_selected_content_node());
 				break;
-			case ':':
-				break;
 			default: {
 				display_screen* current_screen = display_get_current_screen();
 
@@ -120,6 +123,18 @@ int main(){
 							display_set_screen(QUIT_SCREEN);
 							display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
 							break;
+						case ':':
+							display_window_set_visibility(HELP_WINDOW, WINDOW_HIDDEN);
+							display_window_set_visibility(COMMAND_WINDOW, WINDOW_VISIBLE);
+
+							if (input_handle_command(COMMAND_WINDOW, 0, 0) == COMMAND_QUIT){
+								IN_MAIN_LOOP = false;
+							}
+
+							display_window_set_visibility(COMMAND_WINDOW, WINDOW_HIDDEN);
+							display_window_set_visibility(HELP_WINDOW, WINDOW_VISIBLE);
+							break;
+				break;
 					}
 				} else if (current_screen == QUIT_SCREEN){
 					switch(user_in){
