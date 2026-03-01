@@ -7,6 +7,9 @@ compile_commands.json
 # log files
 *.log
 
+# sql db
+*.db
+
 # Prerequisites
 *.d
 
