@@ -59,6 +59,8 @@ typedef struct display_window {
 	int height;
 
 	bool visible;
+	uint8_t box_sides;
+
 	bool boxed;
 	bool expand;
 
@@ -174,6 +176,9 @@ display_content_node* display_screen_get_selected_content_node();
 // draw a window
 int display_draw_window(display_window* window);
 
+// boxes a ncurses window with appropriate sides shown or hidden
+int display_box_window(display_window* window);
+
 
 // set which screen is currently displayed
 int display_set_current_screen(display_screen* screen);
@@ -195,6 +200,18 @@ int display_window_set_visibility(display_window* window, bool visible);
 
 // set if a window is boxed
 int display_window_set_boxed(display_window* window, bool boxed);
+
+// set which sides of a window's box are displayed
+// uses a 8 bit flag system where:
+// 1st bit: top left corner
+// 2nd bit: top right corner
+// 3rd bit: bottom left corner
+// 4th bit: bottom right corner
+// 5th bit: top side
+// 6th bit: left side
+// 7th bit: right side
+// 8th bit: bottom side
+int display_window_set_box_sides(display_window* window, uint8_t sides);
 
 // set if a window expands to fit text
 int display_window_set_expansion(display_window* window, bool expand);

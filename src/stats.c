@@ -39,7 +39,6 @@ int main(){
 	display_new_text_content_node(INFO_WINDOW, "test3");
 	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
 	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
-	//display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
 	INFO_WINDOW->selected = WINDOW_SELECTED;
 
 	display_window* HELP_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-2:w:2");
