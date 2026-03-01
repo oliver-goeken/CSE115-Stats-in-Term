@@ -255,8 +255,10 @@ int display_screen_draw_windows(display_screen* screen){
 	display_window_list_node* cur_node = screen->window_list->root;
 
 	while (cur_node != NULL){
-		werase(cur_node->display_window->ncurses_window);
-		display_draw_window(cur_node->display_window);
+		if (cur_node->display_window != NULL && cur_node->display_window->visible == WINDOW_VISIBLE){
+			werase(cur_node->display_window->ncurses_window);
+			display_draw_window(cur_node->display_window);
+		}
 
 		cur_node = cur_node->next_node;
 	}
@@ -442,6 +444,18 @@ int display_draw_window(display_window* window){
 	display_window_draw_contents(window);
 
 	wnoutrefresh(window->ncurses_window);
+
+	return 0;
+}
+
+int display_draw_window_and_update(display_window* window){
+	if (window == NULL){
+		return -1;
+	}
+
+	display_draw_window(window);
+
+	doupdate();
 
 	return 0;
 }
