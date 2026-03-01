@@ -173,8 +173,11 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 // get the currently selected content node in a screen
 display_content_node* display_screen_get_selected_content_node();
 
-// draw a window
+// draw a window without updating screen
 int display_draw_window(display_window* window);
+
+// draws a window and updates screen
+int display_draw_window_and_update(display_window* window);
 
 // boxes a ncurses window with appropriate sides shown or hidden
 int display_box_window(display_window* window);
