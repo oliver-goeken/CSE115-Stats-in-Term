@@ -1,13 +1,15 @@
 #include "stats.h"
 #include "input.h"
+#include "parse_db_funcs.h"
 #include <unistd.h>
 
-bool IN_MAIN_LOOP = true;
+
 display_screen* MAIN_SCREEN;
 display_screen* QUIT_SCREEN;
 
+bool IN_MAIN_LOOP = true;
 int main(){
-	display_init();
+	init();
 	
 	MAIN_SCREEN = display_create_new_screen("MAIN");
 	display_set_current_screen(MAIN_SCREEN);
@@ -47,9 +49,8 @@ int main(){
 	display_window_set_selected(HELP_WINDOW, WINDOW_UNSELECTABLE);
 	display_set_content_node_alignment(help_node, CONTENT_NODE_ALIGN_CENTER);
 
-	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-2:w:2");
+	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-1:w:1");
 	display_window_set_selected(COMMAND_WINDOW, WINDOW_UNSELECTABLE);
-	display_window_set_visibility(COMMAND_WINDOW, WINDOW_HIDDEN);
 
 
 	QUIT_SCREEN = display_create_new_screen("QUIT");
@@ -123,17 +124,16 @@ int main(){
 							display_set_screen(QUIT_SCREEN);
 							display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
 							break;
-						case ':':
-							display_window_set_visibility(HELP_WINDOW, WINDOW_HIDDEN);
-							display_window_set_visibility(COMMAND_WINDOW, WINDOW_VISIBLE);
+						case ':': {
+							int command_return_val = input_handle_command(COMMAND_WINDOW, 0, 0);
 
-							if (input_handle_command(COMMAND_WINDOW, 0, 0) == COMMAND_QUIT){
+							if (command_return_val == COMMAND_QUIT){
 								IN_MAIN_LOOP = false;
+							} else if (command_return_val == COMMAND_NOT_RECOGNIZED){
+								input_display_command_error(COMMAND_WINDOW, "Command not recognized");
 							}
-
-							display_window_set_visibility(COMMAND_WINDOW, WINDOW_HIDDEN);
-							display_window_set_visibility(HELP_WINDOW, WINDOW_VISIBLE);
 							break;
+						}
 				break;
 					}
 				} else if (current_screen == QUIT_SCREEN){
@@ -151,10 +151,21 @@ int main(){
 		}
 	}
 
-	display_terminate();
+	terminate();
 	return 0;
 }
 
+void init(){
+	display_init();
+
+	create_db();
+
+	//json_import_to_db();
+}
+
+void terminate(){
+	display_terminate();
+}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -167,3 +178,4 @@ void quit_yes_button_interact(display_content_node* content_node){
 void quit_no_button_interact(display_content_node* content_node){
 	display_set_screen(MAIN_SCREEN);
 }
+
