@@ -3,6 +3,7 @@
 #include "log.h"
 #include "parse_db_funcs.h"
 #include <unistd.h>
+#include <signal.h>
 
 sqlite3* song_plays_database;
 
@@ -15,7 +16,6 @@ int main(){
 	init();
 
 	MENU_SCREEN = display_create_new_screen("MENU");
-	display_set_current_screen(MENU_SCREEN);
 	
 	display_window* MENU_TITLE_WINDOW = display_screen_add_new_window(MENU_SCREEN, "0:0:w:h1/4");
 	display_window_set_boxed(MENU_TITLE_WINDOW, WINDOW_BOXED);
@@ -23,6 +23,7 @@ int main(){
 
 	
 	MAIN_SCREEN = display_create_new_screen("MAIN");
+	display_set_current_screen(MAIN_SCREEN);
 
 	display_window* LIST_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:0:w1/2:3");
 	display_window_set_boxed(LIST_TITLE_WINDOW, WINDOW_BOXED);
@@ -37,11 +38,11 @@ int main(){
 	display_set_content_node_alignment(info_title_node, CONTENT_NODE_ALIGN_CENTER);
 
 	display_window* LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:2:w1/2:h-4");
+	display_window_set_selected(LIST_WINDOW, WINDOW_SELECTED);
 	display_window_set_boxed(LIST_WINDOW,  WINDOW_BOXED);
 
 	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:2:w1/2:h-4");
 	display_window_set_boxed(INFO_WINDOW , WINDOW_BOXED);
-	INFO_WINDOW->selected = WINDOW_SELECTED;
 
 	display_window* HELP_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-2:w:2");
 	display_content_node* help_node = display_new_text_content_node(HELP_WINDOW, "[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit");
@@ -80,6 +81,11 @@ int main(){
 	}
 
 	while (IN_MAIN_LOOP){
+		if (SIGINT_FLAG){
+			log_msg("recieved SIGINT");
+			break;
+		}
+
 		display_screen_draw_windows(display_get_current_screen());
 
 		int user_in = getch();
@@ -157,13 +163,20 @@ int main(){
 	return 0;
 }
 
+void handle_sigint(){
+	SIGINT_FLAG = true;
+}
+
 void init(){
+	signal(SIGINT, handle_sigint);
+
 	log_init_file("stats.log");
 
 	display_init();
 
 	create_db(song_plays_database);
-	json_import_to_db(song_plays_database, "~/Downloads/Spotify Extended Streaming History/Streaming_History_Audio_2019-2020_0.json");
+	sqlite3_open("spotifyHistory.db", &song_plays_database);
+	json_import_to_db(song_plays_database, "/Users/oliverdgoeken/Downloads/Spotify Extended Streaming History/Streaming_History_Audio_2019-2020_0.json");
 }
 
 void terminate(){
