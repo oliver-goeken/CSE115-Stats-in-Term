@@ -1,16 +1,18 @@
 #include "log.h"
 #include <stdio.h>
 #include <time.h>
+#include <stdarg.h>
+#include <string.h>
 
 #define TIME_STR_LEN 128
 
 
-FILE* log_file;
+FILE* LOG_FILE;
 
 int log_init(){
-	log_file = fopen("stats.log", "a+");
+	LOG_FILE = fopen("stats.log", "a+");
 
-	if (log_file == NULL){
+	if (LOG_FILE == NULL){
 		return -1;
 	}
 
@@ -22,25 +24,38 @@ int log_init(){
 
 	strftime(time_formatted, TIME_STR_LEN, "%A, %B %d %Y -- %r", time_struct);
 
-	fprintf(log_file, "\n[%s]\n", time_formatted);
+	fprintf(LOG_FILE, "\n[%s]\n", time_formatted);
 	
 	return 0;
 }
 
 int log_terminate(){
-	if (log_file == NULL){
+	if (LOG_FILE == NULL){
 		return -1;
 	}
 
-	return fclose(log_file);
+	return fclose(LOG_FILE);
 }
 
 int log_msg_detailed(char* file, int line, char* msg){
-	if (log_file == NULL){
+	if (LOG_FILE == NULL){
 		return -1;
 	}
 
-	fprintf(log_file, "%s:%d - %s", file, line, msg);
+	fprintf(LOG_FILE, "%s:%d - %s", file, line, msg);
+
+	return 0;
+}
+
+int log_msg_f_detailed(int line, char* file, char* format, ...){
+	va_list args;
+	va_start(args, format);
+
+	fprintf(LOG_FILE, "%s:%d - ", file, line);
+	vfprintf(LOG_FILE, format, args);
+	fprintf(LOG_FILE, "\n");
+
+	va_end(args);
 
 	return 0;
 }
