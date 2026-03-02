@@ -29,11 +29,14 @@ typedef struct {
 
 void free_song_list(song_list* list) ;
 
-int create_db(); 
+int create_db(sqlite3 *database) ; 
 
 char* read_json (char* file) ; 
 
 int json_import_to_db(sqlite3* database, char* file) ; 
 
 song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name) ;
+int get_num_songs_played_for_song(sqlite3* database, char* song_name, char* artist_name) ;
+song_list get_all_listens_from_album(sqlite3* database, char* artist_name, char* album_name) ;
+void sql_change_timestamp_format(sqlite3* database) ;
 #endif
