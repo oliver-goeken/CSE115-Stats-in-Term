@@ -1,5 +1,6 @@
 #include "stats.h"
 #include "input.h"
+#include "log.h"
 #include "parse_db_funcs.h"
 #include <unistd.h>
 
@@ -28,20 +29,9 @@ int main(){
 
 	display_window* LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:2:w1/2:h-4");
 	display_window_set_boxed(LIST_WINDOW,  WINDOW_BOXED);
-	display_new_text_content_node(LIST_WINDOW, "Song Play Info");
-	display_new_text_content_node(LIST_WINDOW, "Song Play Info");
 
 	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:2:w1/2:h-4");
 	display_window_set_boxed(INFO_WINDOW , WINDOW_BOXED);
-	display_new_text_content_node(INFO_WINDOW, "test");
-	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
-	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
-	display_new_text_content_node(INFO_WINDOW, "test2");
-	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
-	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
-	display_new_text_content_node(INFO_WINDOW, "test3");
-	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
-	display_new_text_content_node(INFO_WINDOW, "Song Play Info");
 	INFO_WINDOW->selected = WINDOW_SELECTED;
 
 	display_window* HELP_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-2:w:2");
@@ -156,15 +146,13 @@ int main(){
 }
 
 void init(){
+	log_init();
 	display_init();
-
-	create_db();
-
-	//json_import_to_db();
 }
 
 void terminate(){
 	display_terminate();
+	log_terminate();
 }
 
 #pragma GCC diagnostic push
