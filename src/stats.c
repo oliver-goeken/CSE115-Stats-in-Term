@@ -4,16 +4,25 @@
 #include "parse_db_funcs.h"
 #include <unistd.h>
 
+sqlite3* song_plays_database;
 
+display_screen* MENU_SCREEN;
 display_screen* MAIN_SCREEN;
 display_screen* QUIT_SCREEN;
 
 bool IN_MAIN_LOOP = true;
 int main(){
 	init();
+
+	MENU_SCREEN = display_create_new_screen("MENU");
+	display_set_current_screen(MENU_SCREEN);
+	
+	display_window* MENU_TITLE_WINDOW = display_screen_add_new_window(MENU_SCREEN, "0:0:w:h1/4");
+	display_window_set_boxed(MENU_TITLE_WINDOW, WINDOW_BOXED);
+	display_window_set_selected(MENU_TITLE_WINDOW, WINDOW_UNSELECTABLE);
+
 	
 	MAIN_SCREEN = display_create_new_screen("MAIN");
-	display_set_current_screen(MAIN_SCREEN);
 
 	display_window* LIST_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:0:w1/2:3");
 	display_window_set_boxed(LIST_TITLE_WINDOW, WINDOW_BOXED);
@@ -64,8 +73,11 @@ int main(){
 	display_content_node_set_interaction(quit_no_node, quit_no_button_interact);
 
 
-	
+	song_list sl = get_all_songs_played_for_artist(song_plays_database, "Des Rocs");
 
+	for (int i = 0; i < sl.num_songs; i ++){
+		display_new_text_content_node(LIST_WINDOW, sl.songs[i].track);
+	}
 
 	while (IN_MAIN_LOOP){
 		display_screen_draw_windows(display_get_current_screen());
@@ -82,11 +94,11 @@ int main(){
 				break;
 			case 'j':
 			case KEY_DOWN:
-				display_window_select_next_node(display_screen_get_selected_window_node(display_get_current_screen())->display_window);
+				display_generic_select_next_node();
 				break;
 			case 'k':
 			case KEY_UP:
-				display_window_select_prev_node(display_screen_get_selected_window_node(display_get_current_screen())->display_window);
+				display_generic_select_prev_node();
 				break;
 			case 'h':
 			case KEY_LEFT:
@@ -150,7 +162,8 @@ void init(){
 
 	display_init();
 
-	//create_db();
+	create_db(song_plays_database);
+	json_import_to_db(song_plays_database, "~/Downloads/Spotify Extended Streaming History/Streaming_History_Audio_2019-2020_0.json");
 }
 
 void terminate(){
