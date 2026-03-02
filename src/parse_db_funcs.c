@@ -1,5 +1,6 @@
 #include "parse_db_funcs.h"
 #include "log.h"
+#include <time.h>
 // install cJSON : sudo apt install libcjson-dev
 //install sqlite3 : sudo apt install sqlite3
 
@@ -196,7 +197,10 @@ int json_import_to_db(sqlite3* database, char* file_name)
 
     // close cleanly
     if (success) sqlite3_exec(database, "COMMIT;", NULL, NULL, NULL) ; 
-    sqlite3_finalize(cmd) ; 
+    sqlite3_finalize(cmd) ;
+    
+    // Now change the timestamp to a more readable format (from ms to min:sec)
+    
     cJSON_Delete(root) ; 
     free(json_data) ; 
 
@@ -221,7 +225,7 @@ song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
     while (sqlite3_step(cmd) == SQLITE_ROW)
     {
         int count = list.num_songs + 1 ; 
-        song_info* temp = list.songs = realloc(list.songs, count * sizeof(song_info)) ;
+        song_info* temp = realloc(list.songs, count * sizeof(song_info)) ;
         if (!temp) break ; 
         list.songs = temp ;
         list.num_songs = count ;
@@ -240,3 +244,79 @@ song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
     return list ;
 
 }
+
+
+int song_total(sqlite3* database, char* song_name, char* artist_name)
+{
+    // goal: get total number of listens for a song
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_song_count = "SELECT * FROM spotifyHistory WHERE track = ? COLLATE NOCASE AND artist = ? COLLATE NOCASE;" ;
+
+    if (sqlite3_prepare_v2(database, get_song_count, -1, &cmd, NULL) != 0) 
+    { 
+        log_msg_detailed("Error preparing statement for song total query.", __FILE__, __LINE__, NULL) ;
+        return -1;
+    }
+
+    sqlite3_bind_text(cmd, 1, song_name, -1, SQLITE_TRANSIENT); 
+    sqlite3_bind_text(cmd, 2, artist_name, -1, SQLITE_TRANSIENT); 
+    int count = 0 ;
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        count++ ;
+    }
+    sqlite3_finalize(cmd) ;
+    return count ;
+
+}
+
+song_list get_all_listens_from_album(sqlite3* database, char* artist_name, char* album_name)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_album_rows = "SELECT * FROM spotifyHistory WHERE album = ? COLLATE NOCASE AND artist = ? COLLATE NOCASE;" ; 
+
+    // initialize song list and song info struct to store the songs that match the query
+    song_list list = { .songs = NULL, .num_songs = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_album_rows, -1, &cmd, NULL) != 0) return list;
+
+    sqlite3_bind_text(cmd, 1, album_name, -1, SQLITE_TRANSIENT); 
+    sqlite3_bind_text(cmd, 2, artist_name, -1, SQLITE_TRANSIENT) ; 
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.num_songs + 1 ; 
+        song_info* temp = realloc(list.songs, count * sizeof(song_info)) ;
+        if (!temp) break ; 
+        list.songs = temp ;
+        list.num_songs = count ;
+
+        song_info* info = &list.songs[list.num_songs - 1] ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->track = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->album = strdup((char*) sqlite3_column_text(cmd, 2)) ;
+        info->ms_played = sqlite3_column_int(cmd, 3) ;
+        info->timestamp = strdup((char*) sqlite3_column_text(cmd, 4)) ;
+        info->track_uri = strdup((char*) sqlite3_column_text(cmd, 5)) ;
+            
+    }
+        
+    sqlite3_finalize(cmd) ;
+    return list ;
+
+}
+
+
+void sql_change_timestamp_format(sqlite3* database)
+{
+    // goal: change the timestamp format
+    const char* convert_time = "UPDATE spotifyHistory SET timestamp = strftime('%m-%d-%Y %H:%M:%S', timestamp);" ; 
+    char* err_msg = NULL ;
+    int rc = sqlite3_exec(database, convert_time, NULL, NULL, &err_msg);
+
+    if (rc != SQLITE_OK) {
+        log_msg_detailed("Error updating timestamps", __FILE__, __LINE__, err_msg);
+        sqlite3_free(err_msg);
+    }
+}
+    
