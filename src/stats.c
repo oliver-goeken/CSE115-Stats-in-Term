@@ -146,7 +146,7 @@ int main(){
 }
 
 void init(){
-	log_init();
+	log_init_file("stats.log");
 
 	display_init();
 
