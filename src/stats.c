@@ -64,12 +64,10 @@ int main(){
 	display_content_node_set_interaction(quit_no_node, quit_no_button_interact);
 
 
-	bool SIGINT_FLAG = false;
-	while (IN_MAIN_LOOP){
-		if (SIGINT_FLAG){
-			break;
-		}
+	
 
+
+	while (IN_MAIN_LOOP){
 		display_screen_draw_windows(display_get_current_screen());
 
 		int user_in = getch();
@@ -123,6 +121,8 @@ int main(){
 								input_display_command_error(COMMAND_WINDOW, "Command not recognized");
 							}
 							break;
+
+							return 0;
 						}
 				break;
 					}
@@ -147,11 +147,17 @@ int main(){
 
 void init(){
 	log_init();
+
 	display_init();
+
+	//create_db();
 }
 
 void terminate(){
+	log_msg("closing...");
+
 	display_terminate();
+
 	log_terminate();
 }
 
