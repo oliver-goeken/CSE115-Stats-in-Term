@@ -1,5 +1,6 @@
 #include "display.h"
 #include "utils.h"
+#include "log.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,10 +11,12 @@ static display_info* display_info_struct;
 
 int display_init(){
 	if (display_ncurses_init() != 0){
+		log_err("error with ncurses intialization");
 		return -1;
 	}
 
 	if (display_intitialize_display_info() != 0){
+		log_err("error terminating display info");
 		return -2;
 	}
 
@@ -22,11 +25,13 @@ int display_init(){
 
 int display_ncurses_init(){
 	if (initscr() == NULL){
-		fprintf(stderr, "initscr failed");
+		log_err("initscr failed");
 		return -1;
 	}
 
 	if (LINES < 10 || COLS < 50){
+		log_err("terminal too small to run");
+
 		fprintf(stderr, "Minimum suppported terminal Size is 50 wide and 10 high.\n");
 		endwin();
 		fflush(stdout);
@@ -56,10 +61,12 @@ int display_ncurses_init(){
 
 int display_terminate(){
 	if (display_ncurses_terminate() != 0){
+		log_err("error terminating ncurses display");
 		return -1;
 	}
 
 	if (display_terminate_display_info() != 0){
+		log_err("error terminating display info");
 		return -2;
 	}
 
@@ -68,6 +75,7 @@ int display_terminate(){
 
 int display_ncurses_terminate(){
 	if (endwin() != OK){
+		log_err("endwin failed");
 		return -1;
 	}
 
@@ -77,6 +85,7 @@ int display_ncurses_terminate(){
 
 int display_intitialize_display_info(){
 	if (display_info_struct != NULL){
+		log_err("display info struct already exists");
 		return -1;
 	}
 
@@ -90,6 +99,7 @@ int display_intitialize_display_info(){
 
 int display_terminate_display_info(){
 	if (display_info_struct == NULL){
+		log_err("display info struct does not exist");
 		return -1;
 	}
 
@@ -109,6 +119,7 @@ display_screen_list* display_initialize_screen_list(){
 
 int display_terminate_screen_list(display_screen_list* screen_list){
 	if (screen_list == NULL){
+		log_err("screen list does not exist");
 		return -1;
 	}
 
@@ -139,6 +150,7 @@ display_screen_node* display_create_screen_node(){
 
 int display_destroy_screen_node(display_screen_node* screen_node){
 	if (screen_node == NULL){
+		log_err("screen node does not exist");
 		return -1;
 	}
 
@@ -151,12 +163,14 @@ int display_destroy_screen_node(display_screen_node* screen_node){
 
 display_content_node* display_get_selected_content_node(){
 	if (display_get_current_screen() == NULL){
+		log_err("no currently selected screen");
 		return NULL;
 	}
 
 	display_window_list_node* current_window = display_screen_get_selected_window_node(display_get_current_screen());
 
 	if (current_window == NULL || current_window->display_window == NULL || current_window->display_window->contents == NULL){
+		log_err("window to select content node of doesn't exist, or its contents are unitialized");
 		return NULL;
 	}
 
@@ -170,15 +184,18 @@ display_content_node* display_get_selected_content_node(){
 		cur_node = cur_node->next_node;
 	}
 
+	log_err("cant find a selected content node");
 	return NULL;
 }
 
 display_screen* display_create_new_screen(char* screen_name){
 	if (display_info_struct == NULL){
+		log_err("display info struct doesn't exist");
 		return NULL;
 	}
 
 	if (display_info_struct->screen_list == NULL){
+		log_err("display info struct does not have a screen list");
 		return NULL;
 	}
 
@@ -199,6 +216,7 @@ display_screen* display_create_new_screen(char* screen_name){
 		while (cur_node->next_node != NULL){
 			if (strcmp(cur_node->display_screen->name, screen_name) == 0){
 				free(new_screen);
+				log_err_f("a screen with name '%s' already exists", screen_name);
 				return NULL;
 			}
 
@@ -214,6 +232,7 @@ display_screen* display_create_new_screen(char* screen_name){
 
 int display_destroy_screen(display_screen* screen){
 	if (screen == NULL){
+		log_err("screen to destroy doesn't exist");
 		return -1;
 	} 
 
@@ -228,10 +247,13 @@ int display_destroy_screen(display_screen* screen){
 
 int display_handle_winch(){
 	if (display_info_struct == NULL){
+		log_err("display info struct doesn't exist");
 		return -1;
 	}  if (display_info_struct->current_screen == NULL){
+		log_err("display info struct doesn't have a current screen");
 		return -2;
 	} if (display_info_struct->current_screen->window_list == NULL){
+		log_err("display info struct's current screen doesn't have a window list");
 		return -3;
 	}
 
@@ -248,8 +270,10 @@ int display_handle_winch(){
 
 int display_screen_draw_windows(display_screen* screen){
 	if (screen == NULL){
+		log_err("screen to draw windows of does not exist");
 		return -1;
 	} if (screen->window_list == NULL){
+		log_err("screen's window list does not exist");
 		return -2;
 	}
 
@@ -271,8 +295,10 @@ int display_screen_draw_windows(display_screen* screen){
 
 int display_set_screen(display_screen* screen){
 	if (screen == NULL){
+		log_err("screen to set as current screen does not exist");
 		return -1;
 	} if (display_info_struct == NULL){
+		log_err("display info struct does not exist");
 		return -1;
 	}
 
@@ -286,12 +312,16 @@ int display_set_screen(display_screen* screen){
 
 int display_screen_set_selected_window(display_screen* screen, display_window* window){
 	if (screen == NULL){
+		log_err("screen does not exist");
 		return -1;
 	} if (window == NULL){
+		log_err("window does not exist");
 		return -2;
 	} if (screen->window_list == NULL){
+		log_err("screen does not have window list");
 		return -3;
 	} if (window->selected == WINDOW_UNSELECTABLE){
+		log_err("window is not selectable");
 		return -4;
 	}
 
@@ -314,12 +344,16 @@ int display_screen_set_selected_window(display_screen* screen, display_window* w
 
 int display_screen_select_window_directional(display_screen* screen, int direction){
 	if (screen == NULL){
+		log_err("screen does not exist");
 		return -1;
 	} if (screen->window_list == NULL){
+		log_err("screen's window list does not exist");
 		return -2;
 	} if (screen->window_list->root == NULL){
+		log_err("screen's window list does not have a root");
 		return -3;
 	} if ((direction != NEXT_WINDOW) && (direction != PREV_WINDOW)){
+		log_err("invalid direction");
 		return -4;
 	}
 	
@@ -348,7 +382,7 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 		cur_node = cur_node->next_node;
 	}
 
-	return -5;
+	return 0;
 }
 
 int display_screen_select_next_window(display_screen* screen){
@@ -369,8 +403,10 @@ int display_screen_select_previous_window(display_screen* screen){
 
 int display_set_current_screen(display_screen* screen){
 	if (screen == NULL){
+		log_err("screen does not exist");
 		return -1;
 	} if (display_info_struct == NULL){
+		log_err("display info struct does not exist");
 		return -2;
 	}
 	
@@ -381,6 +417,7 @@ int display_set_current_screen(display_screen* screen){
 
 display_screen* display_get_current_screen(){
 	if (display_info_struct == NULL){
+		log_err("display info struct does not exist");
 		return NULL;
 	}
 
@@ -389,8 +426,10 @@ display_screen* display_get_current_screen(){
 
 int display_draw_window(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (window->ncurses_window == NULL){
+		log_err("ncurses window of window does not exist");
 		return -2;
 	}
 
@@ -455,6 +494,7 @@ int display_draw_window(display_window* window){
 
 int display_draw_window_and_update(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	}
 
@@ -467,8 +507,10 @@ int display_draw_window_and_update(display_window* window){
 
 int display_box_window(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (window->ncurses_window == NULL){
+		log_err("window's ncurses window does not exist");
 		return -2;
 	}
 
@@ -488,8 +530,10 @@ int display_box_window(display_window* window){
 
 display_window_list_node* display_screen_get_selected_window_node(display_screen* screen){
 	if (screen == NULL){
+		log_err("screen does not exist");
 		return NULL;
 	} if (screen->window_list == NULL){
+		log_err("screen's window list does not exist");
 		return NULL;
 	}
 
@@ -503,15 +547,19 @@ display_window_list_node* display_screen_get_selected_window_node(display_screen
 		cur_node = cur_node->next_node;
 	}
 
+	log_err("could not find a selected window node");
 	return NULL;
 }
 
 display_window* display_screen_add_new_window(display_screen* screen, char* dimensions_format){
 	if (screen == NULL){
+		log_err("screen does not exist");
 		return NULL;
 	} if (screen->window_list == NULL) {
+		log_err("screen's window list does not exist");
 		return NULL;
 	} if (dimensions_format == NULL){
+		log_err("dimension format is empty");
 		return NULL;
 	}
 
@@ -544,10 +592,13 @@ display_window* display_screen_add_new_window(display_screen* screen, char* dime
 
 int display_screen_destroy_window(display_screen* screen, display_window* window){
 	if (screen == NULL){
+		log_err("screen does not exist");
 		return -1;
 	} if (screen->window_list == NULL){
+		log_err("screen's window list does not exist");
 		return -2;
 	} if (screen->window_list->root == NULL) {
+		log_err("screen's window list does not have root");
 		return -3;
 	}
 
@@ -569,13 +620,15 @@ int display_screen_destroy_window(display_screen* screen, display_window* window
 		cur_node = cur_node->next_node;
 	}
 
-	return -4;
+	return 0;
 }
 
 int display_window_set_visibility(display_window* window, bool visible){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if ((visible != WINDOW_VISIBLE) && (visible != WINDOW_HIDDEN)){
+		log_err("invalid visibility");
 		return -2;
 	}
 
@@ -586,8 +639,10 @@ int display_window_set_visibility(display_window* window, bool visible){
 
 int display_window_set_boxed(display_window* window, bool boxed){
 	if (window == NULL){
+		log_err("window does not exist")
 		return -1;
 	} if ((boxed != WINDOW_VISIBLE) && (boxed != WINDOW_HIDDEN)){
+		log_err("invalid window visiblity");
 		return -2;
 	}
 
@@ -598,6 +653,7 @@ int display_window_set_boxed(display_window* window, bool boxed){
 
 int display_window_set_box_sides(display_window* window, uint8_t sides){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	}
 
@@ -608,8 +664,10 @@ int display_window_set_box_sides(display_window* window, uint8_t sides){
 
 int display_window_set_expansion(display_window* window, bool expand){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if ((expand != WINDOW_EXPAND_TO_FIT_TEXT) && (expand != WINDOW_SET_SIZE)){
+		log_err("invalid window expansion parameter");
 		return -2;
 	}
 
@@ -620,8 +678,10 @@ int display_window_set_expansion(display_window* window, bool expand){
 
 int display_window_set_selected(display_window* window, int selected){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if ((selected != WINDOW_SELECTED) && (selected != WINDOW_NOT_SELECTED) && (selected != WINDOW_UNSELECTABLE)){
+		log_err("invalid window selection parameter");
 		return -2;
 	}
 
@@ -632,8 +692,10 @@ int display_window_set_selected(display_window* window, int selected){
 
 display_content_node* display_window_get_selected_node(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return NULL;
 	} if (window->contents == NULL){
+		log_err("window contents does not exist");
 		return NULL;
 	}
 
@@ -647,15 +709,19 @@ display_content_node* display_window_get_selected_node(display_window* window){
 		cur_node = cur_node->next_node;
 	}
 
+	log_err("could not find a selected node");
 	return NULL;
 }
 
 int display_window_add_content_node(display_window* window, display_content_node* content_node){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (content_node == NULL){
+		log_err("content node does not exist");
 		return -2;
 	} if (window->contents == NULL){
+		log_err("window contents does not exist");
 		return -3;
 	}
 
@@ -677,8 +743,10 @@ int display_window_add_content_node(display_window* window, display_content_node
 
 int display_window_draw_contents(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (window->contents == NULL){
+		log_err("window contents does not exist");
 		return -1;
 	}
 
@@ -730,10 +798,13 @@ int display_window_draw_contents(display_window* window){
 
 display_screen* display_window_get_screen(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return NULL;
 	} if (display_info_struct == NULL){
+		log_err("display info struct does not exist");
 		return NULL;
 	} if (display_info_struct->screen_list == NULL){
+		log_err("display info struct screen list does not exist");
 		return NULL;
 	}
 
@@ -755,15 +826,19 @@ display_screen* display_window_get_screen(display_window* window){
 		cur_screen = cur_screen->next_node;
 	}
 
+	log_err("could not find screen for this window");
 	return NULL;
 }
 
 int display_window_select_next_node(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (window->contents == NULL){
+		log_err("window contents does not exist");
 		return -2;
 	} if (window->contents->root == NULL){
+		log_err("window contents does not have root node");
 		return -3;
 	}
 
@@ -798,10 +873,13 @@ int display_window_select_next_node(display_window* window){
 
 int display_window_select_prev_node(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (window->contents == NULL){
+		log_err("window contents does not exist");
 		return -2;
 	} if (window->contents->root == NULL){
+		log_err("window contents does not have root node");
 		return -3;
 	}
 
@@ -816,10 +894,6 @@ int display_window_select_prev_node(display_window* window){
 		}
 
 		cur_node = cur_node->next_node;
-	}
-
-	if (new_selection == NULL){
-		return -4;
 	}
 
 	display_content_node_set_selected(currently_selected, CONTENT_NODE_NOT_SELECTED);
@@ -844,6 +918,7 @@ int display_window_select_prev_node(display_window* window){
 
 display_window_list* display_create_window_list(display_screen* screen){
 	if (screen == NULL){
+		log_err("screen does not exist");
 		return NULL;
 	}
 
@@ -854,6 +929,7 @@ display_window_list* display_create_window_list(display_screen* screen){
 
 int display_destroy_window_list(display_window_list* window_list){
 	if (window_list == NULL){
+		log_err("window list does not exist");
 		return -1;
 	} 
 
@@ -878,6 +954,7 @@ int display_destroy_window_list(display_window_list* window_list){
 
 int display_reset_ncurses_window(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} 
 
@@ -892,6 +969,7 @@ int display_reset_ncurses_window(display_window* window){
 
 int display_destroy_ncurses_window(WINDOW* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	}
 
@@ -917,6 +995,7 @@ int display_parse_dimensions_format(display_window* window){
 	 * ADD SUPPORT FOR WINDOW EXPANSION IF TOO SMALL FOR TEXT */
 
 	if (window == NULL) {
+		log_err("window does not exist");
 		return -1;
 	}
 
@@ -1004,6 +1083,7 @@ int display_parse_dimensions_format(display_window* window){
 
 display_window* display_create_window(char* dimensions_format){
 	if (dimensions_format == NULL){
+		log_err("dimensions format is empty");
 		return NULL;
 	}
 
@@ -1028,8 +1108,10 @@ display_window* display_create_window(char* dimensions_format){
 
 int display_window_init_contents(display_window* window){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (window->contents != NULL){
+		log_err("window contents does not exist");
 		return -2;
 	}
 
@@ -1053,10 +1135,15 @@ int display_destroy_window(display_window* window){
 }
 
 int display_window_destroy_content_nodes(display_window* window){
-	if (window->contents == NULL){
+	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
-	} if (window->contents->root == NULL){
+	} if (window->contents == NULL){
+		log_err("window contents does not exist");
 		return -2;
+	} if (window->contents->root == NULL){
+		log_err("window contents does not have root");
+		return -3;
 	}
 
 	display_content_node* cur_node = window->contents->root;
@@ -1076,8 +1163,12 @@ int display_window_destroy_content_nodes(display_window* window){
 }
 
 int display_terminate_window_contents(display_window* window){
-	if (window->contents == NULL){
+	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
+	} if (window->contents == NULL){
+		log_err("window does not have contents");
+		return -2;
 	} 
 
 	display_window_destroy_content_nodes(window);
@@ -1107,8 +1198,10 @@ display_content_node* display_create_content_node(){
 
 int display_content_node_set_timeout(display_content_node* content_node, long time_after_creation){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} if (time_after_creation < 0){
+		log_err("timeout is before creation time");
 		return -2;
 	}
 
@@ -1119,6 +1212,7 @@ int display_content_node_set_timeout(display_content_node* content_node, long ti
 
 int display_content_node_set_color_pair(display_content_node* content_node, int color_pair_num){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	}
 
@@ -1129,8 +1223,10 @@ int display_content_node_set_color_pair(display_content_node* content_node, int 
 
 int display_content_node_set_interaction(display_content_node* content_node, void (*handle_interact)(display_content_node* content_node)){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} else if (handle_interact == NULL){
+		log_err("handle interact not passed");
 		return -2;
 	}
 
@@ -1149,6 +1245,7 @@ int display_handle_interact(display_content_node* content_node){
 
 int display_destroy_content_node(display_content_node* content_node){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	}
 
@@ -1163,6 +1260,7 @@ int display_destroy_content_node(display_content_node* content_node){
 
 int display_set_content_node_alignment(display_content_node* content_node, content_node_alignment alignment){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} 
 
@@ -1173,8 +1271,10 @@ int display_set_content_node_alignment(display_content_node* content_node, conte
 
 int display_content_node_set_data(display_content_node* content_node, display_content_node_data* data){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} if (data == NULL){
+		log_err("data node does not exist");
 		return -2;
 	}
 
@@ -1189,8 +1289,10 @@ int display_content_node_set_data(display_content_node* content_node, display_co
 
 int display_content_node_clear_data(display_content_node* content_node){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} if (content_node->data == NULL){
+		log_err("content node's data struct does not exist");
 		return -1;
 	}
 
@@ -1201,8 +1303,10 @@ int display_content_node_clear_data(display_content_node* content_node){
 
 int display_content_node_set_selected(display_content_node* content_node, int selected){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} if ((selected != CONTENT_NODE_SELECTED) && (selected != CONTENT_NODE_NOT_SELECTED) && (selected != CONTENT_NODE_UNSELECTABLE)){
+		log_err("invalid selection parameter");
 		return -2;
 	}
 
@@ -1213,10 +1317,13 @@ int display_content_node_set_selected(display_content_node* content_node, int se
 
 display_window* display_content_node_get_window(display_content_node* content_node){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return NULL;
 	} if (display_info_struct == NULL){
+		log_err("display info struct does not exist");
 		return NULL;
 	} if (display_info_struct->screen_list == NULL){
+		log_err("display info struct does not exist");
 		return NULL;
 	}
 
@@ -1246,13 +1353,16 @@ display_window* display_content_node_get_window(display_content_node* content_no
 		screen_node = screen_node->next_node;
 	}
 
+	log_err("could not find content node");
 	return NULL;
 }
 
 display_content_node* display_new_text_content_node(display_window* window, char* text){
 	if (window == NULL){
+		log_err("window does not exist");
 		return NULL;
 	} if (window->contents == NULL){
+		log_err("window's contents does not exist");
 		return NULL;
 	} 
 
@@ -1267,10 +1377,9 @@ display_content_node* display_new_text_content_node(display_window* window, char
 
 int display_content_node_data_set_text(display_content_node_data* content_data, char* text_data){
 	if (content_data == NULL){
+		log_err("content_data struct does not exist");
 		return -1;
-	} if (text_data == NULL){
-		return -2;
-	}
+	} 
 
 	content_data->text_data = text_data;
 
@@ -1279,12 +1388,16 @@ int display_content_node_data_set_text(display_content_node_data* content_data, 
 
 int display_draw_content_node(display_window* window, int start_x, int start_y, display_content_node* content_node){
 	if (window == NULL){
+		log_err("window does not exist");
 		return -1;
 	} if (content_node == NULL){
+		log_err("content node does not exist");
 		return -2;
 	} if (content_node->data == NULL){
+		log_err("content node's data struct does not exist");
 		return -3;
 	} if (start_y >= window->height - (window->boxed ? 1 : 0) || start_x >= window->width - (window->boxed ? 1 : 0)){
+		log_err("invalid start positions within window");
 		return -4;
 	}
 
@@ -1312,8 +1425,10 @@ int display_draw_content_node(display_window* window, int start_x, int start_y, 
 
 int display_content_node_init_data(display_content_node* content_node){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} if (content_node->data != NULL){
+		log_err("content node's data struct does not exist");
 		return -2;
 	}
 
@@ -1329,8 +1444,10 @@ int display_content_node_init_data(display_content_node* content_node){
 
 int display_content_node_terminate_data(display_content_node* content_node){
 	if (content_node == NULL){
+		log_err("content node does not exist");
 		return -1;
 	} if (content_node->data == NULL){
+		log_err("content node's data struct does not exist");
 		return -2;
 	}
 
