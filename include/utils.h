@@ -3,10 +3,13 @@
 
 #define __PRINTERR__ print_error(__FILE__, __LINE__);
 
+// prints an error message to stdout
 void print_error(char* file, int line);
 
+// truncates the middle of a string with a "..." so it can fit a given space
 void string_truncate_middle(char* string, int space, char* new_string);
 
+// counts how many newlines are in a string
 void count_newlines(char* string, int* newlines);
 
 /*

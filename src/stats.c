@@ -163,12 +163,14 @@ void terminate(){
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+// pragma because of uneccesary parameter necessary to function pointer
 void quit_yes_button_interact(display_content_node* content_node){
 	IN_MAIN_LOOP = false;
 }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+// pragma because of uneccesary parameter necessary to function pointer
 void quit_no_button_interact(display_content_node* content_node){
 	display_set_screen(MAIN_SCREEN);
 }
