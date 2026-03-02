@@ -454,7 +454,6 @@ int display_draw_window(display_window* window){
 					}
 
 					if (size_diff < 0){
-						fprintf(stderr, "doing something\n");
 						new_start_x = window->start_x + (size_diff / 2);
 						new_width = window->width - size_diff;
 
