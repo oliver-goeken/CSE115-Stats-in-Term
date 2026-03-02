@@ -7,8 +7,10 @@
 #define log_msg_f(format_msg, ...); log_msg_f_detailed("", __FILE__, __LINE__, format_msg, __VA_ARGS__);
 #define log_err_f(format_msg, ...); log_msg_f_detailed("ERROR: ", __FILE__, __LINE__, format_msg, __VA_ARGS__);
 
+#define log_init(); log_init_file(".log");
+
 // initialize logging
-int log_init();
+int log_init_file(char* filename);
 
 // terminates logging
 int log_terminate();

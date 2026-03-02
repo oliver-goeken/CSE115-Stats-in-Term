@@ -10,8 +10,8 @@
 FILE* LOG_FILE;
 time_t raw_time;
 
-int log_init(){
-	LOG_FILE = fopen("stats.log", "a+");
+int log_init_file(char* filename){
+	LOG_FILE = fopen(filename, "a+");
 
 	if (LOG_FILE == NULL){
 		return -1;
