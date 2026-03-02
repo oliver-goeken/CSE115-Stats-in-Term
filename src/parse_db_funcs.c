@@ -20,11 +20,11 @@ void free_song_list(song_list* list) {
     list->num_songs = 0;
 }
 
-int create_db()
+int create_db(sqlite3 *database)
 {
 
     // function to initialize db
-    sqlite3 *database ; // database initialization
+    // database initialization
     int rem_con ; // to establish the remote connection
 
     // open db -- create if it doesn't exist
