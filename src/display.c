@@ -236,6 +236,8 @@ int display_destroy_screen(display_screen* screen){
 		return -1;
 	} 
 
+	log_msg_f("destroying screen %s", screen->name);
+
 	if (screen->window_list != NULL){
 		display_destroy_window_list(screen->window_list);
 	}
@@ -363,23 +365,25 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 	int* comp_greater;
 	int* comp_lesser;
 
-	while (cur_node != NULL){
-		if (direction == NEXT_WINDOW){
-			comp_greater = &(cur_node->display_window->start_x);
-			comp_lesser = &(currently_selected->display_window->start_x);
-		} else {
-			comp_greater = &(currently_selected->display_window->start_x);
-			comp_lesser = &(cur_node->display_window->start_x);
+	if (currently_selected != NULL){
+		while (cur_node != NULL){
+			if (direction == NEXT_WINDOW){
+				comp_greater = &(cur_node->display_window->start_x);
+				comp_lesser = &(currently_selected->display_window->start_x);
+			} else {
+				comp_greater = &(currently_selected->display_window->start_x);
+				comp_lesser = &(cur_node->display_window->start_x);
+			}
+
+			if (cur_node != currently_selected && (*comp_greater > *comp_lesser) && cur_node->display_window->selected != WINDOW_UNSELECTABLE){
+				display_window_set_selected(currently_selected->display_window, WINDOW_NOT_SELECTED);
+				display_window_set_selected(cur_node->display_window, WINDOW_SELECTED);
+
+				return 0;
+			}
+
+			cur_node = cur_node->next_node;
 		}
-
-		if (cur_node != currently_selected && (*comp_greater > *comp_lesser) && cur_node->display_window->selected != WINDOW_UNSELECTABLE){
-			display_window_set_selected(currently_selected->display_window, WINDOW_NOT_SELECTED);
-			display_window_set_selected(cur_node->display_window, WINDOW_SELECTED);
-
-			return 0;
-		}
-
-		cur_node = cur_node->next_node;
 	}
 
 	return 0;
@@ -622,6 +626,18 @@ int display_screen_destroy_window(display_screen* screen, display_window* window
 	return 0;
 }
 
+display_window* display_window_node_get_window(display_window_list_node* window_node){
+	if (window_node == NULL){
+		log_err("window node does not exist");
+		return NULL;
+	} if (window_node->display_window == NULL){
+		log_err("window node's display window does not exist");
+		return NULL;
+	}
+
+	return window_node->display_window;
+}
+
 int display_window_set_visibility(display_window* window, bool visible){
 	if (window == NULL){
 		log_err("window does not exist");
@@ -848,24 +864,27 @@ int display_window_select_next_node(display_window* window){
 		return 0;
 	} 
 
-	display_content_node_set_selected(currently_selected, CONTENT_NODE_NOT_SELECTED);
-	display_content_node_set_selected(new_selection, CONTENT_NODE_SELECTED);
+	if (currently_selected != NULL){
+		display_content_node_set_selected(currently_selected, CONTENT_NODE_NOT_SELECTED);
+		display_content_node_set_selected(new_selection, CONTENT_NODE_SELECTED);
 
-	// loop if not null to see if selection (position - offset) > window height, if so update offset
-	int node_window_pos_x = 1;
+		// loop if not null to see if selection (position - offset) > window height, if so update offset
+		int node_window_pos_x = 1;
 
-	display_content_node* cur_node = window->contents->root;
-	while (cur_node != NULL && cur_node != new_selection){
-		node_window_pos_x ++;
+		display_content_node* cur_node = window->contents->root;
+		while (cur_node != NULL && cur_node != new_selection){
+			node_window_pos_x ++;
 
-		cur_node = cur_node->next_node;
+			cur_node = cur_node->next_node;
+		}
+
+		node_window_pos_x -= window->content_offset;
+
+		if (node_window_pos_x >= window->height - (window->boxed ? 1 : 0)){
+			window->content_offset ++;
+		}
 	}
 
-	node_window_pos_x -= window->content_offset;
-
-	if (node_window_pos_x >= window->height - (window->boxed ? 1 : 0)){
-		window->content_offset ++;
-	}
 
 	return 0;
 }
@@ -885,34 +904,44 @@ int display_window_select_prev_node(display_window* window){
 	display_content_node* currently_selected = display_window_get_selected_node(window);
 	display_content_node* new_selection = NULL;
 
-	display_content_node* cur_node = window->contents->root;
-	while (cur_node != NULL && cur_node != currently_selected){
-		if (cur_node->next_node == currently_selected){
-			new_selection = cur_node;
-			break;
+	if (currently_selected != NULL){
+		display_content_node* cur_node = window->contents->root;
+		while (cur_node != NULL && cur_node != currently_selected){
+			if (cur_node->next_node == currently_selected){
+				new_selection = cur_node;
+				break;
+			}
+
+			cur_node = cur_node->next_node;
 		}
 
-		cur_node = cur_node->next_node;
-	}
+		display_content_node_set_selected(currently_selected, CONTENT_NODE_NOT_SELECTED);
+		display_content_node_set_selected(new_selection, CONTENT_NODE_SELECTED);
+		
+		// loop if not null to see if selection (position - offset) > window height, if so update offset
+		int node_window_pos_x = 1;
 
-	display_content_node_set_selected(currently_selected, CONTENT_NODE_NOT_SELECTED);
-	display_content_node_set_selected(new_selection, CONTENT_NODE_SELECTED);
-	
-	// loop if not null to see if selection (position - offset) > window height, if so update offset
-	int node_window_pos_x = 1;
+		cur_node = window->contents->root;
+		while (cur_node != NULL && cur_node != new_selection){
+			node_window_pos_x ++;
 
-	cur_node = window->contents->root;
-	while (cur_node != NULL && cur_node != new_selection){
-		node_window_pos_x ++;
+			cur_node = cur_node->next_node;
+		}
 
-		cur_node = cur_node->next_node;
-	}
-
-	if (node_window_pos_x <= window->content_offset){
-		window->content_offset --;
+		if (node_window_pos_x <= window->content_offset){
+			window->content_offset --;
+		}
 	}
 
 	return 0;
+}
+
+int display_generic_select_next_node(){
+	return display_window_select_next_node(display_window_node_get_window(display_screen_get_selected_window_node(display_get_current_screen())));
+}
+
+int display_generic_select_prev_node(){
+	return display_window_select_prev_node(display_window_node_get_window(display_screen_get_selected_window_node(display_get_current_screen())));
 }
 
 display_window_list* display_create_window_list(display_screen* screen){

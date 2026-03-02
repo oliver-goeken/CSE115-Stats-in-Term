@@ -267,6 +267,9 @@ display_window* display_screen_add_new_window(display_screen* screen, char* dime
 // destroy a window in a screen
 int display_screen_destroy_window(display_screen* screen, display_window* window);
 
+// gets the window from a window node
+display_window* display_window_node_get_window(display_window_list_node* window_node);
+
 // set a window's visibility
 int display_window_set_visibility(display_window* window, bool visible);
 
@@ -311,6 +314,12 @@ int display_window_select_next_node(display_window* window);
 
 // select the previous node of a window
 int display_window_select_prev_node(display_window* window);
+
+// figures out which window is currently selected and gets the next content node of that window
+int display_generic_select_next_node();
+
+// figures out which window is currently selected and gets the previous content node of that window
+int display_generic_select_prev_node();
 
 // create a new window list for a screen, used internally
 display_window_list* display_create_window_list(display_screen* screen);
