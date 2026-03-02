@@ -213,8 +213,13 @@ display_screen* display_create_new_screen(char* screen_name){
 		display_screen_node* cur_node = display_info_struct->screen_list->root;
 		display_screen_node* prev_node = cur_node;
 
-		while (cur_node->next_node != NULL){
+		while (cur_node){
 			if (strcmp(cur_node->display_screen->name, screen_name) == 0){
+				/*
+				 *
+				 * add more cleanup here
+				 *
+				 */
 				free(new_screen);
 				log_err_f("a screen with name '%s' already exists", screen_name);
 				return NULL;
@@ -236,8 +241,6 @@ int display_destroy_screen(display_screen* screen){
 		return -1;
 	} 
 
-	log_msg_f("destroying screen %s", screen->name);
-
 	if (screen->window_list != NULL){
 		display_destroy_window_list(screen->window_list);
 	}
@@ -251,21 +254,38 @@ int display_handle_winch(){
 	if (display_info_struct == NULL){
 		log_err("display info struct doesn't exist");
 		return -1;
-	}  if (display_info_struct->current_screen == NULL){
-		log_err("display info struct doesn't have a current screen");
+	}  if (display_info_struct->screen_list == NULL){
+		log_err("display info struct doesn't have a screen list");
 		return -2;
-	} if (display_info_struct->current_screen->window_list == NULL){
-		log_err("display info struct's current screen doesn't have a window list");
+	}  if (display_info_struct->screen_list->root == NULL){
+		log_err("display info struct's screen list does not exist");
 		return -3;
 	}
 
-	display_window_list_node* window_node = display_info_struct->current_screen->window_list->root;
+	log_msg("terminal resized");
 
-	while (window_node != NULL){
-		display_parse_dimensions_format(window_node->display_window);
+	display_screen_node* screen_node = display_info_struct->screen_list->root;
 
-		window_node = window_node->next_node;
+	while (screen_node != NULL){
+		log_msg_f("resizing screen %s", screen_node->display_screen->name);
+		if (screen_node->display_screen == NULL || screen_node->display_screen->window_list == NULL){
+			continue;
+		}
+
+		display_window_list_node* window_node = screen_node->display_screen->window_list->root;
+
+		while (window_node != NULL){
+			display_parse_dimensions_format(window_node->display_window);
+
+			window_node = window_node->next_node;
+		}
+
+		screen_node = screen_node->next_node;
 	}
+
+	erase();
+
+	display_screen_draw_windows(display_get_current_screen());
 
 	return 0;
 }
@@ -332,8 +352,8 @@ int display_screen_set_selected_window(display_screen* screen, display_window* w
 	while (window_node != NULL){
 		if (window_node->display_window != window){
 			if (window_node->display_window->selected != WINDOW_UNSELECTABLE){
-				display_window_set_selected(window, WINDOW_NOT_SELECTED);
-			}
+				display_window_set_selected(window_node->display_window, WINDOW_NOT_SELECTED);
+			} 
 		} else {
 			display_window_set_selected(window, WINDOW_SELECTED);
 		}
@@ -578,13 +598,24 @@ display_window* display_screen_add_new_window(display_screen* screen, char* dime
 
 	if (screen->window_list->root == NULL){
 		screen->window_list->root = new_node;
+		display_screen_set_selected_window(screen, new_window);
 	} else {
 		display_window_list_node* cur_node = screen->window_list->root;	
 		display_window_list_node* prev_node = cur_node;
 
+		bool any_selected = false;
+
 		while (cur_node != NULL){
+			if (cur_node->display_window != NULL && cur_node->display_window->selected == WINDOW_SELECTED){
+				any_selected = true;
+			}
+
 			prev_node = cur_node;
 			cur_node = cur_node->next_node;
+		}
+
+		if ((any_selected == false) && new_window != NULL){
+			new_window->selected = WINDOW_SELECTED;
 		}
 
 		prev_node->next_node = new_node;
@@ -695,10 +726,7 @@ int display_window_set_selected(display_window* window, int selected){
 	if (window == NULL){
 		log_err("window does not exist");
 		return -1;
-	} if ((selected != WINDOW_SELECTED) && (selected != WINDOW_NOT_SELECTED) && (selected != WINDOW_UNSELECTABLE)){
-		log_err("invalid window selection parameter");
-		return -2;
-	}
+	} 
 
 	window->selected = selected;
 
@@ -904,8 +932,8 @@ int display_window_select_prev_node(display_window* window){
 	display_content_node* currently_selected = display_window_get_selected_node(window);
 	display_content_node* new_selection = NULL;
 
-	if (currently_selected != NULL){
-		display_content_node* cur_node = window->contents->root;
+	display_content_node* cur_node = window->contents->root;
+	if (currently_selected != NULL && (cur_node != currently_selected)){
 		while (cur_node != NULL && cur_node != currently_selected){
 			if (cur_node->next_node == currently_selected){
 				new_selection = cur_node;
@@ -1424,8 +1452,7 @@ int display_draw_content_node(display_window* window, int start_x, int start_y, 
 	} if (content_node->data == NULL){
 		log_err("content node's data struct does not exist");
 		return -3;
-	} if (start_y >= window->height - (window->boxed ? 1 : 0) || start_x >= window->width - (window->boxed ? 1 : 0)){
-		log_err("invalid start positions within window");
+	} if (start_y >= (window->height - (window->boxed ? 1 : 0)) || start_x >= (window->width - (window->boxed ? 1 : 0))){
 		return -4;
 	}
 
