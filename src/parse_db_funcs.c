@@ -1,4 +1,5 @@
 #include "parse_db_funcs.h"
+#include "log.h"
 // install cJSON : sudo apt install libcjson-dev
 //install sqlite3 : sudo apt install sqlite3
 
@@ -29,7 +30,8 @@ int create_db()
     rem_con = sqlite3_open("spotifyHistory.db", &database);
     
     if (rem_con != 0) { // if it can't open!
-        fprintf(stderr, "Error: %s \n", sqlite3_errmsg(database)) ; 
+        log_msg_detailed("Error opening database: ", __FILE__, __LINE__, sqlite3_errmsg(database)) ;
+        database = NULL ;
         sqlite3_close(database) ; 
         return 1 ; 
     }
@@ -48,7 +50,7 @@ int create_db()
     // check connection again
     if (rem_con != 0)
     {
-        fprintf(stderr, "Error in database: %s \n", sqlite3_errmsg(database)) ; 
+        log_msg_detailed("Error in database: ", __FILE__, __LINE__, sqlite3_errmsg(database)) ;
         database = NULL ;
         sqlite3_close(database) ; 
         return 1 ;
@@ -59,23 +61,55 @@ int create_db()
 
 char* read_json (char* file)
 {
-    if (!file) return NULL ;
+    if (!file) 
+    {
+        log_msg_detailed("Error: file is NULL", __FILE__, __LINE__, NULL) ;
+        return NULL ;
+    }
     FILE *f = fopen(file, "rb") ;
-    if (!f) return NULL ;
+    if (!f) {
+        log_msg_detailed("Error: could not open file", __FILE__, __LINE__, NULL) ;
+        return NULL ;
+    }
 
     // 1) get len of file
-    if (fseek(f, 0, SEEK_END) != 0) {fclose(f) ; return NULL ;}
+    if (fseek(f, 0, SEEK_END) != 0) 
+    {
+        log_msg_detailed("Error: could not seek to end of file", __FILE__, __LINE__, NULL) ;
+        fclose(f) ; 
+        return NULL ;
+    }
     
     long file_len = ftell(f) ; 
-    if (file_len < 0)  {fclose(f) ; return NULL ;}
+    if (file_len < 0)
+    {
+        log_msg_detailed("Error: file length is negative", __FILE__, __LINE__, NULL) ;
+        fclose(f) ; 
+        return NULL ;
+    }
 
     // 2) set the pointer back to the start 
-    if (fseek(f, 0, SEEK_SET) != 0) {fclose(f) ; return NULL ;}
+    if (fseek(f, 0, SEEK_SET) != 0) 
+    {
+        log_msg_detailed("Error: start of file could not be set", __FILE__, __LINE__, NULL) ;
+        fclose(f) ; 
+        return NULL ;
+    }
 
     // 3) save enough mem to go through full file & read the full file
     char* load_data = malloc (file_len + 1) ; 
-    if (!load_data) {fclose(f) ; return NULL ;}
-    if (fread(load_data, 1, (size_t) file_len, f) != (size_t) file_len) {free(load_data) ; fclose(f) ; return NULL ;}
+    if (!load_data) 
+    {
+        log_msg_detailed("Error: memory for file could not be allocated", __FILE__, __LINE__, NULL) ;
+        return NULL ;
+    }
+    if (fread(load_data, 1, (size_t) file_len, f) != (size_t) file_len) 
+    {
+        free(load_data) ; 
+        log_msg_detailed("Error: data could not be read", __FILE__, __LINE__, NULL) ;
+        fclose(f) ; 
+        return NULL ;
+    }
 
     // 4) close and exit properly
     fclose(f) ;
@@ -87,14 +121,23 @@ char* read_json (char* file)
 
 int json_import_to_db(sqlite3* database, char* file_name)
 {
-    if (!database || !file_name) return 1 ;
+    if (!database || !file_name) 
+    {
+        log_msg_detailed("Error: database or file name is NULL", __FILE__, __LINE__, NULL) ;
+        return 1 ; 
+    }
 
     char* json_data = read_json(file_name) ;
-    if (!json_data) return 1; 
+    if (!json_data) 
+    {
+        log_msg_detailed("Error: JSON could not be read", __FILE__, __LINE__, NULL) ;
+        return 1 ; 
+    }
 
     cJSON* root = cJSON_Parse(json_data) ; 
     if (!root) 
     {
+        log_msg_detailed("Error: JSON could not be parsed", __FILE__, __LINE__, NULL) ;
         free(json_data) ; 
         return 1; 
     }
@@ -104,6 +147,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
     int rem_con = sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) ; 
     
     if (rem_con != 0) { // if it can't open!
+        log_msg_detailed("Error: could not insert data into database", __FILE__, __LINE__, sqlite3_errmsg(database)) ;
         cJSON_Delete(root) ;
         free(json_data) ;
         return 1; 
@@ -112,6 +156,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
     // 2) start parsing!
     rem_con = sqlite3_exec(database, "BEGIN TRANSACTION;", NULL, NULL, NULL) ; 
     if (rem_con != 0) { // if it can't open!
+        log_msg_detailed("Error: insert could not be executed", __FILE__, __LINE__, NULL) ;
         sqlite3_finalize(cmd) ;
         cJSON_Delete(root) ;
         free(json_data) ;
@@ -140,6 +185,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
 
         rem_con = sqlite3_step(cmd) ; 
         if (rem_con != SQLITE_DONE) {
+            log_msg_detailed("Error: execute failed. Resetting table.", __FILE__, __LINE__, NULL) ;
             sqlite3_exec(database, "ROLLBACK;", NULL, NULL, NULL) ; // reset everything if failed!!!
             success = false ; 
             break ; 
