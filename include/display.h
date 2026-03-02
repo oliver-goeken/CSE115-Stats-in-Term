@@ -29,18 +29,27 @@
 #define COLOR_PAIR_SELECTED 2
 #define COLOR_PAIR_ERROR 3
 
+// text alignment for content nodes
 typedef enum content_node_alignment{
 	CONTENT_NODE_ALIGN_LEFT,
 	CONTENT_NODE_ALIGN_CENTER
 } content_node_alignment;
 
 
+// text data for content node
 typedef struct display_content_node_data{
 	char* text_data;
 
 	int color_pair_num;
 } display_content_node_data;
 
+// content nodes for a display window
+// alignment: text alignment
+// selected: whether or not a node is selected
+// time_created: the time a node was created, for nodes that can disappear over time
+// timeout: how many seconds after a node is created should it be destroyed
+// handle_interact: the function to run if this node is selected and the user presses enter
+// data: the struct containing text data for this node
 typedef struct display_content_node {
 	struct display_content_node* next_node;
 
@@ -55,12 +64,38 @@ typedef struct display_content_node {
 	display_content_node_data* data;
 } display_content_node;
 
+// linked list of content nodes for a display window
+// drawn to the screen in the order they are added (FIFO)
 typedef struct display_window_contents {
 	display_content_node* root;
 } display_window_contents;
 
 
+// display window, a sort of wrapper for an ncurses window
+// dimension_format: a string which represents the dimensions a window can take up (format below), including percentages of screen so a 
+// start_x, start_y, width, height: the starting positions and dimensions of a display window (will be altered when display size is changed)
+// visible: whether or not a window will currently be displayed onscreen
+// box_sides: a bit flag for which sides of a window box are shown
+// boxed: whether are not a window's border should be shown
+// expand: whether a window taking up a certain percentage of the screep should expand horizontally to fit text if there is room in the window
+// selected: whether or not this window is currently selected
+// ncurses_window: associated ncurses window
+// content_offset: how far into content nodes the window should currently start at at the top of the screen
+// contents: a struct containing the text contents of the window
 typedef struct display_window {
+
+	/*
+	 * parse a formatted string into window startx, starty, width, height
+	 *
+	 * format: "[startx]:[starty]:[width]:[height]"
+	 * for each field, 'h' or 'w' can be used to represent percentage of screen width and height respectively
+	 * '/' indicates the division symbol between a numerator and denominator
+	 * '-' or '+' indicates an offset {ALWAYS PUT OFFSET AFTER DIMENSIONS RATIO}
+	 * example: "h1/3:w1/3:h1/3:3" = start at 1/3 height, 1/3 width; width of 1/3 height and a height of 3
+	 * example: "0:0:w1/2:h-2" = start at 0, 0; width of 1/2; height of window height minus 2
+	 * 
+	 *
+	 * ADD SUPPORT FOR WINDOW EXPANSION IF TOO SMALL FOR TEXT */
 	char* dimensions_format;
 
 	int start_x;
@@ -69,6 +104,19 @@ typedef struct display_window {
 	int height;
 
 	bool visible;
+
+	/*
+	 * bit flag for which sides of a windows box are shown
+	 * bits:
+	 * 1-top left corner
+	 * 2-top right corner
+	 * 3-bottom left corner
+	 * 4-bottom right corner
+	 * 5-top side
+	 * 6-left side
+	 * 7-right side
+	 * 8-bottom side
+	 */
 	uint8_t box_sides;
 
 	bool boxed;
@@ -82,35 +130,46 @@ typedef struct display_window {
 	display_window_contents* contents;
 } display_window;
 
+// a node in the list of display windows
 typedef struct display_window_list_node {
 	struct display_window_list_node* next_node;
 
 	display_window* display_window;
 } display_window_list_node;
 
+// a list of display windows, one list per screen
 typedef struct display_window_list {
 	display_window_list_node* root;
 	
 }	display_window_list;
 
 
+// a "screen" of the display
+// each set of windows is associated with a screen
+// each screen will only displays its windows when it is active
+// there can only be one active screen at a time, and there must be at least one screen to display windows
+// ex.
+// title screen, main screen, exit screen
 typedef struct display_screen {
 	char* name;
 
 	display_window_list* window_list;
 } display_screen;
 
+// a node in a list of screens
 typedef struct display_screen_node{
 	struct display_screen_node* next_node;
 
 	display_screen* display_screen;
 } display_screen_node;
 
+// a list of display screens
 typedef struct display_screen_list {
 	display_screen_node* root;
 } display_screen_list;
 
 
+// the struct which holds the list of screens and stores which screen is currently displayed
 typedef struct display_info {
 	display_screen_list* screen_list;
 	display_screen* current_screen;
