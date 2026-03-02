@@ -1,4 +1,5 @@
 #include "input.h"
+#include "stats.h"
 #include "parse_db_funcs.h"
 #include <string.h>
 
@@ -20,6 +21,10 @@ int get_input(display_window* window, int start_x, int start_y, char* input_buff
 	bool input_finished = false;
 
 	while (!input_finished){
+		if (SIGINT_FLAG){
+			return -5;
+		}
+
 		display_draw_window_and_update(window);
 
 		int user_input = getch();
@@ -113,7 +118,9 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 
 	input_separate_command_and_args(in_buff, command_buff, args_buff, max_input_size);
 
-	if (strcmp(command_buff, "q") == 0){
+	if (*command_buff == '\0'){
+		return COMMAND_CANCEL;
+	}else if (strcmp(command_buff, "q") == 0){
 		return COMMAND_QUIT;
 	} else if (strcmp(command_buff, "search") == 0){
 		
