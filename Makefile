@@ -54,6 +54,11 @@ $(OBJDIR)%.d: $(LIBDIR)%.c
 
 $(TESTDIR)%.c:;
 
+.PHONY: full-clean
+full-clean: clean
+	rm -f stats.log
+	rm -f spotifyHistory.db
+
 .PHONY: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT) $(OBJDIR)*.d
