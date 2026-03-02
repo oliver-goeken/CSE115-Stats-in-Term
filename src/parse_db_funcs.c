@@ -194,8 +194,3 @@ song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
     return list ;
 
 }
-
-
-
-
-
