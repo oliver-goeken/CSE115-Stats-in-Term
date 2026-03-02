@@ -9,6 +9,15 @@
 
 #define log_init(); log_init_file(".log");
 
+/*
+ *
+ * Logging system:
+ * - use log_msg, lg_err, log_msg_f, and log_err_f macros for convenience
+ * - the compiler will insert the file and line numbers automatically from the place the macro is called,
+ *   so you don't have to do it manually
+ *
+ */
+
 // initialize logging
 int log_init_file(char* filename);
 
