@@ -8,6 +8,7 @@
 
 
 FILE* LOG_FILE;
+time_t raw_time;
 
 int log_init(){
 	LOG_FILE = fopen("stats.log", "a+");
@@ -16,15 +17,15 @@ int log_init(){
 		return -1;
 	}
 
-	time_t raw_time;
 	time(&raw_time);
 	struct tm* time_struct = localtime(&raw_time);
 
 	char time_formatted[TIME_STR_LEN];
-
 	strftime(time_formatted, TIME_STR_LEN, "%A, %B %d %Y -- %r", time_struct);
 
 	fprintf(LOG_FILE, "\n[%s]\n", time_formatted);
+
+	log_msg("initializing...");
 	
 	return 0;
 }
@@ -34,24 +35,41 @@ int log_terminate(){
 		return -1;
 	}
 
+	log_msg("done!");
+
 	return fclose(LOG_FILE);
 }
 
-int log_msg_detailed(char* file, int line, char* msg){
+int log_msg_detailed(char* err, char* file, int line, char* msg){
 	if (LOG_FILE == NULL){
 		return -1;
 	}
 
-	fprintf(LOG_FILE, "%s:%d - %s", file, line, msg);
+	time(&raw_time);
+	struct tm* time_struct = localtime(&raw_time);
+	char time_formatted[TIME_STR_LEN];
+	strftime(time_formatted, TIME_STR_LEN, "%T", time_struct);
+
+	fprintf(LOG_FILE, "[%s] ", time_formatted);
+	fprintf(LOG_FILE, "%s:%d -> %s%s\n", file, line, err, msg);
 
 	return 0;
 }
 
-int log_msg_f_detailed(int line, char* file, char* format, ...){
+int log_msg_f_detailed(char* err, char* file, int line, char* format, ...){
+	if (LOG_FILE == NULL){
+		return -1;
+	}
+
 	va_list args;
 	va_start(args, format);
 
-	fprintf(LOG_FILE, "%s:%d - ", file, line);
+	time(&raw_time);
+	struct tm* time_struct = localtime(&raw_time);
+	char time_formatted[TIME_STR_LEN];
+	strftime(time_formatted, TIME_STR_LEN, "%T", time_struct);
+
+	fprintf(LOG_FILE, "[%s] %s:%d -> %s", time_formatted, file, line, err);
 	vfprintf(LOG_FILE, format, args);
 	fprintf(LOG_FILE, "\n");
 
