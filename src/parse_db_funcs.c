@@ -1,6 +1,7 @@
 #include "parse_db_funcs.h"
 #include "log.h"
 #include <time.h>
+#include <sys/errno.h>
 // install cJSON : sudo apt install libcjson-dev
 //install sqlite3 : sudo apt install sqlite3
 
@@ -69,7 +70,8 @@ char* read_json (char* file)
     }
     FILE *f = fopen(file, "rb") ;
     if (!f) {
-        log_msg_detailed("Error: could not open file", __FILE__, __LINE__, NULL) ;
+        //log_msg_detailed("Error: could not open file", __FILE__, __LINE__, NULL) ;
+		log_err_f("could not open file: %s", strerror(errno));
         return NULL ;
     }
 
