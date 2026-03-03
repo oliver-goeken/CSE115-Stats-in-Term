@@ -199,12 +199,11 @@ int json_import_to_db(sqlite3* database, char* file_name)
 
     // close cleanly
     if (success) sqlite3_exec(database, "COMMIT;", NULL, NULL, NULL) ; 
-    sqlite3_finalize(cmd) ;
-    
-    // Now change the timestamp to a more readable format (from ms to min:sec)
-    
+    sqlite3_finalize(cmd) ;    
     cJSON_Delete(root) ; 
     free(json_data) ; 
+
+    sql_change_timestamp_format(database) ;
 
     return 0 ; 
 
@@ -322,3 +321,6 @@ void sql_change_timestamp_format(sqlite3* database)
     }
 }
     
+// function to clear the table
+// function to delete table
+// function to merge tables

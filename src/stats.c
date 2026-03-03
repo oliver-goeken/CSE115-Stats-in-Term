@@ -182,6 +182,8 @@ void init(){
 void terminate(){
 	log_msg("closing...");
 
+	sqlite3_close(song_plays_database);
+
 	display_terminate();
 
 	log_terminate();
