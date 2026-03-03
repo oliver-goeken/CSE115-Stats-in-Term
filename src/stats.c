@@ -13,24 +13,51 @@ display_screen* QUIT_SCREEN;
 
 display_screen* SCREEN_RETURN = NULL;
 
+typedef struct {
+	char* text;
+	void (*interact)(display_content_node*);
+} menu_option_node;
+
 bool IN_MAIN_LOOP = true;
 int main(){
 
 	init();
 
 	MENU_SCREEN = display_create_new_screen("MENU");
-	display_set_current_screen(MENU_SCREEN);
 	
-	display_window* MENU_TITLE_WINDOW = display_screen_add_new_window(MENU_SCREEN, "0:0:w:h1/3");
+	display_window* MENU_TITLE_WINDOW = display_screen_add_new_window(MENU_SCREEN, "0:0:w:4");
 	display_window_set_boxed(MENU_TITLE_WINDOW, WINDOW_BOXED);
 	display_window_set_selected(MENU_TITLE_WINDOW, WINDOW_UNSELECTABLE);
 
-	display_window* MENU_OPTIONS_WINDOW = display_screen_add_new_window(MENU_SCREEN, "w1/4:h1/3:w3/4:h2/3");
+	display_content_node* menu_title_node = display_new_text_content_node(MENU_TITLE_WINDOW, "Listening History And Stats");
+	display_set_content_node_alignment(menu_title_node, CONTENT_NODE_ALIGN_CENTER);
+	display_content_node* menu_title_node_2 = display_new_text_content_node(MENU_TITLE_WINDOW, "Right In Your Terminal!");
+	display_set_content_node_alignment(menu_title_node_2, CONTENT_NODE_ALIGN_CENTER);
+
+
+	display_window* MENU_OPTIONS_WINDOW = display_screen_add_new_window(MENU_SCREEN, "w1/2-5:4:9:h-4");
 	display_window_set_boxed(MENU_OPTIONS_WINDOW, WINDOW_BOXED);
-	display_window_set_selected(MENU_OPTIONS_WINDOW, WINDOW_UNSELECTABLE);
+	display_window_set_expansion(MENU_OPTIONS_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
 	
+#define MENU_OPTIONS 5
+	menu_option_node menu_option_list[MENU_OPTIONS] = {
+		{"Listening History", NULL},
+		{"Top Artists", NULL},
+		{"Top Albums", NULL},
+		{"Top Songs", NULL},
+		{"Quit", quit_button_interact}
+	};
+
+	for (int i = 0; i < MENU_OPTIONS; i ++){
+		display_content_node* option_node = display_new_text_content_node(MENU_OPTIONS_WINDOW, menu_option_list[i].text);
+		display_set_content_node_alignment(option_node, CONTENT_NODE_ALIGN_CENTER);
+		display_content_node_set_interaction(option_node, menu_option_list[i].interact);
+	}
+
+	display_screen_set_selected_window(MENU_SCREEN, MENU_OPTIONS_WINDOW);
 
 	MAIN_SCREEN = display_create_new_screen("MAIN");
+	display_set_current_screen(MENU_SCREEN);
 
 	display_window* LIST_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:0:w1/2:3");
 	display_window_set_boxed(LIST_TITLE_WINDOW, WINDOW_BOXED);
@@ -81,11 +108,13 @@ int main(){
 	display_content_node_set_interaction(quit_no_node, quit_no_button_interact);
 
 
-	song_list sl = get_all_songs_played_for_artist(song_plays_database, "Des Rocs");
+	//song_list sl = get_all_songs_played_for_artist(song_plays_database, "Des Rocs");
 
-	for (int i = 0; i < sl.num_songs; i ++){
-		display_new_text_content_node(LIST_WINDOW, sl.songs[i].track);
-	}
+	/*
+		for (int i = 0; i < sl.num_songs; i ++){
+			display_new_text_content_node(LIST_WINDOW, sl.songs[i].track);
+		}
+	*/
 
 
 	while (IN_MAIN_LOOP){
@@ -160,10 +189,10 @@ int main(){
 							IN_MAIN_LOOP = false;
 							break;
 						case 27:
-							if (SCREEN_RETURN != NULL){
-								display_set_screen(MAIN_SCREEN);
-							} else {
+							if (SCREEN_RETURN == NULL){
 								display_set_screen(MENU_SCREEN);
+							} else {
+								display_set_screen(SCREEN_RETURN);
 							}
 							break;
 					}
@@ -196,6 +225,8 @@ void init(){
 	log_init_file("stats.log");
 
 	display_init();
+
+	remove("spotifyHistory.db");
 
 	create_db(song_plays_database);
 	sqlite3_open("spotifyHistory.db", &song_plays_database);
@@ -230,3 +261,9 @@ void quit_no_button_interact(display_content_node* content_node){
 	}
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+void quit_button_interact(display_content_node* content_node){
+	SCREEN_RETURN = MENU_SCREEN;
+	display_set_screen(QUIT_SCREEN);
+}
