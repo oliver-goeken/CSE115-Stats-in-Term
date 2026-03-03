@@ -29,7 +29,7 @@ int display_ncurses_init(){
 		return -1;
 	}
 
-	if (LINES < 10 || COLS < 50){
+	if (LINES < 15 || COLS < 50){
 		log_err("terminal too small to run");
 
 		fprintf(stderr, "Minimum suppported terminal Size is 50 wide and 10 high.\n");
@@ -1292,6 +1292,11 @@ int display_content_node_set_interaction(display_content_node* content_node, voi
 }
 
 int display_handle_interact(display_content_node* content_node){
+	if (content_node == NULL){
+		log_err("content node to interact with is null");
+		return -1;
+	}
+
 	if (content_node->handle_interact != NULL){
 		(*(content_node->handle_interact))(content_node);
 	}
