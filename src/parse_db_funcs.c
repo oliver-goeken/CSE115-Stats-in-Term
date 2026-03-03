@@ -47,7 +47,7 @@ int create_db(sqlite3 *database)
                         "track_uri TEXT);" ;
 
     char* error_msg = 0 ; 
-    rem_con = sqlite3_exec(database, sql_cmd, 0, 0, &error_msg) ; 
+    rem_con = sqlite3_exec(database, sql_cmd, 0, 0, &error_msg) ;  // memory leak here maybe
 
     // check connection again
     if (rem_con != 0)

@@ -13,19 +13,56 @@
 // note : you have to install the cJSON package: sudo apt install libcjson-dev
 //install sqlite3 : sudo apt install sqlite3
 
+typedef struct artist {
+	char* name;
+	int num_plays;
+} artist;
+
+typedef struct artist_list {
+	artist* root;
+	int len;
+} artist_list ;
+
+
+typedef struct album {
+	char* name;
+	artist* artist;
+	int num_plays;
+} album;
+
+typedef struct album_list {
+	album* root;
+	int len;
+} album_list ;
+
+
+typedef struct track {
+	char* name;
+	album* album;
+	artist* artist;
+	char* track_uri;
+	int num_plays;
+} track;
+
+typedef struct track_list {
+	track* root;
+	int len;
+} track_list ;
+
+
 typedef struct {
-    char* artist ;
-    char* track ;
-    char* album ;
+	artist* artist;
+    track* track ;
+    album* album ;
     int ms_played ;
     char* timestamp ;
-    char* track_uri ;
 } song_info ;
 
 typedef struct {
     song_info* songs ;
     int num_songs ;
 } song_list ; 
+
 
 void free_song_list(song_list* list) ;
 
@@ -39,4 +76,24 @@ song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name) 
 int get_num_songs_played_for_song(sqlite3* database, char* song_name, char* artist_name) ;
 song_list get_all_listens_from_album(sqlite3* database, char* artist_name, char* album_name) ;
 void sql_change_timestamp_format(sqlite3* database) ;
+
+
+// sort 
+artist_list get_top_artist(sqlite3* database);
+
+album_list get_top_albums(sqlite3* database);
+
+track_list get_top_tracks(sqlite3* database);
+
+song_list get_listening_history(sqlite3* database);
+
+
+// search
+// returns appropriate items from listening history
+song_list search_track(sqlite3* database, char* track_name);
+
+song_list search_album(sqlite3* database, char* album_name);
+
+song_list search_artist(sqlite3* database, char* artist_name);
+
 #endif
