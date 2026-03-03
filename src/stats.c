@@ -11,19 +11,26 @@ display_screen* MENU_SCREEN;
 display_screen* MAIN_SCREEN;
 display_screen* QUIT_SCREEN;
 
+display_screen* SCREEN_RETURN = NULL;
+
 bool IN_MAIN_LOOP = true;
 int main(){
+
 	init();
 
 	MENU_SCREEN = display_create_new_screen("MENU");
+	display_set_current_screen(MENU_SCREEN);
 	
-	display_window* MENU_TITLE_WINDOW = display_screen_add_new_window(MENU_SCREEN, "0:0:w:h1/4");
+	display_window* MENU_TITLE_WINDOW = display_screen_add_new_window(MENU_SCREEN, "0:0:w:h1/3");
 	display_window_set_boxed(MENU_TITLE_WINDOW, WINDOW_BOXED);
 	display_window_set_selected(MENU_TITLE_WINDOW, WINDOW_UNSELECTABLE);
 
+	display_window* MENU_OPTIONS_WINDOW = display_screen_add_new_window(MENU_SCREEN, "w1/4:h1/3:w3/4:h2/3");
+	display_window_set_boxed(MENU_OPTIONS_WINDOW, WINDOW_BOXED);
+	display_window_set_selected(MENU_OPTIONS_WINDOW, WINDOW_UNSELECTABLE);
 	
+
 	MAIN_SCREEN = display_create_new_screen("MAIN");
-	display_set_current_screen(MAIN_SCREEN);
 
 	display_window* LIST_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:0:w1/2:3");
 	display_window_set_boxed(LIST_TITLE_WINDOW, WINDOW_BOXED);
@@ -80,6 +87,7 @@ int main(){
 		display_new_text_content_node(LIST_WINDOW, sl.songs[i].track);
 	}
 
+
 	while (IN_MAIN_LOOP){
 		if (SIGINT_FLAG){
 			log_msg("recieved SIGINT");
@@ -127,6 +135,7 @@ int main(){
 						case 'Q':
 						case 'q':
 						case 27:
+							SCREEN_RETURN = MAIN_SCREEN;
 							display_set_screen(QUIT_SCREEN);
 							display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
 							break;
@@ -151,7 +160,21 @@ int main(){
 							IN_MAIN_LOOP = false;
 							break;
 						case 27:
-							display_set_screen(MAIN_SCREEN);
+							if (SCREEN_RETURN != NULL){
+								display_set_screen(MAIN_SCREEN);
+							} else {
+								display_set_screen(MENU_SCREEN);
+							}
+							break;
+					}
+				} else if (current_screen == MENU_SCREEN){
+					switch(user_in){
+						case 'Q':
+						case 'q':
+						case 27:
+							SCREEN_RETURN = MENU_SCREEN;
+							display_set_screen(QUIT_SCREEN);
+							display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
 							break;
 					}
 				}
@@ -198,6 +221,10 @@ void quit_yes_button_interact(display_content_node* content_node){
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 // pragma because of uneccesary parameter necessary to function pointer
 void quit_no_button_interact(display_content_node* content_node){
-	display_set_screen(MAIN_SCREEN);
+	if (SCREEN_RETURN != NULL){
+		display_set_screen(SCREEN_RETURN);
+	} else {
+		display_set_screen(MAIN_SCREEN);
+	}
 }
 
