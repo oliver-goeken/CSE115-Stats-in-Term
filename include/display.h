@@ -40,6 +40,8 @@ typedef enum content_node_alignment{
 typedef struct display_content_node_data{
 	char* text_data;
 
+	void* other_data;
+
 	int color_pair_num;
 } display_content_node_data;
 
