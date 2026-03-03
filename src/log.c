@@ -53,6 +53,8 @@ int log_msg_detailed(char* err, char* file, int line, char* msg){
 	fprintf(LOG_FILE, "[%s] ", time_formatted);
 	fprintf(LOG_FILE, "%s:%d -> %s%s\n", file, line, err, msg);
 
+	fflush(LOG_FILE);
+
 	return 0;
 }
 
@@ -72,6 +74,8 @@ int log_msg_f_detailed(char* err, char* file, int line, char* format, ...){
 	fprintf(LOG_FILE, "[%s] %s:%d -> %s", time_formatted, file, line, err);
 	vfprintf(LOG_FILE, format, args);
 	fprintf(LOG_FILE, "\n");
+
+	fflush(LOG_FILE);
 
 	va_end(args);
 
