@@ -20,4 +20,7 @@ void quit_yes_button_interact(display_content_node* content_node);
 // function handler for the no button on the quit screen
 void quit_no_button_interact(display_content_node* content_node);
 
+// button to enter quit screen from main menu
+void quit_button_interact(display_content_node* content_node);
+
 #endif
