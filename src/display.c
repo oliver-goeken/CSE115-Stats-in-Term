@@ -368,7 +368,7 @@ int display_screen_set_selected_window(display_screen* screen, display_window* w
 	return 0;
 }
 
-int display_screen_select_window_directional(display_screen* screen, int direction){
+int display_screen_select_window_directional(display_screen* screen, int direction, int dimension){
 	if (screen == NULL){
 		log_err("screen does not exist");
 		return -1;
@@ -399,21 +399,32 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 			continue;
 		}
 
-		int first_x;
-		int second_x;
+		int first_pos;
+		int second_pos;
 		int diff;
 
-		if (direction == NEXT_WINDOW){
-			first_x = window_node->display_window->start_x;
-			second_x = currently_selected->display_window->start_x;
+		int start_pos_cur;
+		int start_pos_new;
+
+		if (dimension == WINDOW_HORIZONTAL){
+			start_pos_new = window_node->display_window->start_x;
+			start_pos_cur = currently_selected->display_window->start_x;
 		} else {
-			first_x = currently_selected->display_window->start_x;
-			second_x = window_node->display_window->start_x;
+			start_pos_new = window_node->display_window->start_y;
+			start_pos_cur = currently_selected->display_window->start_y;
 		}
 
-		diff = first_x - second_x;
+		if (direction == NEXT_WINDOW){
+			first_pos = start_pos_new;
+			second_pos = start_pos_cur;
+		} else {
+			first_pos = start_pos_cur;
+			second_pos = start_pos_new;
+		}
+
+		diff = first_pos - second_pos;
 	
-		if (diff >= 0 && diff < distance_to_new_selection){
+		if (diff > 0 && diff < distance_to_new_selection){
 			distance_to_new_selection = diff;
 			new_selection = window_node;
 		}
@@ -427,7 +438,7 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 }
 
 int display_screen_select_next_window(display_screen* screen){
-	if (display_screen_select_window_directional(screen, NEXT_WINDOW) != 0){
+	if (display_screen_select_window_directional(screen, NEXT_WINDOW, WINDOW_HORIZONTAL) != 0){
 		return -1;
 	}
 	
@@ -435,7 +446,7 @@ int display_screen_select_next_window(display_screen* screen){
 }
 
 int display_screen_select_previous_window(display_screen* screen){
-	if (display_screen_select_window_directional(screen, PREV_WINDOW) != 0){
+	if (display_screen_select_window_directional(screen, PREV_WINDOW, WINDOW_HORIZONTAL) != 0){
 		return -1;
 	}
 
@@ -906,6 +917,7 @@ int display_window_select_next_node(display_window* window){
 	display_content_node* new_selection = currently_selected->next_node;
 
 	if (new_selection == NULL){
+		display_screen_select_window_directional(display_window_get_screen(window), NEXT_WINDOW, WINDOW_VERTICAL);
 		return 0;
 	} 
 
@@ -950,6 +962,12 @@ int display_window_select_prev_node(display_window* window){
 	display_content_node* new_selection = NULL;
 
 	display_content_node* cur_node = window->contents->root;
+
+	if (cur_node == currently_selected){
+		display_screen_select_window_directional(display_window_get_screen(window), PREV_WINDOW, WINDOW_VERTICAL);
+		return 0;
+	}
+
 	if (currently_selected != NULL && (cur_node != currently_selected)){
 		while (cur_node != NULL && cur_node != currently_selected){
 			if (cur_node->next_node == currently_selected){
@@ -989,13 +1007,26 @@ make select next node switch to next/prev most vertical window if at top or bott
    */
 
 
-
 int display_generic_select_next_node(){
-	return display_window_select_next_node(display_window_node_get_window(display_screen_get_selected_window_node(display_get_current_screen())));
+	display_window* current_window = display_window_node_get_window(display_screen_get_selected_window_node(display_get_current_screen()));
+	int ret_val = display_window_select_next_node(current_window);
+
+	if (ret_val != 0){
+		display_screen_select_window_directional(display_window_get_screen(current_window), NEXT_WINDOW, WINDOW_VERTICAL);
+	}
+
+	return 0;
 }
 
 int display_generic_select_prev_node(){
-	return display_window_select_prev_node(display_window_node_get_window(display_screen_get_selected_window_node(display_get_current_screen())));
+	display_window* current_window = display_window_node_get_window(display_screen_get_selected_window_node(display_get_current_screen()));
+	int ret_val = display_window_select_prev_node(current_window);
+
+	if (ret_val != 0){
+		display_screen_select_window_directional(display_window_get_screen(current_window), PREV_WINDOW, WINDOW_VERTICAL);
+	}
+
+	return 0;
 }
 
 display_window_list* display_create_window_list(display_screen* screen){

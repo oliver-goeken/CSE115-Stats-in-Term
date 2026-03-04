@@ -25,6 +25,9 @@
 #define NEXT_WINDOW 1
 #define PREV_WINDOW -1
 
+#define WINDOW_HORIZONTAL 1
+#define WINDOW_VERTICAL -1
+
 #define COLOR_PAIR_DEFAULT 1
 #define COLOR_PAIR_SELECTED 2
 #define COLOR_PAIR_ERROR 3
@@ -239,7 +242,7 @@ int display_screen_select_next_window(display_screen* screen);
 int display_screen_select_previous_window(display_screen* screen);
 
 // select a window in the given direction (horizontally)
-int display_screen_select_window_directional(display_screen* screen, int direction);
+int display_screen_select_window_directional(display_screen* screen, int direction, int dimension);
 
 // get the currently selected content node in a screen
 display_content_node* display_screen_get_selected_content_node();
