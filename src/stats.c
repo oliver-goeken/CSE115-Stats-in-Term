@@ -7,7 +7,6 @@
 #include <signal.h>
 
 sqlite3* song_plays_database;
-bool SIGINT_FLAG = true;
 
 display_screen* MAIN_SCREEN;
 display_screen* QUIT_SCREEN;
