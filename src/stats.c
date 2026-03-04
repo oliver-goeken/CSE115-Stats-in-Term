@@ -255,7 +255,7 @@ void init(){
 
 	create_db(song_plays_database);
 	sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database);
-	json_import_to_db(song_plays_database, "data/Streaming_History_Audio_2019-2020_0.json");
+	json_import_to_db(song_plays_database, CLI_OPTIONS.json_path);
 }
 
 void terminate(){
