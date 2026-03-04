@@ -1,6 +1,12 @@
 #ifndef CLI_H
 #define CLI_H
 
+typedef struct {
+    const char *db_path;
+} cli_options;
+
+extern cli_options CLI_OPTIONS;
+
 // Returns:
 //   -1 = no CLI action; caller should continue into TUI
 //    0 = handled successfully; caller should exit(0)

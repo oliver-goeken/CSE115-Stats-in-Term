@@ -35,10 +35,9 @@ typedef struct {
 bool IN_MAIN_LOOP = true;
 
 
-int main(int argc, char **argv){
-	if (handle_args(argc, argv)) {
-		return 0;
-	}
+int main(int argc, char **argv) {
+	int rc = handle_args(argc, argv);
+	if (rc >= 0) return rc;
 
 	init();
 
@@ -252,11 +251,11 @@ void init(){
 
 	display_init();
 
-	remove("spotifyHistory.db");
+	remove(CLI_OPTIONS.db_path);
 
 	create_db(song_plays_database);
-	sqlite3_open("spotifyHistory.db", &song_plays_database);
-	json_import_to_db(song_plays_database, "/Users/oliverdgoeken/Downloads/Spotify Extended Streaming History/Streaming_History_Audio_2019-2020_0.json");
+	sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database);
+	json_import_to_db(song_plays_database, "data/Streaming_History_Audio_2019-2020_0.json");
 }
 
 void terminate(){
