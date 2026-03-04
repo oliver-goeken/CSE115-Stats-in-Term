@@ -11,6 +11,8 @@ sqlite3* song_plays_database;
 display_screen* MAIN_SCREEN;
 display_screen* QUIT_SCREEN;
 
+display_window* LIST_WINDOW;
+
 display_screen* SCREEN_RETURN = NULL;
 
 typedef struct {
@@ -44,7 +46,7 @@ int main(int argc, char **argv) {
 	MAIN_SCREEN = display_create_new_screen("MENU");
 	
 	screen_setup menu_setup = {
-		8, {
+		7, {
 			{"0:0:w:4", WINDOW_UNSELECTABLE, WINDOW_BOXED, 2, {
 				//{"", NULL, CONTENT_NODE_ALIGN_CENTER},  // MAKE A OPTION TO SHRINK WINDOW HEIGHT AS MUCH AS POSSIBLE TO FIT CONTENT, as well as option to center nodes vertically
 													// this title will be 6 high (two spaces) unless terminal too small
@@ -58,15 +60,13 @@ int main(int argc, char **argv) {
 				{"Top Artists", NULL, CONTENT_NODE_ALIGN_CENTER}
 										}},
 			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
-				{"Top Albums", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"Top Albums", sql_get_top_albums, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Top Songs", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
-										 }},
-			{"0:7:w:h-9", WINDOW_NOT_SELECTED, WINDOW_BOXED, 0, {
 										 }},
 			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, 1, {
 				{"[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
@@ -85,6 +85,12 @@ int main(int argc, char **argv) {
 			display_content_node_set_interaction(new_node, menu_setup.windows[i].contents[j].interact);
 		}
 	}
+
+	LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:7:w:h-9");
+	display_window_set_boxed(LIST_WINDOW, WINDOW_BOXED);
+
+	
+
 
 	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-1:w:1");
 	display_window_set_selected(COMMAND_WINDOW, WINDOW_UNSELECTABLE);
@@ -244,9 +250,6 @@ void quit_yes_button_interact(display_content_node* content_node){
 	IN_MAIN_LOOP = false;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-// pragma because of uneccesary parameter necessary to function pointer
 void quit_no_button_interact(display_content_node* content_node){
 	if (SCREEN_RETURN != NULL){
 		display_set_screen(SCREEN_RETURN);
@@ -255,9 +258,23 @@ void quit_no_button_interact(display_content_node* content_node){
 	}
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void quit_button_interact(display_content_node* content_node){
 	SCREEN_RETURN = MAIN_SCREEN;
 	display_set_screen(QUIT_SCREEN);
+}
+
+void sql_get_top_albums(display_content_node* content_node){
+	log_msg("getting top albums");
+
+	album_list top_albums_list;
+
+	top_albums_list = get_top_albums(song_plays_database);
+
+	if (top_albums_list.root == NULL){
+		log_err("top albums list is empty");
+	}
+	
+	for (int i = 0; i < top_albums_list.len; i ++){
+		display_new_text_content_node(LIST_WINDOW, top_albums_list.root[i].name);
+	}
 }
