@@ -1,6 +1,8 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#define NCURSES_WIDECHAR 1
+
 #include <curses.h>
 #include <stdbool.h>
 #include <time.h>
