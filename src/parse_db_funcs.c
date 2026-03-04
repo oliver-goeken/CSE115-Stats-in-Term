@@ -134,6 +134,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
     if (!json_data) 
     {
         log_msg_detailed("Error: JSON could not be read", __FILE__, __LINE__, NULL) ;
+        free(json_data) ; 
         return 1 ; 
     }
 
@@ -141,7 +142,8 @@ int json_import_to_db(sqlite3* database, char* file_name)
     if (!root) 
     {
         log_msg_detailed("Error: JSON could not be parsed", __FILE__, __LINE__, NULL) ;
-        free(json_data) ; 
+        free(json_data) ;
+        cJSON_Delete(root) ; 
         return 1; 
     }
     // 1) Set up the command to add stuff to the sql
@@ -320,6 +322,40 @@ void sql_change_timestamp_format(sqlite3* database)
         sqlite3_free(err_msg);
     }
 }
+
+
+artist_list get_top_artist(sqlite3* database)
+{
+    // goal: get the top artist
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_top_artist_cmd = "SELECT artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY artist ORDER BY play_count DESC;" ; 
+
+    artist_list list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_top_artist_cmd, -1, &cmd, NULL) != 0) return list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.len + 1 ; 
+        artist* temp = realloc(list.root, count * sizeof(artist)) ;
+        if (!temp) break ; 
+        list.root = temp ;
+        list.len = count ;
+
+        artist* info = &list.root[list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->num_plays = sqlite3_column_int(cmd, 1) ;
+            
+    }
+
+    // NOTE: to get the first few artists, you just have to get the first few elements from the list that's returned when this function is called
+        
+    sqlite3_finalize(cmd) ;
+    return list ;
+
+}
+
+
     
 // function to clear the table
 // function to delete table
