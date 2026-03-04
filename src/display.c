@@ -1311,6 +1311,7 @@ display_content_node* display_create_content_node(){
 	new_content_node->timeout = 0;
 	time(&(new_content_node->time_created));
 
+	new_content_node->data = NULL;
 	display_content_node_init_data(new_content_node);
 
 	return new_content_node;
@@ -1552,7 +1553,7 @@ int display_content_node_init_data(display_content_node* content_node){
 		log_err("content node does not exist");
 		return -1;
 	} if (content_node->data != NULL){
-		log_err("content node's data struct does not exist");
+		log_err("content node's data struct already exist");
 		return -2;
 	}
 
