@@ -210,7 +210,7 @@ int input_display_command_error(display_window* window, char* msg){
 	}
 
 	display_content_node* msg_node = display_new_text_content_node(window, msg);
-	display_content_node_set_timeout(msg_node, 4);
+	display_content_node_set_timeout(msg_node, 3);
 	display_content_node_set_color_pair(msg_node, COLOR_PAIR_ERROR);
 
 	return 0;
