@@ -3,7 +3,7 @@
 
 #include "display.h"
 
-bool SIGINT_FLAG;
+static bool SIGINT_FLAG;
 
 // initializes everything
 void init();
@@ -22,5 +22,7 @@ void quit_no_button_interact(display_content_node* content_node);
 
 // button to enter quit screen from main menu
 void quit_button_interact(display_content_node* content_node);
+
+void sql_get_top_albums(display_content_node* content_node);
 
 #endif
