@@ -43,7 +43,7 @@ int create_db(sqlite3 *database)
                         "track TEXT, "
                         "album TEXT, "
                         "ms_played INTEGER, " // milliseconds
-                        "timestamp TEXT, "
+                        "timestamp TEXT UNIQUE, "
                         "track_uri TEXT);" ;
 
     char* error_msg = 0 ; 
