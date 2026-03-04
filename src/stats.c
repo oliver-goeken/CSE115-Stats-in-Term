@@ -16,7 +16,20 @@ display_screen* SCREEN_RETURN = NULL;
 typedef struct {
 	char* text;
 	void (*interact)(display_content_node*);
-} menu_option_node;
+	int alignment;
+} content_setup;
+
+typedef struct {
+	char* fmt_string;
+	int selected;
+	int num_contents;
+	content_setup contents[256];
+} window_setup;
+
+typedef struct {
+	int num_windows;
+	window_setup windows[256];
+} screen_setup;
 
 bool IN_MAIN_LOOP = true;
 int main(){
@@ -25,36 +38,43 @@ int main(){
 
 	MENU_SCREEN = display_create_new_screen("MENU");
 	
-	display_window* MENU_TITLE_WINDOW = display_screen_add_new_window(MENU_SCREEN, "0:0:w:4");
-	display_window_set_boxed(MENU_TITLE_WINDOW, WINDOW_BOXED);
-	display_window_set_selected(MENU_TITLE_WINDOW, WINDOW_UNSELECTABLE);
-
-	display_content_node* menu_title_node = display_new_text_content_node(MENU_TITLE_WINDOW, "Listening History And Stats");
-	display_set_content_node_alignment(menu_title_node, CONTENT_NODE_ALIGN_CENTER);
-	display_content_node* menu_title_node_2 = display_new_text_content_node(MENU_TITLE_WINDOW, "Right In Your Terminal!");
-	display_set_content_node_alignment(menu_title_node_2, CONTENT_NODE_ALIGN_CENTER);
-
-
-	display_window* MENU_OPTIONS_WINDOW = display_screen_add_new_window(MENU_SCREEN, "w1/2-5:4:9:h-4");
-	display_window_set_boxed(MENU_OPTIONS_WINDOW, WINDOW_BOXED);
-	display_window_set_expansion(MENU_OPTIONS_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
-	
-#define MENU_OPTIONS 5
-	menu_option_node menu_option_list[MENU_OPTIONS] = {
-		{"Listening History", NULL},
-		{"Top Artists", NULL},
-		{"Top Albums", NULL},
-		{"Top Songs", NULL},
-		{"Quit", quit_button_interact}
+	screen_setup menu_setup = {
+		6, {
+			{"0:0:w:4", WINDOW_UNSELECTABLE, 2, {
+				//{"", NULL, CONTENT_NODE_ALIGN_CENTER},  // MAKE A OPTION TO SHRINK WINDOW HEIGHT AS MUCH AS POSSIBLE TO FIT CONTENT, as well as option to center nodes vertically
+													// this title will be 6 high (two spaces) unless terminal too small
+				{"Listening History and Stats", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Right In Your Terminal!", NULL, CONTENT_NODE_ALIGN_CENTER}
+				 }},
+			{"w1/7:4:w1/7:3", WINDOW_SELECTED, 1, {
+				{"Listening History", NULL, CONTENT_NODE_ALIGN_CENTER}
+									}},
+			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED,1, {
+				{"Top Artists", NULL, CONTENT_NODE_ALIGN_CENTER}
+										}},
+			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, 1, {
+				{"Top Albums", NULL, CONTENT_NODE_ALIGN_CENTER}
+										 }},
+			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, 1, {
+				{"Top Songs", NULL, CONTENT_NODE_ALIGN_CENTER}
+										 }},
+			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, 1, {
+				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
+										 }}
+		}
 	};
 
-	for (int i = 0; i < MENU_OPTIONS; i ++){
-		display_content_node* option_node = display_new_text_content_node(MENU_OPTIONS_WINDOW, menu_option_list[i].text);
-		display_set_content_node_alignment(option_node, CONTENT_NODE_ALIGN_CENTER);
-		display_content_node_set_interaction(option_node, menu_option_list[i].interact);
-	}
+	for (int i = 0; i < menu_setup.num_windows; i ++){
+		display_window* NEW_WINDOW = display_screen_add_new_window(MENU_SCREEN, (menu_setup.windows)[i].fmt_string);
+		display_window_set_boxed(NEW_WINDOW, WINDOW_BOXED);
+		display_window_set_selected(NEW_WINDOW, menu_setup.windows[i].selected);
 
-	display_screen_set_selected_window(MENU_SCREEN, MENU_OPTIONS_WINDOW);
+		for (int j = 0; j < menu_setup.windows[i].num_contents; j ++){
+			display_content_node* new_node = display_new_text_content_node(NEW_WINDOW, menu_setup.windows[i].contents[j].text);
+			display_set_content_node_alignment(new_node, menu_setup.windows[i].contents[j].alignment);
+			display_content_node_set_interaction(new_node, menu_setup.windows[i].contents[j].interact);
+		}
+	}
 
 	MAIN_SCREEN = display_create_new_screen("MAIN");
 	display_set_current_screen(MENU_SCREEN);
@@ -93,7 +113,7 @@ int main(){
 	display_window_set_boxed(QUIT_WINDOW , WINDOW_BOXED);
 	display_window_set_expansion(QUIT_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
 	display_window_set_selected(QUIT_WINDOW, WINDOW_UNSELECTABLE);
-	display_content_node* quit_node_1 = display_new_text_content_node(QUIT_WINDOW, "Are you sure you want to quit");
+	display_content_node* quit_node_1 = display_new_text_content_node(QUIT_WINDOW, "Are you sure you want to quit?");
 	display_set_content_node_alignment(quit_node_1, CONTENT_NODE_ALIGN_CENTER);
 	display_content_node* quit_node_2 = display_new_text_content_node(QUIT_WINDOW, "Select option or press [q] to confirm.");
 	display_set_content_node_alignment(quit_node_2, CONTENT_NODE_ALIGN_CENTER);
