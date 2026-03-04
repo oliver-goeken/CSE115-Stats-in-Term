@@ -26,7 +26,7 @@ typedef struct artist_list {
 
 typedef struct album {
 	char* name;
-	artist* artist;
+	char* artist; // changed to string for easier parsing
 	int num_plays;
 } album;
 
@@ -65,6 +65,8 @@ typedef struct {
 
 
 void free_song_list(song_list* list) ;
+void free_album_list(album_list list) ;
+void free_artist_list(artist_list list) ;
 
 int create_db(sqlite3 *database) ; 
 

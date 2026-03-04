@@ -20,7 +20,23 @@ void free_song_list(song_list* list) {
     list->songs = NULL;
     list->num_songs = 0;
 }
+void free_album_list(album_list list) {
+ for (int i = 0; i < list.len; i++) {
+        free(list.root[i].name);
+        free(list.root[i].artist);
+    }
+    free(list.root);
+}
 
+void free_artist_list(artist_list list)
+{
+    for (int i = 0; i < list.len; i++) {
+        free(list.root[i].name);
+    }
+    free(list.root);
+}
+
+ 
 int create_db(sqlite3 *database)
 {
 
@@ -328,11 +344,11 @@ artist_list get_top_artist(sqlite3* database)
 {
     // goal: get the top artist
     sqlite3_stmt* cmd = NULL ;
-    const char* get_top_artist_cmd = "SELECT artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY artist ORDER BY play_count DESC;" ; 
+    const char* get_artist_listen_count = "SELECT artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY artist ORDER BY play_count DESC;" ; 
 
     artist_list list = { .root = NULL, .len = 0 } ;
 
-    if (sqlite3_prepare_v2(database, get_top_artist_cmd, -1, &cmd, NULL) != 0) return list;
+    if (sqlite3_prepare_v2(database, get_artist_listen_count, -1, &cmd, NULL) != 0) return list;
 
     while (sqlite3_step(cmd) == SQLITE_ROW)
     {
@@ -348,11 +364,38 @@ artist_list get_top_artist(sqlite3* database)
             
     }
 
-    // NOTE: to get the first few artists, you just have to get the first few elements from the list that's returned when this function is called
-        
+    // NOTE: to get the first few artists, you just have to get the first few elements from the list that's returned when this function is called     
     sqlite3_finalize(cmd) ;
     return list ;
 
+}
+
+album_list get_top_albums(sqlite3* database)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_album_listen_count = "SELECT album, artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY album, artist ORDER BY play_count DESC;" ; 
+
+    album_list list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_album_listen_count, -1, &cmd, NULL) != 0) return list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.len + 1 ; 
+        album* temp = realloc(list.root, count * sizeof(album)) ;
+        if (!temp) break ; 
+        list.root = temp ;
+        list.len = count ;
+
+        album* info = &list.root[list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->num_plays = sqlite3_column_int(cmd, 2) ;
+            
+    }
+        
+    sqlite3_finalize(cmd) ;
+    return list ;
 }
 
 
