@@ -3,6 +3,7 @@
 #include "log.h"
 #include "parse_db_funcs.h"
 #include "cli.h"
+#include "utils.h"
 #include <unistd.h>
 #include <signal.h>
 
@@ -273,8 +274,34 @@ void sql_get_top_albums(display_content_node* content_node){
 	if (top_albums_list.root == NULL){
 		log_err("top albums list is empty");
 	}
+
 	
+	int str_data_size = 256;
 	for (int i = 0; i < top_albums_list.len; i ++){
-		display_new_text_content_node(LIST_WINDOW, top_albums_list.root[i].name);
+		char album_str_data[str_data_size];
+		album_str_data[0] = '\0';
+
+		char album_number[str_data_size];
+		char album_plays[str_data_size];
+
+		snprintf(album_number, str_data_size, "%d. ", i + 1);
+		snprintf(album_plays, str_data_size, "[%d plays]", top_albums_list.root[i].num_plays);
+
+		//remove_non_printable_chars(top_albums_list.root[i].name);
+		//remove_non_printable_chars(top_albums_list.root[i].artist);
+
+		strncat(album_str_data, album_number, str_data_size);
+		strncat(album_str_data, top_albums_list.root[i].name, str_data_size);
+		strncat(album_str_data, " - ", str_data_size);
+		strncat(album_str_data, top_albums_list.root[i].artist, str_data_size);
+		strncat(album_str_data, " - ", str_data_size);
+		strncat(album_str_data, album_plays, str_data_size);
+			
+		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, album_str_data);
+		display_content_node_set_interaction(new_node, handle_album_click);
 	}
+}
+
+void handle_album_click(display_content_node* content_node){
+	log_msg_f("%s", content_node->data->text_data);
 }
