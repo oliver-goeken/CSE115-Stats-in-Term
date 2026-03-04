@@ -1219,6 +1219,7 @@ display_window* display_create_window(char* dimensions_format){
 	new_window->box_sides = 0b11111111;
 
 	new_window->content_offset = 0;
+	new_window->contents = NULL;
 
 	display_window_init_contents(new_window);
 
@@ -1230,7 +1231,7 @@ int display_window_init_contents(display_window* window){
 		log_err("window does not exist");
 		return -1;
 	} if (window->contents != NULL){
-		log_err("window contents does not exist");
+		log_err("window contents already exists");
 		return -2;
 	}
 
