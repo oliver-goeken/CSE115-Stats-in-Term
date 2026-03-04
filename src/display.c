@@ -1235,6 +1235,7 @@ int display_window_init_contents(display_window* window){
 	}
 
 	window->contents = malloc(sizeof(display_window_contents));
+	window->contents->root = NULL;
 
 	return 0;
 }
@@ -1559,8 +1560,9 @@ int display_content_node_init_data(display_content_node* content_node){
 
 	new_data->text_data = NULL;
 	new_data->color_pair_num = COLOR_PAIR_DEFAULT;
+	new_data->other_data = NULL;
 
-	content_node->data=new_data;
+	content_node->data = new_data;
 
 	return 0;
 }
