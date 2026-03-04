@@ -14,7 +14,7 @@ void free_song_list(song_list* list) {
         free(list->songs[i].track);
         free(list->songs[i].album);
         free(list->songs[i].timestamp);
-        free(list->songs[i].track_uri);
+        free(list->songs[i].track);
     }
     free(list->songs);
     list->songs = NULL;
@@ -237,7 +237,7 @@ song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
         info->album = strdup((char*) sqlite3_column_text(cmd, 2)) ;
         info->ms_played = sqlite3_column_int(cmd, 3) ;
         info->timestamp = strdup((char*) sqlite3_column_text(cmd, 4)) ;
-        info->track_uri = strdup((char*) sqlite3_column_text(cmd, 5)) ;
+        info->track = strdup((char*) sqlite3_column_text(cmd, 5)) ;
             
     }
         
@@ -298,7 +298,7 @@ song_list get_all_listens_from_album(sqlite3* database, char* artist_name, char*
         info->album = strdup((char*) sqlite3_column_text(cmd, 2)) ;
         info->ms_played = sqlite3_column_int(cmd, 3) ;
         info->timestamp = strdup((char*) sqlite3_column_text(cmd, 4)) ;
-        info->track_uri = strdup((char*) sqlite3_column_text(cmd, 5)) ;
+        info->track = strdup((char*) sqlite3_column_text(cmd, 5)) ;
             
     }
         
