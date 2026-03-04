@@ -50,3 +50,21 @@ void throw_error(int code, char* msg, char* file, int line){
 	fprintf(stderr, "%s:%d -- %s\n", file, line, msg);
 	exit(code);
 }
+
+void remove_non_printable_chars(char* string){
+	int move_back = 0;
+
+	int i;
+	for (i = 0; string[i] != '\0'; i ++){
+		if (string[i] < 32 || string[i] > 126){
+			move_back ++;
+			continue;
+		}
+
+		if (move_back != 0){
+			string[i - move_back] = string[i];
+		}
+	}
+
+	string[i - move_back] = '\0';
+}

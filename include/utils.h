@@ -27,4 +27,6 @@ void count_newlines(char* string, int* newlines);
  */
 void throw_error(int code, char* msg, char* file, int line);
 
+void remove_non_printable_chars(char* string);
+
 #endif
