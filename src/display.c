@@ -3,6 +3,7 @@
 #include "log.h"
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 // bit shifting from https://www.chiefdelphi.com/t/extracting-individual-bits-in-c/48028
 #define get_bit(bitmap, pos)  (( bitmap & (1 << (pos - 1)) ? 1 : 0 ))
@@ -29,10 +30,13 @@ int display_ncurses_init(){
 		return -1;
 	}
 
-	if (LINES < 15 || COLS < 50){
+	int MINTERM_Y = 12;
+	int MINTERM_X = 50;
+
+	if (LINES < MINTERM_Y || COLS < MINTERM_X){
 		log_err("terminal too small to run");
 
-		fprintf(stderr, "Minimum suppported terminal Size is 50 wide and 10 high.\n");
+		fprintf(stderr, "Minimum suppported terminal Size is %d wide and %d high.\n", MINTERM_X, MINTERM_Y);
 		endwin();
 		fflush(stdout);
 
@@ -380,31 +384,44 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 	}
 	
 	display_window_list_node* currently_selected = display_screen_get_selected_window_node(screen);
-	display_window_list_node* cur_node = screen->window_list->root;
 
-	int* comp_greater;
-	int* comp_lesser;
-
-	if (currently_selected != NULL){
-		while (cur_node != NULL){
-			if (direction == NEXT_WINDOW){
-				comp_greater = &(cur_node->display_window->start_x);
-				comp_lesser = &(currently_selected->display_window->start_x);
-			} else {
-				comp_greater = &(currently_selected->display_window->start_x);
-				comp_lesser = &(cur_node->display_window->start_x);
-			}
-
-			if (cur_node != currently_selected && (*comp_greater > *comp_lesser) && cur_node->display_window->selected != WINDOW_UNSELECTABLE){
-				display_window_set_selected(currently_selected->display_window, WINDOW_NOT_SELECTED);
-				display_window_set_selected(cur_node->display_window, WINDOW_SELECTED);
-
-				return 0;
-			}
-
-			cur_node = cur_node->next_node;
-		}
+	if (currently_selected == NULL){
+		return -5;
 	}
+	
+	display_window_list_node* new_selection = currently_selected;
+	int distance_to_new_selection = INT_MAX;
+
+	display_window_list_node* window_node = screen->window_list->root;
+	while (window_node != NULL){
+		if (window_node == currently_selected){
+			window_node = window_node->next_node;
+			continue;
+		}
+
+		int first_x;
+		int second_x;
+		int diff;
+
+		if (direction == NEXT_WINDOW){
+			first_x = window_node->display_window->start_x;
+			second_x = currently_selected->display_window->start_x;
+		} else {
+			first_x = currently_selected->display_window->start_x;
+			second_x = window_node->display_window->start_x;
+		}
+
+		diff = first_x - second_x;
+	
+		if (diff >= 0 && diff < distance_to_new_selection){
+			distance_to_new_selection = diff;
+			new_selection = window_node;
+		}
+
+		window_node = window_node->next_node;
+	}
+
+	display_screen_set_selected_window(screen, new_selection->display_window);
 
 	return 0;
 }
@@ -963,6 +980,15 @@ int display_window_select_prev_node(display_window* window){
 
 	return 0;
 }
+
+/*
+
+make select next node switch to next/prev most vertical window if at top or bottom node
+
+
+   */
+
+
 
 int display_generic_select_next_node(){
 	return display_window_select_next_node(display_window_node_get_window(display_screen_get_selected_window_node(display_get_current_screen())));
