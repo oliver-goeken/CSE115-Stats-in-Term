@@ -64,7 +64,7 @@ int create_db(sqlite3 *database)
 
     char* error_msg = 0 ; 
     rem_con = sqlite3_exec(database, sql_cmd, 0, 0, &error_msg) ;  // memory leak here maybe
-
+    free(error_msg) ; 
     // check connection again
     if (rem_con != 0)
     {
