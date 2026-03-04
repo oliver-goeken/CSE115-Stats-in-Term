@@ -9,7 +9,7 @@ OBJDIR = .obj/
 TESTDIR = tests/
 TESTOBJDIR = $(TESTDIR).obj/
 
-CC = cc
+CC = clang
 LDLIBS = -lncurses 
 CFLAGS = -g -Wall -Wextra -I$(INCDIR) -I$(LIBDIR)
 
