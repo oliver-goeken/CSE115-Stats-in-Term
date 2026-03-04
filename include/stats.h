@@ -25,4 +25,6 @@ void quit_button_interact(display_content_node* content_node);
 
 void sql_get_top_albums(display_content_node* content_node);
 
+void handle_album_click(display_content_node* content_node);
+
 #endif
