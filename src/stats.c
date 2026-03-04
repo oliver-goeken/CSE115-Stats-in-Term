@@ -7,7 +7,6 @@
 
 sqlite3* song_plays_database;
 
-display_screen* MENU_SCREEN;
 display_screen* MAIN_SCREEN;
 display_screen* QUIT_SCREEN;
 
@@ -22,6 +21,7 @@ typedef struct {
 typedef struct {
 	char* fmt_string;
 	int selected;
+	bool window_boxed;
 	int num_contents;
 	content_setup contents[256];
 } window_setup;
@@ -36,37 +36,42 @@ int main(){
 
 	init();
 
-	MENU_SCREEN = display_create_new_screen("MENU");
+	MAIN_SCREEN = display_create_new_screen("MENU");
 	
 	screen_setup menu_setup = {
-		6, {
-			{"0:0:w:4", WINDOW_UNSELECTABLE, 2, {
+		8, {
+			{"0:0:w:4", WINDOW_UNSELECTABLE, WINDOW_BOXED, 2, {
 				//{"", NULL, CONTENT_NODE_ALIGN_CENTER},  // MAKE A OPTION TO SHRINK WINDOW HEIGHT AS MUCH AS POSSIBLE TO FIT CONTENT, as well as option to center nodes vertically
 													// this title will be 6 high (two spaces) unless terminal too small
 				{"Listening History and Stats", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"Right In Your Terminal!", NULL, CONTENT_NODE_ALIGN_CENTER}
 				 }},
-			{"w1/7:4:w1/7:3", WINDOW_SELECTED, 1, {
+			{"w1/7:4:w1/7:3", WINDOW_SELECTED, WINDOW_BOXED, 1, {
 				{"Listening History", NULL, CONTENT_NODE_ALIGN_CENTER}
 									}},
-			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED,1, {
+			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Top Artists", NULL, CONTENT_NODE_ALIGN_CENTER}
 										}},
-			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, 1, {
+			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Top Albums", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }},
-			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, 1, {
+			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Top Songs", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }},
-			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, 1, {
+			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
+										 }},
+			{"0:7:w:h-9", WINDOW_NOT_SELECTED, WINDOW_BOXED, 0, {
+										 }},
+			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, 1, {
+				{"[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }}
 		}
 	};
 
 	for (int i = 0; i < menu_setup.num_windows; i ++){
-		display_window* NEW_WINDOW = display_screen_add_new_window(MENU_SCREEN, (menu_setup.windows)[i].fmt_string);
-		display_window_set_boxed(NEW_WINDOW, WINDOW_BOXED);
+		display_window* NEW_WINDOW = display_screen_add_new_window(MAIN_SCREEN, (menu_setup.windows)[i].fmt_string);
+		display_window_set_boxed(NEW_WINDOW, menu_setup.windows[i].window_boxed);
 		display_window_set_selected(NEW_WINDOW, menu_setup.windows[i].selected);
 
 		for (int j = 0; j < menu_setup.windows[i].num_contents; j ++){
@@ -76,36 +81,10 @@ int main(){
 		}
 	}
 
-	MAIN_SCREEN = display_create_new_screen("MAIN");
-	display_set_current_screen(MENU_SCREEN);
-
-	display_window* LIST_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:0:w1/2:3");
-	display_window_set_boxed(LIST_TITLE_WINDOW, WINDOW_BOXED);
-	display_window_set_selected(LIST_TITLE_WINDOW, WINDOW_UNSELECTABLE);
-	display_content_node* list_title_node = display_new_text_content_node(LIST_TITLE_WINDOW, "Listening History");
-	display_set_content_node_alignment(list_title_node, CONTENT_NODE_ALIGN_CENTER);
-
-	display_window* INFO_TITLE_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:0:w1/2:3");
-	display_window_set_boxed(INFO_TITLE_WINDOW, WINDOW_BOXED);
-	display_window_set_selected(INFO_TITLE_WINDOW, WINDOW_UNSELECTABLE);
-	display_content_node* info_title_node = display_new_text_content_node(INFO_TITLE_WINDOW, "Song Play Info");
-	display_set_content_node_alignment(info_title_node, CONTENT_NODE_ALIGN_CENTER);
-
-	display_window* LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:2:w1/2:h-4");
-	display_window_set_selected(LIST_WINDOW, WINDOW_SELECTED);
-	display_window_set_boxed(LIST_WINDOW,  WINDOW_BOXED);
-
-	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:2:w1/2:h-4");
-	display_window_set_boxed(INFO_WINDOW , WINDOW_BOXED);
-
-	display_window* HELP_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-2:w:2");
-	display_content_node* help_node = display_new_text_content_node(HELP_WINDOW, "[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit");
-	display_window_set_selected(HELP_WINDOW, WINDOW_UNSELECTABLE);
-	display_set_content_node_alignment(help_node, CONTENT_NODE_ALIGN_CENTER);
-
 	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-1:w:1");
 	display_window_set_selected(COMMAND_WINDOW, WINDOW_UNSELECTABLE);
 
+	display_set_current_screen(MAIN_SCREEN);
 
 	QUIT_SCREEN = display_create_new_screen("QUIT");
 
@@ -123,7 +102,7 @@ int main(){
 	display_content_node_set_interaction(quit_yes_node, quit_yes_button_interact);
 
 	
-	display_window* QUIT_NO_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/2+1:h1/2+1:2:1");
+	display_window* QUIT_NO_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/2+2:h1/2+1:2:1");
 	display_content_node* quit_no_node = display_new_text_content_node(QUIT_NO_WINDOW, "No");
 	display_content_node_set_interaction(quit_no_node, quit_no_button_interact);
 
@@ -210,20 +189,10 @@ int main(){
 							break;
 						case 27:
 							if (SCREEN_RETURN == NULL){
-								display_set_screen(MENU_SCREEN);
+								display_set_screen(MAIN_SCREEN);
 							} else {
 								display_set_screen(SCREEN_RETURN);
 							}
-							break;
-					}
-				} else if (current_screen == MENU_SCREEN){
-					switch(user_in){
-						case 'Q':
-						case 'q':
-						case 27:
-							SCREEN_RETURN = MENU_SCREEN;
-							display_set_screen(QUIT_SCREEN);
-							display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
 							break;
 					}
 				}
@@ -284,6 +253,6 @@ void quit_no_button_interact(display_content_node* content_node){
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 void quit_button_interact(display_content_node* content_node){
-	SCREEN_RETURN = MENU_SCREEN;
+	SCREEN_RETURN = MAIN_SCREEN;
 	display_set_screen(QUIT_SCREEN);
 }
