@@ -14,13 +14,29 @@ void free_song_list(song_list* list) {
         free(list->songs[i].track);
         free(list->songs[i].album);
         free(list->songs[i].timestamp);
-        free(list->songs[i].track_uri);
+        free(list->songs[i].track);
     }
     free(list->songs);
     list->songs = NULL;
     list->num_songs = 0;
 }
+void free_album_list(album_list list) {
+ for (int i = 0; i < list.len; i++) {
+        free(list.root[i].name);
+        free(list.root[i].artist);
+    }
+    free(list.root);
+}
 
+void free_artist_list(artist_list list)
+{
+    for (int i = 0; i < list.len; i++) {
+        free(list.root[i].name);
+    }
+    free(list.root);
+}
+
+ 
 int create_db(sqlite3 *database)
 {
 
@@ -43,7 +59,7 @@ int create_db(sqlite3 *database)
                         "track TEXT, "
                         "album TEXT, "
                         "ms_played INTEGER, " // milliseconds
-                        "timestamp TEXT, "
+                        "timestamp TEXT UNIQUE, "
                         "track_uri TEXT);" ;
 
     char* error_msg = 0 ; 
@@ -134,6 +150,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
     if (!json_data) 
     {
         log_msg_detailed("Error: JSON could not be read", __FILE__, __LINE__, NULL) ;
+        free(json_data) ; 
         return 1 ; 
     }
 
@@ -141,7 +158,8 @@ int json_import_to_db(sqlite3* database, char* file_name)
     if (!root) 
     {
         log_msg_detailed("Error: JSON could not be parsed", __FILE__, __LINE__, NULL) ;
-        free(json_data) ; 
+        free(json_data) ;
+        cJSON_Delete(root) ; 
         return 1; 
     }
     // 1) Set up the command to add stuff to the sql
@@ -237,7 +255,7 @@ song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
         info->album = strdup((char*) sqlite3_column_text(cmd, 2)) ;
         info->ms_played = sqlite3_column_int(cmd, 3) ;
         info->timestamp = strdup((char*) sqlite3_column_text(cmd, 4)) ;
-        info->track_uri = strdup((char*) sqlite3_column_text(cmd, 5)) ;
+        info->track = strdup((char*) sqlite3_column_text(cmd, 5)) ;
             
     }
         
@@ -298,7 +316,7 @@ song_list get_all_listens_from_album(sqlite3* database, char* artist_name, char*
         info->album = strdup((char*) sqlite3_column_text(cmd, 2)) ;
         info->ms_played = sqlite3_column_int(cmd, 3) ;
         info->timestamp = strdup((char*) sqlite3_column_text(cmd, 4)) ;
-        info->track_uri = strdup((char*) sqlite3_column_text(cmd, 5)) ;
+        info->track = strdup((char*) sqlite3_column_text(cmd, 5)) ;
             
     }
         
@@ -320,6 +338,67 @@ void sql_change_timestamp_format(sqlite3* database)
         sqlite3_free(err_msg);
     }
 }
+
+
+artist_list get_top_artist(sqlite3* database)
+{
+    // goal: get the top artist
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_artist_listen_count = "SELECT artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY artist ORDER BY play_count DESC;" ; 
+
+    artist_list list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_artist_listen_count, -1, &cmd, NULL) != 0) return list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.len + 1 ; 
+        artist* temp = realloc(list.root, count * sizeof(artist)) ;
+        if (!temp) break ; 
+        list.root = temp ;
+        list.len = count ;
+
+        artist* info = &list.root[list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->num_plays = sqlite3_column_int(cmd, 1) ;
+            
+    }
+
+    // NOTE: to get the first few artists, you just have to get the first few elements from the list that's returned when this function is called     
+    sqlite3_finalize(cmd) ;
+    return list ;
+
+}
+
+album_list get_top_albums(sqlite3* database)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_album_listen_count = "SELECT album, artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY album, artist ORDER BY play_count DESC;" ; 
+
+    album_list list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_album_listen_count, -1, &cmd, NULL) != 0) return list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.len + 1 ; 
+        album* temp = realloc(list.root, count * sizeof(album)) ;
+        if (!temp) break ; 
+        list.root = temp ;
+        list.len = count ;
+
+        album* info = &list.root[list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->num_plays = sqlite3_column_int(cmd, 2) ;
+            
+    }
+        
+    sqlite3_finalize(cmd) ;
+    return list ;
+}
+
+
     
 // function to clear the table
 // function to delete table
