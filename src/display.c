@@ -1036,6 +1036,7 @@ display_window_list* display_create_window_list(display_screen* screen){
 	}
 
 	screen->window_list = malloc(sizeof(display_window_list));
+	screen->window_list->root = NULL;
 
 	return screen->window_list;
 }
@@ -1203,6 +1204,11 @@ display_window* display_create_window(char* dimensions_format){
 	display_window* new_window = malloc(sizeof(display_window));
 	
 	new_window->dimensions_format = dimensions_format;
+	new_window->ncurses_window = NULL;
+	new_window->start_x = 0;
+	new_window->start_y = 0;
+	new_window->width = 0;
+	new_window->height = 0;
 	display_parse_dimensions_format(new_window);
 
 	new_window->visible = WINDOW_VISIBLE;
