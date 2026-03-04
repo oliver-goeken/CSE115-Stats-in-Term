@@ -4,6 +4,8 @@
 #include "parse_db_funcs.h"
 #include <unistd.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 
 sqlite3* song_plays_database;
 
@@ -32,7 +34,20 @@ typedef struct {
 } screen_setup;
 
 bool IN_MAIN_LOOP = true;
-int main(){
+
+static int handle_args(int argc, char **argv) {
+	if (argc > 1 && strcmp(argv[1], "-h") == 0) {
+		printf("hello world\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+int main(int argc, char **argv){
+	if (handle_args(argc, argv)) {
+		return 0;
+	}
 
 	init();
 
