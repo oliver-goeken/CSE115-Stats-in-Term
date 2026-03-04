@@ -17,7 +17,7 @@ CFILES = $(wildcard $(SRCDIR)*.c)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 
 LIBCFILES = lib/cJSON.c lib/sqlite3.c
-LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.d,$(LIBCFILES))
+LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.l,$(LIBCFILES))
 
 
 TESTS = $(wildcard $(TESTDIR)test_*.c)
@@ -48,7 +48,7 @@ $(OBJDIR)%.o: $(SRCDIR)%.c
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR)%.d: $(LIBDIR)%.c
+$(OBJDIR)%.l: $(LIBDIR)%.c
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
