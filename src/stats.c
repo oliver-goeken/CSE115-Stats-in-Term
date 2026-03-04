@@ -281,7 +281,7 @@ void sql_get_top_albums(display_content_node* content_node){
 	int str_data_size = 256;
 	for (int i = 0; i < top_albums_list.len; i ++){
 		char album_str_data[str_data_size];
-		album_str_data[0] = '\0';
+		memset(album_str_data, 0, str_data_size);
 
 		char album_number[str_data_size];
 		char album_plays[str_data_size];
