@@ -3,7 +3,7 @@
 
 #include "display.h"
 
-bool SIGINT_FLAG;
+extern bool SIGINT_FLAG;
 
 // initializes everything
 void init();
