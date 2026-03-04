@@ -1,6 +1,5 @@
 #include "input.h"
 #include "stats.h"
-#include "parse_db_funcs.h"
 #include <string.h>
 
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size){
