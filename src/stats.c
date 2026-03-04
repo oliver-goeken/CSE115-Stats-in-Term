@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, 1, {
-				{"[arrow keys] or [hjkl] to navigate - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [h] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }}
 		}
 	};
@@ -275,7 +275,9 @@ void sql_get_top_albums(display_content_node* content_node){
 		log_err("top albums list is empty");
 	}
 
-	
+	// ERROR
+	// printing quit screen message sometimes
+
 	int str_data_size = 256;
 	for (int i = 0; i < top_albums_list.len; i ++){
 		char album_str_data[str_data_size];
