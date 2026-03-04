@@ -10,7 +10,7 @@ TESTDIR = tests/
 TESTOBJDIR = $(TESTDIR).obj/
 
 CC = clang
-LDLIBS = -lncurses 
+LDLIBS = -lncurses
 CFLAGS = -g -Wall -Wextra -I$(INCDIR) -I$(LIBDIR)
 
 CFILES = $(wildcard $(SRCDIR)*.c)
