@@ -2,10 +2,9 @@
 #include "input.h"
 #include "log.h"
 #include "parse_db_funcs.h"
+#include "cli.h"
 #include <unistd.h>
 #include <signal.h>
-#include <stdio.h>
-#include <string.h>
 
 sqlite3* song_plays_database;
 
@@ -35,14 +34,6 @@ typedef struct {
 
 bool IN_MAIN_LOOP = true;
 
-static int handle_args(int argc, char **argv) {
-	if (argc > 1 && strcmp(argv[1], "-h") == 0) {
-		printf("hello world\n");
-		return 1;
-	}
-
-	return 0;
-}
 
 int main(int argc, char **argv){
 	if (handle_args(argc, argv)) {
