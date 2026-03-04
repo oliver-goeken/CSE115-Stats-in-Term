@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <locale.h>
 
 // bit shifting from https://www.chiefdelphi.com/t/extracting-individual-bits-in-c/48028
 #define get_bit(bitmap, pos)  (( bitmap & (1 << (pos - 1)) ? 1 : 0 ))
@@ -25,10 +26,12 @@ int display_init(){
 }
 
 int display_ncurses_init(){
+	setlocale(LC_ALL, "");
 	if (initscr() == NULL){
 		log_err("initscr failed");
 		return -1;
 	}
+
 
 	int MINTERM_Y = 12;
 	int MINTERM_X = 50;
@@ -1508,7 +1511,10 @@ int display_content_node_data_set_text(display_content_node_data* content_data, 
 		return -1;
 	} 
 
-	content_data->text_data = text_data;
+	char* new_data = malloc(sizeof(char) * strlen(text_data));
+	strncpy(new_data, text_data, strlen(text_data));
+
+	content_data->text_data = new_data;
 
 	return 0;
 }
