@@ -59,7 +59,7 @@ int create_db(sqlite3 *database)
                         "track TEXT, "
                         "album TEXT, "
                         "ms_played INTEGER, " // milliseconds
-                        "timestamp TEXT UNIQUE, "
+                        "timestamp TEXT, "
                         "track_uri TEXT);" ;
 
     char* error_msg = 0 ; 
@@ -206,7 +206,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
 
         rem_con = sqlite3_step(cmd) ; 
         if (rem_con != SQLITE_DONE) {
-            log_msg_detailed("Error: execute failed. Resetting table.", __FILE__, __LINE__, NULL) ;
+            log_msg_detailed("Error: execute failed. Resetting table.", __FILE__, __LINE__, sqlite3_errmsg(database)) ;
             sqlite3_exec(database, "ROLLBACK;", NULL, NULL, NULL) ; // reset everything if failed!!!
             success = false ; 
             break ; 
