@@ -1511,7 +1511,7 @@ int display_content_node_data_set_text(display_content_node_data* content_data, 
 		return -1;
 	} 
 
-	char* new_data = malloc(sizeof(char) * strlen(text_data));
+	char* new_data = calloc(sizeof(char), strlen(text_data));
 	strncpy(new_data, text_data, strlen(text_data));
 
 	content_data->text_data = new_data;
