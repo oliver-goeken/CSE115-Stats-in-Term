@@ -55,9 +55,9 @@ int create_db(sqlite3 *database)
     }
 
     const char *sql_cmd = "CREATE TABLE IF NOT EXISTS spotifyHistory ("
-                        "artist TEXT, "
-                        "track TEXT, "
-                        "album TEXT, "
+                        "artist VARCHAR, "
+                        "track VARCHAR, "
+                        "album VARCHAR, "
                         "ms_played INTEGER, " // milliseconds
                         "timestamp TEXT, "
                         "track_uri TEXT);" ;
@@ -211,9 +211,11 @@ int json_import_to_db(sqlite3* database, char* file_name)
             success = false ; 
             break ; 
         }
+
         sqlite3_reset(cmd) ; 
 
     }
+
 
     // close cleanly
     if (success) sqlite3_exec(database, "COMMIT;", NULL, NULL, NULL) ; 
