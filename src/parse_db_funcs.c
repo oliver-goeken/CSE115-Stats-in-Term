@@ -399,6 +399,7 @@ album_list get_top_albums(sqlite3* database)
 }
 
 
+
     
 // function to clear the table
 // function to delete table
