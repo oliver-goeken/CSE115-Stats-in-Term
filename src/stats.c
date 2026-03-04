@@ -2,6 +2,7 @@
 #include "input.h"
 #include "log.h"
 #include "parse_db_funcs.h"
+#include "cli.h"
 #include <unistd.h>
 #include <signal.h>
 
@@ -32,7 +33,11 @@ typedef struct {
 } screen_setup;
 
 bool IN_MAIN_LOOP = true;
-int main(){
+
+
+int main(int argc, char **argv) {
+	int rc = handle_args(argc, argv);
+	if (rc >= 0) return rc;
 
 	init();
 
@@ -215,11 +220,11 @@ void init(){
 
 	display_init();
 
-	remove("spotifyHistory.db");
+	remove(CLI_OPTIONS.db_path);
 
 	create_db(song_plays_database);
-	sqlite3_open("spotifyHistory.db", &song_plays_database);
-	json_import_to_db(song_plays_database, "/Users/oliverdgoeken/Downloads/Spotify Extended Streaming History/Streaming_History_Audio_2019-2020_0.json");
+	sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database);
+	json_import_to_db(song_plays_database, CLI_OPTIONS.json_path);
 }
 
 void terminate(){
