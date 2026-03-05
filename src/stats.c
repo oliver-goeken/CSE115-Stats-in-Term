@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 	for (int i = 0; i < menu_setup.num_windows; i ++){
 		display_window* NEW_WINDOW = display_screen_add_new_window(MAIN_SCREEN, (menu_setup.windows)[i].fmt_string);
 		display_window_set_boxed(NEW_WINDOW, menu_setup.windows[i].window_boxed);
-		display_add_window_to_group(NEW_WINDOW, options_group);
+		display_add_window_to_group(NEW_WINDOW, menu_setup.windows[i].group);
 		display_window_set_selected(NEW_WINDOW, menu_setup.windows[i].selected);
 
 		for (int j = 0; j < menu_setup.windows[i].num_contents; j ++){
