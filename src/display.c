@@ -729,6 +729,14 @@ int display_screen_destroy_window(display_screen* screen, display_window* window
 	display_window_list_node* cur_node = screen->window_list->root;
 	display_window_list_node* prev_node = cur_node;
 
+	if (cur_node->next_node == NULL){
+		display_destroy_window(window);
+		free(cur_node);
+
+		screen->window_list->root = NULL;
+		return 0;
+	}
+
 	while (cur_node != NULL){
 		prev_node = cur_node;
 
@@ -1406,6 +1414,7 @@ int display_window_destroy_content_nodes(display_window* window){
 	}
 
 	window->contents->root = NULL;
+	window->content_offset = 0;
 
 	return 0;
 }
