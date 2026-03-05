@@ -1234,7 +1234,6 @@ int display_parse_dimensions_format(display_window* window){
 	 * '-' or '+' indicates an offset {ALWAYS PUT OFFSET AFTER DIMENSIONS RATIO}
 	 * example: "h1/3:w1/3:h1/3:3" = start at 1/3 height, 1/3 width; width of 1/3 height and a height of 3
 	 * example: "0:0:w1/2:h-2" = start at 0, 0; width of 1/2; height of window height minus 2
-	 * 
 	 *
 	 * ADD SUPPORT FOR WINDOW EXPANSION IF TOO SMALL FOR TEXT */
 
