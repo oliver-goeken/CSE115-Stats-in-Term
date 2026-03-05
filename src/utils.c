@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "log.h"
+#include "input.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,18 +103,15 @@ bool string_ends_with(char* cmp, char* end){
 }
 
 void get_dir_path(char* dir_path, char* path, int dir_path_size){
-	int last_slash_pos = 0;
+	strncpy(dir_path, path, dir_path_size);
+	input_command_remove_excess_space(dir_path, dir_path_size);
 
-	for (int i = 0; path[i] != '\0'; i ++){
-		if (path[i] == '/'){
-			last_slash_pos = i;
+	int final_char = strlen(dir_path) - 1;
+
+	if (path[final_char] != '/'){
+		if ((final_char + 2) < dir_path_size){
+			path[final_char + 1] = '/';
+			path[final_char + 2] = '\0';
 		}
 	}
-
-	int j;
-	for (j = 0; j <= last_slash_pos && j < (dir_path_size - 1); j ++){
-		dir_path[j] = path[j];
-	}
-
-	dir_path[j + 1] = '\0';
 }
