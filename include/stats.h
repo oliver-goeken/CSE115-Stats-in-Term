@@ -30,4 +30,6 @@ void sql_get_top_songs(display_content_node* content_node);
 
 void handle_album_click(display_content_node* content_node);
 
+void go_to_quit_screen();
+
 #endif
