@@ -36,10 +36,10 @@ typedef struct album_list {
 } album_list ;
 
 
-typedef struct track {
+typedef struct{
 	char* name;
-	album* album;
-	artist* artist;
+	char* album;
+	char* artist;
 	char* track_uri;
 	int num_plays;
 } track;
@@ -51,9 +51,9 @@ typedef struct track_list {
 
 
 typedef struct {
-	artist* artist;
-    track* track ;
-    album* album ;
+	char* artist;
+    char* track ;
+    char* album ;
     int ms_played ;
     char* timestamp ;
 } song_info ;
@@ -83,7 +83,7 @@ void sql_change_timestamp_format(sqlite3* database) ;
 
 
 // sort 
-artist_list get_top_artist(sqlite3* database);
+artist_list get_top_artists(sqlite3* database);
 
 album_list get_top_albums(sqlite3* database);
 

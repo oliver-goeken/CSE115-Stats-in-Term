@@ -64,7 +64,7 @@ int create_db(sqlite3 *database)
                         "album VARCHAR, "
                         "ms_played INTEGER, " // milliseconds
                         "timestamp TEXT, "
-                        "track_uri TEXT);" ;
+                        "track_uri TEXT, primary key (track, artist, timestamp));" ;
 
     char* error_msg = 0 ; 
     rem_con = sqlite3_exec(database, sql_cmd, 0, 0, &error_msg) ;  // memory leak here maybe
@@ -172,7 +172,7 @@ int json_import_to_db(sqlite3* database, char* file_name)
 
     // 1) Set up the command to add stuff to the sql
     sqlite3_stmt* cmd = NULL; 
-    const char* sql_cmd = "INSERT INTO spotifyHistory (artist, track, album, ms_played, timestamp, track_uri) VALUES (?, ?, ?, ?, ?, ?);" ; 
+    const char* sql_cmd = "REPLACE INTO spotifyHistory (artist, track, album, ms_played, timestamp, track_uri) VALUES (?, ?, ?, ?, ?, ?);" ; 
     int rem_con = sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) ; 
     
     if (rem_con != 0) { // if it can't open!
@@ -203,6 +203,9 @@ int json_import_to_db(sqlite3* database, char* file_name)
         cJSON* artist = cJSON_GetObjectItemCaseSensitive(elem, "master_metadata_album_artist_name") ; 
         cJSON* album = cJSON_GetObjectItemCaseSensitive(elem, "master_metadata_album_album_name") ; 
         cJSON* track_uri = cJSON_GetObjectItemCaseSensitive(elem, "spotify_track_uri"); 
+
+		if (ms_played->valueint < 30000)
+			continue;
 
         // bind each to the ?s
         sqlite3_bind_text(cmd, 1, (artist && artist->valuestring) ? artist->valuestring : "Unknown", -1, SQLITE_STATIC) ; 
@@ -379,22 +382,22 @@ song_list get_all_listens_from_album(sqlite3* database, char* artist_name, char*
 
 }
 
-
 void sql_change_timestamp_format(sqlite3* database)
 {
-    // goal: change the timestamp format
-    const char* convert_time = "UPDATE spotifyHistory SET timestamp = strftime('%m-%d-%Y %H:%M:%S', timestamp);" ; 
-    char* err_msg = NULL ;
-    int rc = sqlite3_exec(database, convert_time, NULL, NULL, &err_msg);
+	if (false){
+		// goal: change the timestamp format
+		const char* convert_time = "UPDATE spotifyHistory SET timestamp = strftime('%m-%d-%Y %H:%M:%S', timestamp);" ; 
+		char* err_msg = NULL ;
+		int rc = sqlite3_exec(database, convert_time, NULL, NULL, &err_msg);
 
-    if (rc != SQLITE_OK) {
-        log_msg_detailed("Error updating timestamps", __FILE__, __LINE__, err_msg);
-        sqlite3_free(err_msg);
-    }
+		if (rc != SQLITE_OK) {
+			log_msg_detailed("Error updating timestamps", __FILE__, __LINE__, err_msg);
+			sqlite3_free(err_msg);
+		}
+	}
 }
 
-
-artist_list get_top_artist(sqlite3* database)
+artist_list get_top_artists(sqlite3* database)
 {
     // goal: get the top artist
     sqlite3_stmt* cmd = NULL ;
@@ -451,6 +454,66 @@ album_list get_top_albums(sqlite3* database)
     return list ;
 }
 
+track_list get_top_tracks(sqlite3* database)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_track_listen_count = "SELECT track, album, artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY track, album, artist ORDER BY play_count DESC;" ; 
+
+    track_list t_list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_track_listen_count, -1, &cmd, NULL) != 0) return t_list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = t_list.len + 1 ; 
+        track* root = realloc(t_list.root, count * sizeof(track)) ;
+        if (!root) break ; 
+        t_list.root = root ;
+        t_list.len = count ;
+
+        track* info = &t_list.root[t_list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->album = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 2)) ;
+        info->num_plays = atoi((char*) sqlite3_column_text(cmd, 3)) ;
+    }
+        
+    sqlite3_finalize(cmd) ;
+    return t_list ;
+}
+
+song_list get_listening_history(sqlite3* database){
+    sqlite3_stmt* cmd = NULL;
+    const char* get_listen_history = "SELECT artist, track, album, timestamp, ms_played FROM spotifyHistory ORDER BY timestamp DESC;"; 
+
+    song_list listen_history = { .songs = NULL, .num_songs = 0 };
+
+    if (sqlite3_prepare_v2(database, get_listen_history, -1, &cmd, NULL) != 0) return listen_history;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW){
+        int count = listen_history.num_songs + 1; 
+        song_info* new_song = realloc(listen_history.songs, count * sizeof(song_info));
+
+        if (!new_song) break; 
+
+        listen_history.songs = new_song;
+        listen_history.num_songs = count;
+
+        song_info* new_song_info = &(listen_history.songs[listen_history.num_songs - 1]);
+
+		new_song_info->artist = strdup((char*) sqlite3_column_text(cmd, 0));
+		new_song_info->track = strdup((char*) sqlite3_column_text(cmd, 1));
+		new_song_info->album = strdup((char*) sqlite3_column_text(cmd, 2));
+		new_song_info->timestamp = strdup((char*) sqlite3_column_text(cmd, 3));
+		new_song_info->ms_played = atoi((char*) sqlite3_column_text(cmd, 4));
+    }
+        
+    sqlite3_finalize(cmd);
+
+	log_msg("done getting listening history");
+
+    return listen_history;
+}
 
 
     

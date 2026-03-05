@@ -55,16 +55,16 @@ int main(int argc, char **argv) {
 				{"Right In Your Terminal!", NULL, CONTENT_NODE_ALIGN_CENTER}
 				 }},
 			{"w1/7:4:w1/7:3", WINDOW_SELECTED, WINDOW_BOXED, 1, {
-				{"Listening History", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"Listening History", sql_get_listening_history, CONTENT_NODE_ALIGN_CENTER}
 									}},
 			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
-				{"Top Artists", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"Top Artists", sql_get_top_artists, CONTENT_NODE_ALIGN_CENTER}
 										}},
 			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Top Albums", sql_get_top_albums, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
-				{"Top Songs", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"Top Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
@@ -267,6 +267,8 @@ void quit_button_interact(display_content_node* content_node){
 void sql_get_top_albums(display_content_node* content_node){
 	log_msg("getting top albums");
 
+	display_window_destroy_content_nodes(LIST_WINDOW);
+
 	album_list top_albums_list;
 
 	top_albums_list = get_top_albums(song_plays_database);
@@ -286,6 +288,83 @@ void sql_get_top_albums(display_content_node* content_node){
 		snprintf(album_str_data, str_data_size, "%d. %s - %s - [%d plays]", i + 1, top_albums_list.root[i].name, top_albums_list.root[i].artist, top_albums_list.root[i].num_plays);
 
 		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, album_str_data);
+		display_content_node_set_interaction(new_node, handle_album_click);
+	}
+}
+
+void sql_get_top_artists(display_content_node* content_node){
+	log_msg("getting top artists");
+
+	display_window_destroy_content_nodes(LIST_WINDOW);
+
+	artist_list top_artists_list = get_top_artists(song_plays_database);
+
+	if (top_artists_list.root == NULL){
+		log_err("no artists in list");
+	}
+
+	int str_data_size = 256;
+	for (int i = 0; i < top_artists_list.len; i ++){
+		char artist_str_data[str_data_size];
+		memset(artist_str_data, 0, str_data_size);
+
+		snprintf(artist_str_data, str_data_size, "%d. %s - [%d plays]", i + 1, top_artists_list.root[i].name, top_artists_list.root[i].num_plays);
+
+		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, artist_str_data);
+		display_content_node_set_interaction(new_node, handle_album_click);
+	}
+}
+
+void sql_get_listening_history(display_content_node* content_node){
+	log_msg("getting listening history");
+
+	display_window_destroy_content_nodes(LIST_WINDOW);
+
+	song_list listening_history = get_listening_history(song_plays_database);
+
+	if (listening_history.songs == NULL){
+		log_err("no songs in list");
+	}
+
+	int str_data_size = 256;
+	for (int i = 0; i < listening_history.num_songs; i ++){
+		char listen_str_data[str_data_size];
+		memset(listen_str_data, 0, str_data_size);
+
+		char time_formatted[str_data_size];
+		struct tm time_struct;
+
+		strptime(listening_history.songs[i].timestamp, "%Y-%m-%dT%H:%M:%S", &time_struct);
+		strftime(time_formatted, str_data_size, "%D %R", &time_struct);
+
+		snprintf(listen_str_data, str_data_size, "[%s] %s - %s - %s", time_formatted, listening_history.songs[i].track, listening_history.songs[i].album, listening_history.songs[i].artist);
+
+		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, listen_str_data);
+		display_content_node_set_interaction(new_node, handle_album_click);
+	}
+
+	log_msg("done showing listening history");
+}
+
+void sql_get_top_songs(display_content_node* content_node){
+	log_msg("getting top artists");
+
+	display_window_destroy_content_nodes(LIST_WINDOW);
+
+	track_list top_songs_list = get_top_tracks(song_plays_database);
+
+	if (top_songs_list.root == NULL){
+		log_err("no artists in list");
+	}
+
+	int str_data_size = 256;
+	for (int i = 0; i < top_songs_list.len; i ++){
+		char songs_str_data[str_data_size];
+		memset(songs_str_data, 0, str_data_size);
+
+		snprintf(songs_str_data, str_data_size, "%d. %s - %s - %s - [%d plays]", i + 1, top_songs_list.root[i].name, top_songs_list.root[i].album, top_songs_list.root[i].artist, top_songs_list.root[i].num_plays);
+
+		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
 		display_content_node_set_interaction(new_node, handle_album_click);
 	}
 }

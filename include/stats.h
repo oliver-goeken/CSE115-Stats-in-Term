@@ -24,6 +24,9 @@ void quit_no_button_interact(display_content_node* content_node);
 void quit_button_interact(display_content_node* content_node);
 
 void sql_get_top_albums(display_content_node* content_node);
+void sql_get_top_artists(display_content_node* content_node);
+void sql_get_listening_history(display_content_node* content_node);
+void sql_get_top_songs(display_content_node* content_node);
 
 void handle_album_click(display_content_node* content_node);
 
