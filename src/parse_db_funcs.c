@@ -64,7 +64,7 @@ int create_db(sqlite3 *database)
                         "album VARCHAR, "
                         "ms_played INTEGER, " // milliseconds
                         "timestamp TEXT, "
-                        "track_uri TEXT, primary key (track, artist, timestamp));" ;
+                        "track_uri TEXT, primary key (artist, ms_played, timestamp));" ;
 
     char* error_msg = 0 ; 
     rem_con = sqlite3_exec(database, sql_cmd, 0, 0, &error_msg) ;  // memory leak here maybe
