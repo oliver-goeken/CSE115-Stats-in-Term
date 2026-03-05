@@ -13,6 +13,7 @@ display_screen* MAIN_SCREEN;
 display_screen* QUIT_SCREEN;
 
 display_window* LIST_WINDOW;
+display_window* QUIT_NO_WINDOW;
 
 display_screen* SCREEN_RETURN = NULL;
 
@@ -38,6 +39,9 @@ typedef struct {
 
 bool IN_MAIN_LOOP = true;
 
+display_screen* LOADING_DATA_SCREEN;
+display_window* LOADING_DATA_WINDOW;
+
 
 int main(int argc, char **argv) {
 	int rc = handle_args(argc, argv);
@@ -45,7 +49,8 @@ int main(int argc, char **argv) {
 
 	init();
 
-	MAIN_SCREEN = display_create_new_screen("MENU");
+	MAIN_SCREEN = display_create_new_screen("MAIN");
+	display_set_screen(MAIN_SCREEN);
 
 	display_window_group* options_group = display_create_window_group();
 	
@@ -73,7 +78,7 @@ int main(int argc, char **argv) {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, NULL, 1, {
-				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [h] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [esc] to return to options - [h] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }}
 		}
 	};
@@ -118,18 +123,9 @@ int main(int argc, char **argv) {
 	display_content_node_set_interaction(quit_yes_node, quit_yes_button_interact);
 
 	
-	display_window* QUIT_NO_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/2+2:h1/2+1:2:1");
+	QUIT_NO_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/2+2:h1/2+1:2:1");
 	display_content_node* quit_no_node = display_new_text_content_node(QUIT_NO_WINDOW, "No");
 	display_content_node_set_interaction(quit_no_node, quit_no_button_interact);
-
-
-	//song_list sl = get_all_songs_played_for_artist(song_plays_database, "Des Rocs");
-
-	/*
-		for (int i = 0; i < sl.num_songs; i ++){
-			display_new_text_content_node(LIST_WINDOW, sl.songs[i].track);
-		}
-	*/
 
 
 	while (IN_MAIN_LOOP){
@@ -178,10 +174,11 @@ int main(int argc, char **argv) {
 					switch (user_in) {
 						case 'Q':
 						case 'q':
-						case 27:
 							SCREEN_RETURN = MAIN_SCREEN;
-							display_set_screen(QUIT_SCREEN);
-							display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
+							go_to_quit_screen();
+							break;
+						case 27:
+							display_screen_set_selected_window(MAIN_SCREEN, options_group->selected_window);
 							break;
 						case ':': {
 							int command_return_val = input_handle_command(COMMAND_WINDOW, 0, 0);
@@ -233,10 +230,23 @@ void init(){
 
 	display_init();
 
-	remove(CLI_OPTIONS.db_path);
+	LOADING_DATA_SCREEN = display_create_new_screen("loading");
+
+	LOADING_DATA_WINDOW = display_screen_add_new_window(LOADING_DATA_SCREEN, "w3/8:h1/2-1:w1/4:3");
+	display_window_set_boxed(LOADING_DATA_WINDOW , WINDOW_BOXED);
+	display_window_set_expansion(LOADING_DATA_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
+	display_window_set_selected(LOADING_DATA_WINDOW, WINDOW_UNSELECTABLE);
+	display_content_node* loading_node_1 = display_new_text_content_node(LOADING_DATA_WINDOW, "Loading json file...");
+	display_set_content_node_alignment(loading_node_1, CONTENT_NODE_ALIGN_CENTER);
+
+	display_screen_draw_windows(LOADING_DATA_SCREEN);
 
 	create_db(song_plays_database);
 	sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database);
+	
+	// move to its own function taking string
+	// function called by command or by cli option
+	// defaults to nothing
 	json_import_directory(song_plays_database, CLI_OPTIONS.json_path);
 }
 
@@ -267,7 +277,7 @@ void quit_no_button_interact(display_content_node* content_node){
 
 void quit_button_interact(display_content_node* content_node){
 	SCREEN_RETURN = MAIN_SCREEN;
-	display_set_screen(QUIT_SCREEN);
+	go_to_quit_screen();
 }
 
 void sql_get_top_albums(display_content_node* content_node){
@@ -281,6 +291,7 @@ void sql_get_top_albums(display_content_node* content_node){
 
 	if (top_albums_list.root == NULL){
 		log_err("top albums list is empty");
+		return;
 	}
 
 	// ERROR
@@ -296,6 +307,8 @@ void sql_get_top_albums(display_content_node* content_node){
 		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, album_str_data);
 		display_content_node_set_interaction(new_node, handle_album_click);
 	}
+
+	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
 }
 
 void sql_get_top_artists(display_content_node* content_node){
@@ -307,6 +320,7 @@ void sql_get_top_artists(display_content_node* content_node){
 
 	if (top_artists_list.root == NULL){
 		log_err("no artists in list");
+		return;
 	}
 
 	int str_data_size = 256;
@@ -319,6 +333,8 @@ void sql_get_top_artists(display_content_node* content_node){
 		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, artist_str_data);
 		display_content_node_set_interaction(new_node, handle_album_click);
 	}
+
+	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
 }
 
 void sql_get_listening_history(display_content_node* content_node){
@@ -330,6 +346,7 @@ void sql_get_listening_history(display_content_node* content_node){
 
 	if (listening_history.songs == NULL){
 		log_err("no songs in list");
+		return;
 	}
 
 	int str_data_size = 256;
@@ -350,17 +367,20 @@ void sql_get_listening_history(display_content_node* content_node){
 	}
 
 	log_msg("done showing listening history");
+
+	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
 }
 
 void sql_get_top_songs(display_content_node* content_node){
-	log_msg("getting top artists");
+	log_msg("getting top songs");
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
 	track_list top_songs_list = get_top_tracks(song_plays_database);
 
 	if (top_songs_list.root == NULL){
-		log_err("no artists in list");
+		log_err("no songs in list");
+		return;
 	}
 
 	int str_data_size = 256;
@@ -373,8 +393,15 @@ void sql_get_top_songs(display_content_node* content_node){
 		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
 		display_content_node_set_interaction(new_node, handle_album_click);
 	}
+
+	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
 }
 
 void handle_album_click(display_content_node* content_node){
 	log_msg_f("%s", content_node->data->text_data);
+}
+
+void go_to_quit_screen(){
+	display_set_screen(QUIT_SCREEN);
+	display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
 }
