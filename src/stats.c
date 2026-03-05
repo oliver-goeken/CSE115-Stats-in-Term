@@ -1,13 +1,10 @@
 #include "stats.h"
 #include "input.h"
 #include "log.h"
-#include "parse_db_funcs.h"
 #include "cli.h"
 #include "utils.h"
 #include <unistd.h>
 #include <signal.h>
-
-sqlite3* song_plays_database;
 
 display_window* LOADING_DATA_WINDOW;
 
