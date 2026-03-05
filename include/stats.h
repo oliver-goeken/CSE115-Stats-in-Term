@@ -5,6 +5,10 @@
 
 static bool SIGINT_FLAG;
 
+display_screen* LOADING_DATA_SCREEN;
+display_screen* MAIN_SCREEN;
+display_screen* QUIT_SCREEN;
+
 // initializes everything
 void init();
 

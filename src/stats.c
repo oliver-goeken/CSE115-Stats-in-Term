@@ -9,8 +9,7 @@
 
 sqlite3* song_plays_database;
 
-display_screen* MAIN_SCREEN;
-display_screen* QUIT_SCREEN;
+display_window* LOADING_DATA_WINDOW;
 
 display_window* LIST_WINDOW;
 display_window* QUIT_NO_WINDOW;
@@ -39,8 +38,6 @@ typedef struct {
 
 bool IN_MAIN_LOOP = true;
 
-display_screen* LOADING_DATA_SCREEN;
-display_window* LOADING_DATA_WINDOW;
 
 
 int main(int argc, char **argv) {
