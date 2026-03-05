@@ -1,5 +1,6 @@
 #include "input.h"
 #include "stats.h"
+#include "log.h"
 #include <string.h>
 
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size){
@@ -119,7 +120,7 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 
 	if (*command_buff == '\0'){
 		return COMMAND_CANCEL;
-	}else if (strcmp(command_buff, "q") == 0){
+	}else if (strcmp(command_buff, "q") == 0 || strcmp(command_buff, "quit") == 0){
 		return COMMAND_QUIT;
 	} else if (strcmp(command_buff, "search") == 0){
 		
