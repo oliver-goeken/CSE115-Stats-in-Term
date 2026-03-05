@@ -34,6 +34,8 @@
 #define COLOR_PAIR_SELECTED 2
 #define COLOR_PAIR_ERROR 3
 
+struct display_window_group;
+
 // text alignment for content nodes
 typedef enum content_node_alignment{
 	CONTENT_NODE_ALIGN_LEFT,
@@ -112,6 +114,8 @@ typedef struct display_window {
 
 	bool visible;
 
+	struct display_window_group* window_group;
+
 	/*
 	 * bit flag for which sides of a windows box are shown
 	 * bits:
@@ -143,6 +147,12 @@ typedef struct display_window_list_node {
 
 	display_window* display_window;
 } display_window_list_node;
+
+// a group of associated display windows
+typedef struct display_window_group {
+	display_window_list_node* root;
+	display_window* selected_window;
+} display_window_group;
 
 // a list of display windows, one list per screen
 typedef struct display_window_list {
@@ -268,6 +278,8 @@ display_screen* display_get_current_screen();
 // get which window node in a screen is selected
 display_window_list_node* display_screen_get_selected_window_node(display_screen* screen);
 
+int display_content_node_get_position(display_window* window, display_content_node* content_node, int* pos);
+
 // add a new window to a screen with the given dimension format string
 display_window* display_screen_add_new_window(display_screen* screen, char* dimensions_format);
 
@@ -330,6 +342,14 @@ int display_generic_select_prev_node();
 
 // create a new window list for a screen, used internally
 display_window_list* display_create_window_list(display_screen* screen);
+
+
+display_window_group* display_create_window_group();
+
+int display_add_window_to_group(display_window* window, display_window_group* group);
+
+int display_destroy_window_group(display_window_group* group);
+
 
 // destroy a window list, used internally
 int display_destroy_window_list(display_window_list* window_list);
