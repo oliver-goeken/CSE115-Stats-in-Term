@@ -124,6 +124,13 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 		return COMMAND_QUIT;
 	} else if (strcmp(command_buff, "search") == 0){
 		
+	} else if (strcmp(command_buff, "load") == 0){
+		display_set_screen(LOADING_DATA_SCREEN);
+		display_screen_draw_windows(LOADING_DATA_SCREEN);
+
+		json_import_directory(song_plays_database, args_buff);
+
+		display_set_screen(MAIN_SCREEN);
 	} else {
 		return COMMAND_NOT_RECOGNIZED;
 	}

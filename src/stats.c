@@ -2,7 +2,6 @@
 #include "input.h"
 #include "log.h"
 #include "cli.h"
-#include "utils.h"
 #include <unistd.h>
 #include <signal.h>
 
@@ -92,8 +91,6 @@ int main(int argc, char **argv) {
 
 	LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:7:w:h-9");
 	display_window_set_boxed(LIST_WINDOW, WINDOW_BOXED);
-
-	
 
 
 	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-1:w:1");
