@@ -1,5 +1,6 @@
 #include "stats.h"
 #include "input.h"
+#include "boognish.h"
 #include "utils.h"
 #include "log.h"
 #include "cli.h"
@@ -409,22 +410,12 @@ void draw_boognish(){
 	display_window_set_boxed(win, WINDOW_BOXED);
 	display_window_set_selected(win, WINDOW_UNSELECTABLE);
 
-	int start_x = 1;
-	int start_y = 1;
-
-	FILE* boog = fopen("lib/boognish.txt", "r");
-
-	if (boog == NULL){
-		return;
-	}
-
-	// read data
-	// put in window
-
 	char* buff = malloc(1);
 
 	ssize_t lines_read = 0;
 	size_t len = 1;
+
+	FILE* boog = fmemopen(lib_boognish_txt, lib_boognish_txt_len, "r");
 
 	while ((lines_read = getline(&buff, &len, boog)) != -1){
 		buff[100] = '\0';
