@@ -1,5 +1,6 @@
 #include "input.h"
 #include "stats.h"
+#include "utils.h"
 #include "log.h"
 #include <string.h>
 
@@ -124,7 +125,9 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 		return COMMAND_QUIT;
 	} else if (strcmp(command_buff, "search") == 0){
 		
-	} else if (strcmp(command_buff, "load") == 0){
+	} else if (strcmp(command_buff, "brown") == 0){
+		draw_boognish();
+	}else if (strcmp(command_buff, "load") == 0){
 		display_set_screen(LOADING_DATA_SCREEN);
 		display_screen_draw_windows(LOADING_DATA_SCREEN);
 
@@ -222,3 +225,4 @@ int input_display_command_error(display_window* window, char* msg){
 
 	return 0;
 }
+

@@ -1204,6 +1204,10 @@ int display_reset_ncurses_window(display_window* window){
 
 	window->ncurses_window = newwin(window->height, window->width, window->start_y, window->start_x);
 
+	if (window->ncurses_window == NULL){
+		log_err("error creating ncurses window");
+	}
+
 	return 0;
 }
 

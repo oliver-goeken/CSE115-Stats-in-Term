@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "log.h"
 #include "input.h"
+#include "stats.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -113,5 +114,15 @@ void get_dir_path(char* dir_path, char* path, int dir_path_size){
 			path[final_char + 1] = '/';
 			path[final_char + 2] = '\0';
 		}
+	}
+}
+
+void clear_screen(display_screen* screen){
+	if (screen != NULL){
+		display_destroy_window_list(screen->window_list);
+		display_create_window_list(screen);
+		display_screen_draw_windows(screen);
+	} else {
+		log_err("screen does not exist");
 	}
 }

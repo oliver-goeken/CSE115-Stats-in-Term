@@ -6,11 +6,12 @@
 
 static bool SIGINT_FLAG;
 
-display_screen* LOADING_DATA_SCREEN;
-display_screen* MAIN_SCREEN;
-display_screen* QUIT_SCREEN;
+static display_screen* LOADING_DATA_SCREEN;
+static display_screen* MAIN_SCREEN;
+static display_screen* QUIT_SCREEN;
+static display_screen* FULL_SCREEN;
 
-sqlite3* song_plays_database;
+static sqlite3* song_plays_database;
 
 // initializes everything
 void init();
@@ -38,5 +39,7 @@ void sql_get_top_songs(display_content_node* content_node);
 void handle_album_click(display_content_node* content_node);
 
 void go_to_quit_screen();
+
+void draw_boognish();
 
 #endif

@@ -2,6 +2,7 @@
 #define error_h
 
 #include <stdbool.h>
+#include "display.h"
 
 #define __PRINTERR__ print_error(__FILE__, __LINE__);
 
@@ -38,5 +39,7 @@ bool is_file(char* path);
 bool string_ends_with(char* cmp, char* end);
 
 void get_dir_path(char* dir_path, char* path, int dir_path_size);
+
+void clear_screen(display_screen* screen);
 
 #endif

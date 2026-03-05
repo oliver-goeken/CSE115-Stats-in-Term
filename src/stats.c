@@ -1,5 +1,6 @@
 #include "stats.h"
 #include "input.h"
+#include "utils.h"
 #include "log.h"
 #include "cli.h"
 #include <unistd.h>
@@ -41,6 +42,8 @@ int main(int argc, char **argv) {
 	if (rc >= 0) return rc;
 
 	init();
+
+	FULL_SCREEN = display_create_new_screen("FULL");
 
 	MAIN_SCREEN = display_create_new_screen("MAIN");
 	display_set_screen(MAIN_SCREEN);
@@ -395,4 +398,52 @@ void handle_album_click(display_content_node* content_node){
 void go_to_quit_screen(){
 	display_set_screen(QUIT_SCREEN);
 	display_screen_set_selected_window(QUIT_SCREEN, QUIT_NO_WINDOW);
+}
+
+void draw_boognish(){
+	clear_screen(FULL_SCREEN);
+
+	display_set_screen(FULL_SCREEN);
+
+	display_window* win = display_screen_add_new_window(FULL_SCREEN, "0:0:w:h");
+	display_window_set_boxed(win, WINDOW_BOXED);
+	display_window_set_selected(win, WINDOW_UNSELECTABLE);
+
+	int start_x = 1;
+	int start_y = 1;
+
+	FILE* boog = fopen("lib/boognish.txt", "r");
+
+	if (boog == NULL){
+		return;
+	}
+
+	// read data
+	// put in window
+
+	char* buff = malloc(1);
+
+	ssize_t lines_read = 0;
+	size_t len = 1;
+
+	while ((lines_read = getline(&buff, &len, boog)) != -1){
+		buff[100] = '\0';
+		display_content_node* content_node = display_new_text_content_node(win, buff);
+		display_set_content_node_alignment(content_node, CONTENT_NODE_ALIGN_CENTER);
+	}
+
+	display_new_text_content_node(win, "");
+	display_new_text_content_node(win, "");
+	display_new_text_content_node(win, "");
+	display_set_content_node_alignment(display_new_text_content_node(win, "press any key to continue, mang"), CONTENT_NODE_ALIGN_CENTER);
+
+	display_screen_draw_windows(FULL_SCREEN);
+
+	wrefresh(win->ncurses_window);
+
+	fclose(boog);
+
+	getchar();
+
+	display_set_screen(MAIN_SCREEN);
 }
