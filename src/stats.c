@@ -26,6 +26,7 @@ typedef struct {
 	char* fmt_string;
 	int selected;
 	bool window_boxed;
+	display_window_group* group;
 	int num_contents;
 	content_setup contents[256];
 } window_setup;
@@ -45,31 +46,33 @@ int main(int argc, char **argv) {
 	init();
 
 	MAIN_SCREEN = display_create_new_screen("MENU");
+
+	display_window_group* options_group = display_create_window_group();
 	
 	screen_setup menu_setup = {
 		7, {
-			{"0:0:w:4", WINDOW_UNSELECTABLE, WINDOW_BOXED, 2, {
+			{"0:0:w:4", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 2, {
 				//{"", NULL, CONTENT_NODE_ALIGN_CENTER},  // MAKE A OPTION TO SHRINK WINDOW HEIGHT AS MUCH AS POSSIBLE TO FIT CONTENT, as well as option to center nodes vertically
 													// this title will be 6 high (two spaces) unless terminal too small
 				{"Listening History and Stats", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"Right In Your Terminal!", NULL, CONTENT_NODE_ALIGN_CENTER}
 				 }},
-			{"w1/7:4:w1/7:3", WINDOW_SELECTED, WINDOW_BOXED, 1, {
+			{"w1/7:4:w1/7:3", WINDOW_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Listening History", sql_get_listening_history, CONTENT_NODE_ALIGN_CENTER}
 									}},
-			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
+			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Top Artists", sql_get_top_artists, CONTENT_NODE_ALIGN_CENTER}
 										}},
-			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
+			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Top Albums", sql_get_top_albums, CONTENT_NODE_ALIGN_CENTER}
 										 }},
-			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
+			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Top Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
 										 }},
-			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, 1, {
+			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
 										 }},
-			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, 1, {
+			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, NULL, 1, {
 				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [h] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }}
 		}
@@ -78,6 +81,7 @@ int main(int argc, char **argv) {
 	for (int i = 0; i < menu_setup.num_windows; i ++){
 		display_window* NEW_WINDOW = display_screen_add_new_window(MAIN_SCREEN, (menu_setup.windows)[i].fmt_string);
 		display_window_set_boxed(NEW_WINDOW, menu_setup.windows[i].window_boxed);
+		display_add_window_to_group(NEW_WINDOW, options_group);
 		display_window_set_selected(NEW_WINDOW, menu_setup.windows[i].selected);
 
 		for (int j = 0; j < menu_setup.windows[i].num_contents; j ++){
@@ -211,6 +215,8 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+
+	display_destroy_window_group(options_group);
 
 	terminate();
 	return 0;
