@@ -1,6 +1,8 @@
 #ifndef error_h
 #define error_h
 
+#include <stdbool.h>
+
 #define __PRINTERR__ print_error(__FILE__, __LINE__);
 
 // prints an error message to stdout
@@ -28,5 +30,13 @@ void count_newlines(char* string, int* newlines);
 void throw_error(int code, char* msg, char* file, int line);
 
 void remove_non_printable_chars(char* string);
+
+bool is_directory(char* path);
+
+bool is_file(char* path);
+
+bool string_ends_with(char* cmp, char* end);
+
+void get_dir_path(char* dir_path, char* path, int dir_path_size);
 
 #endif

@@ -1,7 +1,9 @@
 #include "utils.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 void print_error(char* file, int line){
 	fprintf(stderr, "%s[%d]\n", file, line);
@@ -67,4 +69,51 @@ void remove_non_printable_chars(char* string){
 	}
 
 	string[i - move_back] = '\0';
+}
+
+bool is_directory(char* path){
+	struct stat stat_buffer;
+	int ret_val = stat(path, &stat_buffer);
+
+	if (ret_val != 0){
+		log_err_f("error with stat at %s", path);
+		return false;
+	}
+
+	if (S_ISDIR(stat_buffer.st_mode)){
+		log_msg_f("%s is a directory", path);
+		return true;
+	}
+
+	return false;
+}
+
+bool is_file(char* path){
+	struct stat stat_buffer;
+	stat(path, &stat_buffer);
+
+	return S_ISREG(stat_buffer.st_mode);
+}
+
+bool string_ends_with(char* cmp, char* end){
+	int end_len = strlen(end);
+
+	return strncmp(cmp + strlen(cmp) - end_len, end, end_len) == 0;
+}
+
+void get_dir_path(char* dir_path, char* path, int dir_path_size){
+	int last_slash_pos = 0;
+
+	for (int i = 0; path[i] != '\0'; i ++){
+		if (path[i] == '/'){
+			last_slash_pos = i;
+		}
+	}
+
+	int j;
+	for (j = 0; j <= last_slash_pos && j < (dir_path_size - 1); j ++){
+		dir_path[j] = path[j];
+	}
+
+	dir_path[j + 1] = '\0';
 }

@@ -1,7 +1,11 @@
 #include "parse_db_funcs.h"
 #include "log.h"
+#include "utils.h"
 #include <time.h>
 #include <sys/errno.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <limits.h>
 // install cJSON : sudo apt install libcjson-dev
 //install sqlite3 : sudo apt install sqlite3
 
@@ -140,6 +144,8 @@ char* read_json (char* file)
 
 int json_import_to_db(sqlite3* database, char* file_name)
 {
+	log_msg_f("attempting to load json file %s", file_name);
+
     if (!database || !file_name) 
     {
         log_msg_detailed("Error: database or file name is NULL", __FILE__, __LINE__, NULL) ;
@@ -162,6 +168,8 @@ int json_import_to_db(sqlite3* database, char* file_name)
         cJSON_Delete(root) ; 
         return 1; 
     }
+
+
     // 1) Set up the command to add stuff to the sql
     sqlite3_stmt* cmd = NULL; 
     const char* sql_cmd = "INSERT INTO spotifyHistory (artist, track, album, ms_played, timestamp, track_uri) VALUES (?, ?, ?, ?, ?, ?);" ; 
@@ -229,6 +237,51 @@ int json_import_to_db(sqlite3* database, char* file_name)
 
 }
 
+int json_import_directory(sqlite3* database, char* path){
+	if (database == NULL){
+		log_err("database does not exist");
+		return -1;
+	} if (path == NULL){
+		log_err("path is empty");
+		return -2;
+	}
+
+	if (!is_directory(path)){
+		json_import_to_db(database, path);
+		return -0;
+	}
+
+	log_msg_f("opening directory %s", path);
+
+	DIR* json_dir = opendir(path);
+
+	if (json_dir == NULL){
+		log_err_f("error opening directory at %s", path);
+		return -3;
+	}
+
+	int path_buff_size = 1012;
+	char path_buffer[path_buff_size];
+
+	struct dirent* dir_ent;
+	while ((dir_ent = readdir(json_dir)) != NULL){
+		memset(path_buffer, 0, path_buff_size);
+
+		get_dir_path(path_buffer, path, path_buff_size);
+		strncat(path_buffer, dir_ent->d_name, path_buff_size);
+
+		if (is_file(path_buffer) && string_ends_with(path_buffer, ".json")){
+			json_import_to_db(database, path_buffer);
+		} else {
+			log_msg_f("%s is not a file or is not a json file", dir_ent->d_name);
+		}
+	}
+
+	closedir(json_dir);
+
+	return 0;
+}
+
 
 song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
 {
@@ -265,7 +318,6 @@ song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name)
     return list ;
 
 }
-
 
 int song_total(sqlite3* database, char* song_name, char* artist_name)
 {
@@ -393,7 +445,6 @@ album_list get_top_albums(sqlite3* database)
         info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
         info->artist = strdup((char*) sqlite3_column_text(cmd, 1)) ;
         info->num_plays = sqlite3_column_int(cmd, 2) ;
-            
     }
         
     sqlite3_finalize(cmd) ;

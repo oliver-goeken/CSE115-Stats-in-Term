@@ -231,7 +231,7 @@ void init(){
 
 	create_db(song_plays_database);
 	sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database);
-	json_import_to_db(song_plays_database, CLI_OPTIONS.json_path);
+	json_import_directory(song_plays_database, CLI_OPTIONS.json_path);
 }
 
 void terminate(){
@@ -283,22 +283,8 @@ void sql_get_top_albums(display_content_node* content_node){
 		char album_str_data[str_data_size];
 		memset(album_str_data, 0, str_data_size);
 
-		char album_number[str_data_size];
-		char album_plays[str_data_size];
+		snprintf(album_str_data, str_data_size, "%d. %s - %s - [%d plays]", i + 1, top_albums_list.root[i].name, top_albums_list.root[i].artist, top_albums_list.root[i].num_plays);
 
-		snprintf(album_number, str_data_size, "%d. ", i + 1);
-		snprintf(album_plays, str_data_size, "[%d plays]", top_albums_list.root[i].num_plays);
-
-		//remove_non_printable_chars(top_albums_list.root[i].name);
-		//remove_non_printable_chars(top_albums_list.root[i].artist);
-
-		strncat(album_str_data, album_number, str_data_size);
-		strncat(album_str_data, top_albums_list.root[i].name, str_data_size);
-		strncat(album_str_data, " - ", str_data_size);
-		strncat(album_str_data, top_albums_list.root[i].artist, str_data_size);
-		strncat(album_str_data, " - ", str_data_size);
-		strncat(album_str_data, album_plays, str_data_size);
-			
 		display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, album_str_data);
 		display_content_node_set_interaction(new_node, handle_album_click);
 	}
