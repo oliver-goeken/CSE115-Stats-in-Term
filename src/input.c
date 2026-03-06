@@ -1,5 +1,6 @@
 #include "input.h"
 #include "stats.h"
+#include "shared_defs.h"
 #include "utils.h"
 #include "log.h"
 #include <string.h>

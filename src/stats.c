@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "log.h"
 #include "cli.h"
+#include "shared_defs.h"
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
@@ -16,6 +17,14 @@ display_window* LOADING_DATA_WINDOW;
 display_window* QUIT_NO_WINDOW;
 
 display_screen* SCREEN_RETURN = NULL;
+
+display_screen* LOADING_DATA_SCREEN;
+display_screen* MAIN_SCREEN;
+display_screen* QUIT_SCREEN;
+display_screen* FULL_SCREEN;
+display_window* LIST_WINDOW;
+
+sqlite3* song_plays_database;
 
 typedef struct {
 	char* text;
