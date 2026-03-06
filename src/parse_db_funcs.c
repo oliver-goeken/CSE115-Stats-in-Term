@@ -250,8 +250,7 @@ int json_import_directory(sqlite3* database, char* path){
 	}
 
 	if (!is_directory(path)){
-		json_import_to_db(database, path);
-		return -0;
+		return json_import_to_db(database, path);
 	}
 
 	log_msg_f("opening directory %s", path);
