@@ -6,6 +6,7 @@
 #define COMMAND_QUIT -100
 #define COMMAND_NOT_RECOGNIZED -200
 #define COMMAND_CANCEL 100
+#define COMMAND_HELP 200
 
 // gets input from the user
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size);

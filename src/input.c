@@ -119,13 +119,23 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 
 	input_separate_command_and_args(in_buff, command_buff, args_buff, max_input_size);
 
+	/*
+	 *
+	 * maybe implement vim like lowest common denominator for larger commands
+	 * store a str array of commands
+	 * as soon as command_buff could only refer to one command, that is the command to run
+	 *
+	 */
+
 	if (*command_buff == '\0'){
 		return COMMAND_CANCEL;
 	}else if (strcmp(command_buff, "q") == 0 || strcmp(command_buff, "quit") == 0){
 		return COMMAND_QUIT;
 	} else if (strcmp(command_buff, "search") == 0){
 		
-	} else if (strcmp(command_buff, "brown") == 0){
+	} else if (strcmp(command_buff, "help") == 0){
+		return COMMAND_HELP;
+	}  else if (strcmp(command_buff, "brown") == 0){
 		draw_boognish();
 	}else if (strcmp(command_buff, "load") == 0){
 		display_set_screen(LOADING_DATA_SCREEN);

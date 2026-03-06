@@ -46,6 +46,64 @@ int main(int argc, char **argv) {
 
 	FULL_SCREEN = display_create_new_screen("FULL");
 
+	display_screen* HELP_SCREEN = display_create_new_screen("HELP");
+
+	screen_setup help_setup = {
+		7, {
+			{"0:0:w:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+				{"Help Menu", NULL, CONTENT_NODE_ALIGN_CENTER}
+																	}},
+			{"0:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+				{"Hotkeys", NULL, CONTENT_NODE_ALIGN_CENTER}
+																	}},
+			{"w1/3:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+				{"Commands", NULL, CONTENT_NODE_ALIGN_CENTER}
+																	}},
+			{"w2/3:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+				{"General Info", NULL, CONTENT_NODE_ALIGN_CENTER}
+																	}},
+			{"0:5:w1/3:h-5", WINDOW_SELECTED, WINDOW_BOXED, NULL, 7, {
+				{"[esc] - return to main screen from here", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[esc] - on main screen, select new option", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[arrows keys]/[hjkl] - navigate", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[enter] interact", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[H] on main screen, show this help screen", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[:] on main screen, enter command", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[q] quit", NULL, CONTENT_NODE_ALIGN_CENTER},
+																	 }},
+			{"w1/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
+																			}},
+			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
+																			}}
+		}
+	};
+
+	/*
+	 *
+	 * 3 column help screen
+	 * hotkeys
+	 * commands
+	 * general info
+	 *
+	 *
+	 */
+
+	for (int i = 0; i < help_setup.num_windows; i ++){
+		display_window* NEW_WINDOW = display_screen_add_new_window(HELP_SCREEN, (help_setup.windows)[i].fmt_string);
+		display_window_set_boxed(NEW_WINDOW, help_setup.windows[i].window_boxed);
+		display_add_window_to_group(NEW_WINDOW, help_setup.windows[i].group);
+		display_window_set_selected(NEW_WINDOW, help_setup.windows[i].selected);
+
+		for (int j = 0; j < help_setup.windows[i].num_contents; j ++){
+			display_content_node* new_node = display_new_text_content_node(NEW_WINDOW, help_setup.windows[i].contents[j].text);
+			display_set_content_node_alignment(new_node, help_setup.windows[i].contents[j].alignment);
+			display_content_node_set_interaction(new_node, help_setup.windows[i].contents[j].interact);
+		}
+	}
+
+
 	MAIN_SCREEN = display_create_new_screen("MAIN");
 	display_set_screen(MAIN_SCREEN);
 
@@ -75,7 +133,7 @@ int main(int argc, char **argv) {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, NULL, 1, {
-				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [esc] to return to options - [h] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [esc] to return to options - [H] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }}
 		}
 	};
@@ -175,6 +233,9 @@ int main(int argc, char **argv) {
 						case 27:
 							display_screen_set_selected_window(MAIN_SCREEN, options_group->selected_window);
 							break;
+						case 'H':
+							display_set_screen(HELP_SCREEN);
+							break;
 						case ':': {
 							int command_return_val = input_handle_command(COMMAND_WINDOW, 0, 0);
 
@@ -182,6 +243,8 @@ int main(int argc, char **argv) {
 								IN_MAIN_LOOP = false;
 							} else if (command_return_val == COMMAND_NOT_RECOGNIZED){
 								input_display_command_error(COMMAND_WINDOW, "Command not recognized");
+							} else if (command_return_val == COMMAND_HELP){
+								display_set_screen(HELP_SCREEN);
 							}
 							break;
 
@@ -201,6 +264,17 @@ int main(int argc, char **argv) {
 							} else {
 								display_set_screen(SCREEN_RETURN);
 							}
+							break;
+					}
+				} else if (current_screen == HELP_SCREEN){
+					switch(user_in){
+						case 27:
+							display_set_screen(MAIN_SCREEN);
+							break;
+						case 'Q':
+						case 'q':
+							SCREEN_RETURN = HELP_SCREEN;
+							go_to_quit_screen();
 							break;
 					}
 				}
