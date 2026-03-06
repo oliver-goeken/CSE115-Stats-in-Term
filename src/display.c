@@ -925,13 +925,19 @@ int display_window_draw_contents(display_window* window){
 				continue;
 			}
 		}
-		
+
 		display_draw_content_node(window, start_x, start_y, cur_node);
 
 		start_y ++;
 
 		prev_node = cur_node;
 		cur_node = cur_node->next_node;
+	}
+
+	if (start_y >= (window->height - (window->boxed ? 0 : 1)) && prev_node != NULL && prev_node != window->contents->root){
+		int dots_pos = ((window->width / 2) - 1);
+
+		mvwprintw(window->ncurses_window, window->height - 1, dots_pos, "...");
 	}
 
 	return 0;
