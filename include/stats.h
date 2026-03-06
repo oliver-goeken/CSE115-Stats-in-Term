@@ -6,12 +6,13 @@
 
 static bool SIGINT_FLAG;
 
-static display_screen* LOADING_DATA_SCREEN;
-static display_screen* MAIN_SCREEN;
-static display_screen* QUIT_SCREEN;
-static display_screen* FULL_SCREEN;
+display_screen* LOADING_DATA_SCREEN;
+display_screen* MAIN_SCREEN;
+display_screen* QUIT_SCREEN;
+display_screen* FULL_SCREEN;
+display_window* LIST_WINDOW;
 
-static sqlite3* song_plays_database;
+sqlite3* song_plays_database;
 
 // initializes everything
 void init();

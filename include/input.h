@@ -4,6 +4,7 @@
 #include "display.h"
 
 #define COMMAND_QUIT -100
+#define COMMAND_FILE_NOT_FOUND -300
 #define COMMAND_NOT_RECOGNIZED -200
 #define COMMAND_CANCEL 100
 #define COMMAND_HELP 200
