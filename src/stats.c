@@ -1,11 +1,15 @@
+#define _XOPEN_SOURCE 700
 #include "stats.h"
 #include "input.h"
 #include "log.h"
 #include "parse_db_funcs.h"
 #include "cli.h"
 #include "utils.h"
+#include "panel.h"
+#include <time.h>
 #include <unistd.h>
 #include <signal.h>
+
 
 sqlite3* song_plays_database;
 
@@ -87,10 +91,14 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:7:w:h-9");
+	LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:7:w1/2:h-9");
 	display_window_set_boxed(LIST_WINDOW, WINDOW_BOXED);
 
-	
+	//panel
+	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:7:w1/2:h-9");
+	display_window_set_boxed(INFO_WINDOW, WINDOW_BOXED);
+	panel_init(song_plays_database, LIST_WINDOW, INFO_WINDOW);
+
 
 
 	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-1:w:1");
@@ -149,10 +157,12 @@ int main(int argc, char **argv) {
 			case 'j':
 			case KEY_DOWN:
 				display_generic_select_next_node();
+				panel_on_selection_changed(); //CHANGES
 				break;
 			case 'k':
 			case KEY_UP:
 				display_generic_select_prev_node();
+				panel_on_selection_changed(); //CHANGES
 				break;
 			case 'h':
 			case KEY_LEFT:

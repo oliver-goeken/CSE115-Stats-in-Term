@@ -1,215 +1,309 @@
+#include "panel.h"
 #include "display.h"
+#include "sqlite3.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <stdbool.h>
 
-// call these inside main of stats.c ? 
-// initialize_info_panel(list_window, info_window, records_array, number_of_records)
-/*
-    prob have to keep struct in stats?
-*/
+static sqlite3* g_database = NULL;
+static display_window* g_list_window = NULL;
+static display_window* g_info_window = NULL;
 
-/*
-	typedef struct {
-		char *artist_name;
-		char *timestamp;
-		long milliseconds_played;
-	} ListeningRecord;
-	
-	typedef struct {
-		char *artist_name;
-		long total_milliseconds;
-		long total_plays;
-		time_t first_time_listened;
-	} ArtistSummary;
-	
-	static ArtistSummary *artist_list = NULL;
-	static int artist_count = 0;
-	
-	static display_window *list_window_ptr = NULL;
-	static display_window *info_window_ptr = NULL;
-	
-	//helpers
-	
-	static char *duplicate_string(const char *text) {
-		char *copy = malloc(strlen(text) + 1);
-		strcpy(copy, text);
-		return copy;
-	}
-	
-	static bool convert_timestamp_to_time(const char *timestamp, time_t *result) {
-	
-		struct tm time_info;
-		memset(&time_info, 0, sizeof(time_info));
-	
-		if (strlen(timestamp) < 19)
-			return false;
-	
-		time_info.tm_year = atoi(timestamp) - 1900;
-		time_info.tm_mon  = atoi(timestamp + 5) - 1;
-		time_info.tm_mday = atoi(timestamp + 8);
-		time_info.tm_hour = atoi(timestamp + 11);
-		time_info.tm_min  = atoi(timestamp + 14);
-		time_info.tm_sec  = atoi(timestamp + 17);
-	
-		*result = mktime(&time_info);
-		return true;
-	}
-	
-	static void convert_milliseconds_to_hms(long milliseconds, char *output) {
-	
-		long total_seconds = milliseconds / 1000;
-	
-		long hours = total_seconds / 3600;
-		long minutes = (total_seconds % 3600) / 60;
-		long seconds = total_seconds % 60;
-	
-		sprintf(output, "%ld:%02ld:%02ld", hours, minutes, seconds);
-	}
-	
-	// artist summary
-	
-	static int find_artist_position(const char *artist_name) {
-	
-		for (int i = 0; i < artist_count; i++) {
-			if (strcmp(artist_list[i].artist_name, artist_name) == 0)
-				return i;
-		}
-	
-		return -1;
-	}
-	
-	void create_artist_summary_table(ListeningRecord *records, int record_count) {
-	
-		artist_list = malloc(sizeof(ArtistSummary) * record_count);
-		artist_count = 0;
-	
-		for (int i = 0; i < record_count; i++) {
-	
-			if (records[i].artist_name == NULL)
-				continue;
-	
-			int index = find_artist_position(records[i].artist_name);
-	
-			time_t listen_time;
-			convert_timestamp_to_time(records[i].timestamp, &listen_time);
-	
-			if (index == -1) {
-	
-				artist_list[artist_count].artist_name =
-					duplicate_string(records[i].artist_name);
-	
-				artist_list[artist_count].total_milliseconds =
-					records[i].milliseconds_played;
-	
-				artist_list[artist_count].total_plays = 1;
-				artist_list[artist_count].first_time_listened = listen_time;
-	
-				artist_count++;
-	
-			} else {
-	
-				artist_list[index].total_milliseconds +=
-					records[i].milliseconds_played;
-	
-				artist_list[index].total_plays++;
-	
-				if (listen_time < artist_list[index].first_time_listened) {
-					artist_list[index].first_time_listened = listen_time;
-				}
-			}
-		}
-	}
-	
-	// top 10 artists
-	
-	void show_top_10_artists() {
-	
-		display_terminate_window_contents(list_window_ptr);
-		display_terminate_window_contents(info_window_ptr);
-	
-		display_window_add_content_node(list_window_ptr,
-			"top 10 artists");
-	
-		for (int i = 0; i < artist_count && i < 10; i++) {
-	
-			char time_text[64];
-			convert_milliseconds_to_hms(
-				artist_list[i].total_milliseconds,
-				time_text);
-	
-			char line[256];
-			sprintf(line, "%d) %s [%s]",
-				i + 1,
-				artist_list[i].artist_name,
-				time_text);
-	
-			display_window_add_content_node(list_window_ptr, line);
-		}
-	
-		display_window_add_content_node(info_window_ptr,
-			"choose artist");
-	}
-	
-	// artist information
-	
-	void show_artist_details(const char *artist_name) {
-	
-		display_terminate_window_contents(info_window_ptr);
-	
-		for (int i = 0; i < artist_count; i++) {
-	
-			if (strcmp(artist_list[i].artist_name, artist_name) == 0) {
-	
-				char time_text[64];
-				convert_milliseconds_to_hms(
-					artist_list[i].total_milliseconds,
-					time_text);
-	
-				char date_text[64];
-				strftime(date_text, sizeof(date_text),
-					"%Y-%m-%d",
-					gmtime(&artist_list[i].first_time_listened));
-	
-				display_window_add_content_node(info_window_ptr,
-					"artist summary");
-			
-				display_window_add_content_node(info_window_ptr,
-					artist_list[i].artist_name);
-	
-				char line1[128];
-				sprintf(line1, "total time listened: %s", time_text);
-				display_window_add_content_node(info_window_ptr, line1);
-	
-				char line2[128];
-				sprintf(line2, "total plays: %ld",
-					artist_list[i].total_plays);
-				display_window_add_content_node(info_window_ptr, line2);
-	
-				char line3[128];
-				sprintf(line3, "first time listened: %s", date_text);
-				display_window_add_content_node(info_window_ptr, line3);
-	
-				return;
-			}
-		}
-	}
-	
-	//initialize the info panel with the list of artists and their details
-	
-	void initialize_info_panel(
-		display_window *list_window,
-		display_window *info_window,
-		ListeningRecord *records,
-		int record_count) {
-	
-		list_window_ptr = list_window;
-		info_window_ptr = info_window;
-	
-		create_artist_summary_table(records, record_count);
-	
-		show_top_10_artists();
-	}
-*/
+//string helpers
+
+static void safe_copy(char* dst, int dst_size, const char* src) {
+    if (dst == NULL || dst_size <= 0) {
+        return;
+    }
+    if (src == NULL) {
+        dst[0] = '\0';
+        return;
+    }
+    snprintf(dst, dst_size, "%s", src);
+}
+
+static void trim_whitespace_in_place(char* text) {
+    if (text == NULL) return;
+
+    int start = 0;
+    while (text[start] != '\0' && isspace((unsigned char)text[start])) {
+        start++;
+    }
+
+    if (start > 0) {
+        memmove(text, text + start, strlen(text + start) + 1);
+    }
+
+    int end = (int)strlen(text) - 1;
+    while (end >= 0 && isspace((unsigned char)text[end])) {
+        text[end] = '\0';
+        end--;
+    }
+}
+
+static void format_ms_as_hms(long long ms, char* out, int out_size) {
+    long long total_seconds = ms / 1000;
+    long long hours = total_seconds / 3600;
+    long long minutes = (total_seconds % 3600) / 60;
+    long long seconds = total_seconds % 60;
+
+    snprintf(out, out_size, "%lld:%02lld:%02lld", hours, minutes, seconds);
+}
+
+static bool parse_artist_from_list_line(const char* line, char* out_artist, int out_size) {
+    if (line == NULL || out_artist == NULL || out_size <= 0) {
+        return false;
+    }
+    out_artist[0] = '\0';
+
+    char buffer[512];
+    safe_copy(buffer, (int)sizeof(buffer), line);
+    trim_whitespace_in_place(buffer);
+
+    if (buffer[0] == '\0') {
+        return false;
+    }
+
+    if (buffer[0] == '[') {
+        const char* last_sep = NULL;
+        const char* p = buffer;
+
+        while ((p = strstr(p, " - ")) != NULL) {
+            last_sep = p;
+            p += 3;
+        }
+
+        if (last_sep == NULL) {
+            return false;
+        }
+
+        safe_copy(out_artist, out_size, last_sep + 3);
+        trim_whitespace_in_place(out_artist);
+        return (out_artist[0] != '\0');
+    }
+
+    const char* after_number = buffer;
+    while (isdigit((unsigned char)*after_number)) after_number++;
+    if (*after_number == '.' && after_number[1] == ' ') {
+        after_number += 2; 
+    } else {
+        after_number = buffer;
+    }
+
+    char temp[512];
+    safe_copy(temp, (int)sizeof(temp), after_number);
+
+    char* bracket = strstr(temp, " - [");
+    if (bracket != NULL) {
+        *bracket = '\0';
+    }
+    trim_whitespace_in_place(temp);
+
+    char* last_sep = NULL;
+    char* search = temp;
+    while ((search = strstr(search, " - ")) != NULL) {
+        last_sep = search;
+        search += 3;
+    }
+
+    if (last_sep == NULL) {
+        safe_copy(out_artist, out_size, temp);
+        trim_whitespace_in_place(out_artist);
+        return (out_artist[0] != '\0');
+    }
+
+    safe_copy(out_artist, out_size, last_sep + 3);
+    trim_whitespace_in_place(out_artist);
+    return (out_artist[0] != '\0');
+}
+
+static bool query_artist_summary(
+    sqlite3* db,
+    const char* artist,
+    long long* out_total_plays,
+    long long* out_total_ms,
+    char* out_first_ts,
+    int out_first_ts_size
+) {
+    if (db == NULL || artist == NULL || artist[0] == '\0') {
+        return false;
+    }
+
+    if (out_total_plays) *out_total_plays = 0;
+    if (out_total_ms) *out_total_ms = 0;
+    if (out_first_ts && out_first_ts_size > 0) out_first_ts[0] = '\0';
+
+    const char* sql =
+        "SELECT COUNT(*) AS plays, "
+        "       COALESCE(SUM(ms_played), 0) AS total_ms, "
+        "       COALESCE(MIN(timestamp), '') AS first_ts "
+        "FROM spotifyHistory "
+        "WHERE artist = ?;";
+
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, artist, -1, SQLITE_TRANSIENT);
+
+    bool ok = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        if (out_total_plays) *out_total_plays = sqlite3_column_int64(stmt, 0);
+        if (out_total_ms) *out_total_ms = sqlite3_column_int64(stmt, 1);
+
+        const unsigned char* first_ts = sqlite3_column_text(stmt, 2);
+        if (out_first_ts && out_first_ts_size > 0) {
+            safe_copy(out_first_ts, out_first_ts_size, (const char*)first_ts);
+        }
+        ok = true;
+    }
+
+    sqlite3_finalize(stmt);
+    return ok;
+}
+
+static int query_top_songs_for_artist(
+    sqlite3* db,
+    const char* artist,
+    char song_names[][256],
+    long long song_plays[],
+    int max_songs
+) {
+    if (db == NULL || artist == NULL || artist[0] == '\0') {
+        return 0;
+    }
+
+    const char* sql =
+        "SELECT track, COUNT(*) AS plays "
+        "FROM spotifyHistory "
+        "WHERE artist = ? "
+        "GROUP BY track "
+        "ORDER BY plays DESC, track ASC "
+        "LIMIT ?;";
+
+    sqlite3_stmt* stmt = NULL;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        return 0;
+    }
+
+    sqlite3_bind_text(stmt, 1, artist, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 2, max_songs);
+
+    int count = 0;
+    while (count < max_songs && sqlite3_step(stmt) == SQLITE_ROW) {
+        const unsigned char* track = sqlite3_column_text(stmt, 0);
+        long long plays = sqlite3_column_int64(stmt, 1);
+
+        safe_copy(song_names[count], 256, (const char*)track);
+        song_plays[count] = plays;
+
+        count++;
+    }
+
+    sqlite3_finalize(stmt);
+    return count;
+}
+
+// info panel drawing
+
+static void draw_info_default(void) {
+    if (g_info_window == NULL) return;
+
+    display_window_destroy_content_nodes(g_info_window);
+    display_new_text_content_node(g_info_window, "Select item on left for details");
+    display_new_text_content_node(g_info_window, "--------------------------------");
+    //display_new_text_content_node(g_info_window, "Then details will appear");
+}
+
+static void draw_artist_info(const char* artist) {
+    if (g_info_window == NULL || g_database == NULL) return;
+
+    display_window_destroy_content_nodes(g_info_window);
+
+    char title[300];
+    snprintf(title, sizeof(title), "Artist: %s", artist);
+    display_new_text_content_node(g_info_window, title);
+
+    //info stuff
+    long long total_plays = 0;
+    long long total_ms = 0;
+    char first_ts[64];
+    first_ts[0] = '\0';
+
+    if (!query_artist_summary(g_database, artist, &total_plays, &total_ms, first_ts, (int)sizeof(first_ts))) {
+        display_new_text_content_node(g_info_window, "Could not query artist summary.");
+        return;
+    }
+
+    char total_time_text[64];
+    format_ms_as_hms(total_ms, total_time_text, (int)sizeof(total_time_text));
+
+    char plays_line[128];
+    snprintf(plays_line, sizeof(plays_line), "Total plays: %lld", total_plays);
+    display_new_text_content_node(g_info_window, plays_line);
+
+    char time_line[128];
+    snprintf(time_line, sizeof(time_line), "Total listening time: %s", total_time_text);
+    display_new_text_content_node(g_info_window, time_line);
+
+    // first_ts looks like "2026-02-05T07:27:51Z"
+    char first_line[160];
+    if (first_ts[0] == '\0') {
+        snprintf(first_line, sizeof(first_line), "First time listened: (unknown)");
+    } else {
+        snprintf(first_line, sizeof(first_line), "First time listened: %s", first_ts);
+    }
+    display_new_text_content_node(g_info_window, first_line);
+
+    // Top songs
+    display_new_text_content_node(g_info_window, "");
+    display_new_text_content_node(g_info_window, "Top songs:");
+    //display_new_text_content_node(g_info_window, "---------");
+
+    char top_song_names[5][256];
+    long long top_song_plays[5];
+    int top_count = query_top_songs_for_artist(g_database, artist, top_song_names, top_song_plays, 5);
+
+    if (top_count <= 0) {
+        display_new_text_content_node(g_info_window, "(No songs found for this artist)");
+        return;
+    }
+
+    for (int i = 0; i < top_count; i++) {
+        char line[320];
+        snprintf(line, sizeof(line), "%d. %s  [%lld plays]", i + 1, top_song_names[i], top_song_plays[i]);
+        display_new_text_content_node(g_info_window, line);
+    }
+}
+
+void panel_init(sqlite3* database, display_window* list_window, display_window* info_window) {
+    g_database = database;
+    g_list_window = list_window;
+    g_info_window = info_window;
+
+    draw_info_default();
+}
+
+void panel_on_selection_changed(void) {
+    if (g_list_window == NULL || g_info_window == NULL) {
+        return;
+    }
+
+    display_content_node* selected_node = display_get_selected_content_node();
+    if (selected_node == NULL || selected_node->data == NULL || selected_node->data->text_data == NULL) {
+        draw_info_default();
+        return;
+    }
+
+    const char* selected_text = selected_node->data->text_data;
+
+    char artist[256];
+    if (!parse_artist_from_list_line(selected_text, artist, (int)sizeof(artist))) {
+        draw_info_default();
+        return;
+    }
+
+    draw_artist_info(artist);
+}
