@@ -8,7 +8,7 @@
 #include <signal.h>
 
 // definition necessary for strptime on linux
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
 #include <time.h>
 
 display_window* LOADING_DATA_WINDOW;
