@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 				{"Right In Your Terminal!", NULL, CONTENT_NODE_ALIGN_CENTER}
 				 }},
 			{"w1/7:4:w1/7:3", WINDOW_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Listening History", sql_get_listening_history, CONTENT_NODE_ALIGN_CENTER}
+				{"History", sql_get_listening_history, CONTENT_NODE_ALIGN_CENTER}
 									}},
 			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Top Artists", sql_get_top_artists, CONTENT_NODE_ALIGN_CENTER}
@@ -169,13 +169,15 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:7:w1/2:h-9");
+	LIST_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:7:w:h-9");
 	display_window_set_boxed(LIST_WINDOW, WINDOW_BOXED);
 
 	//panel
-	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w1/2:7:w1/2:h-9");
+	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w2/3:8:w1/3-1:h1/3");
 	display_window_set_boxed(INFO_WINDOW, WINDOW_BOXED);
+	display_window_set_constraint_window(INFO_WINDOW, LIST_WINDOW);
 	panel_init(song_plays_database, LIST_WINDOW, INFO_WINDOW);
+	display_window_set_visibility(INFO_WINDOW, WINDOW_HIDDEN);
 
 
 	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-1:w:1");
@@ -296,6 +298,7 @@ int main(int argc, char **argv) {
 				} else if (current_screen == HELP_SCREEN){
 					switch(user_in){
 						case 27:
+						case 'H':
 							display_set_screen(MAIN_SCREEN);
 							break;
 						case 'Q':
@@ -405,6 +408,7 @@ void sql_get_top_albums(display_content_node* content_node){
 	}
 
 	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+	panel_on_selection_changed(); //CHANGES
 }
 
 void sql_get_top_artists(display_content_node* content_node){
@@ -431,6 +435,7 @@ void sql_get_top_artists(display_content_node* content_node){
 	}
 
 	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+	panel_on_selection_changed(); //CHANGES
 }
 
 void sql_get_listening_history(display_content_node* content_node){
@@ -465,6 +470,7 @@ void sql_get_listening_history(display_content_node* content_node){
 	log_msg("done showing listening history");
 
 	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+	panel_on_selection_changed(); //CHANGES
 }
 
 void sql_get_top_songs(display_content_node* content_node){
@@ -491,6 +497,7 @@ void sql_get_top_songs(display_content_node* content_node){
 	}
 
 	display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+	panel_on_selection_changed(); //CHANGES
 }
 
 void handle_album_click(display_content_node* content_node){

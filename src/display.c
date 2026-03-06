@@ -33,8 +33,8 @@ int display_ncurses_init(){
 	}
 
 
-	int MINTERM_Y = 12;
-	int MINTERM_X = 50;
+	int MINTERM_Y = 14;
+	int MINTERM_X = 100; //135
 
 	if (LINES < MINTERM_Y || COLS < MINTERM_X){
 		log_err("terminal too small to run");
@@ -806,6 +806,22 @@ int display_window_set_box_sides(display_window* window, uint8_t sides){
 	return 0;
 }
 
+int display_window_set_constraint_window(display_window* set, display_window* constraint){
+	if (set == NULL){
+		log_err("set window does not exist")
+		return -1;
+	} if (constraint == NULL){
+		log_err("constraint window does not exist")
+		return -2;
+	}
+
+	set->constraint_window = constraint;
+
+	display_parse_dimensions_format(set);
+
+	return 0;
+}
+
 int display_window_set_expansion(display_window* window, bool expand){
 	if (window == NULL){
 		log_err("window does not exist");
@@ -934,10 +950,14 @@ int display_window_draw_contents(display_window* window){
 		cur_node = cur_node->next_node;
 	}
 
+	int dots_pos = ((window->width / 2) - 1);
 	if (start_y >= (window->height - (window->boxed ? 0 : 1)) && prev_node != NULL && prev_node != window->contents->root){
-		int dots_pos = ((window->width / 2) - 1);
 
 		mvwprintw(window->ncurses_window, window->height - 1, dots_pos, "...");
+	}
+
+	if (window->content_offset > 0){
+		mvwprintw(window->ncurses_window, 0, dots_pos, "...");
 	}
 
 	return 0;
@@ -1322,17 +1342,40 @@ int display_parse_dimensions_format(display_window* window){
 
 		*field = ((atoi(numerator) * mult) / atoi(denominator)) + atoi(offset);
 
-		display_reset_ncurses_window(window);
 
-		// reset offset
-
-		int selected_node_number = 0;
-		display_content_node_get_position(window, display_window_get_selected_node(window), &selected_node_number);
-
-		window->content_offset = selected_node_number - ((window->height - (window->boxed ? 2 : 1)) / 2);
 
 		position ++;
 	}
+
+	if (window->constraint_window != NULL){
+		log_msg("resizing window to fit constraint");
+
+		if (window->start_x < (window->constraint_window->start_x + (window->constraint_window->boxed ? 1 : 0))){
+			window->start_x = window->constraint_window->start_x + (window->constraint_window->boxed ? 1 : 0);
+		}
+
+		int x_end_diff = 0;
+		if ((x_end_diff = (window->start_x + window->width) - (window->constraint_window->start_x + window->constraint_window->width) + (window->constraint_window->boxed ? 1 : 0)) > 0){
+			window->width -= x_end_diff;
+		}
+
+		if (window->start_y < window->constraint_window->start_y + (window->constraint_window->boxed ? 1 : 0)){
+			window->start_x = window->constraint_window->start_x + (window->constraint_window->boxed ? 1 : 0);
+		}
+
+		int y_end_diff = 0;
+		if ((y_end_diff = (window->start_y + window->height) - (window->constraint_window->start_y + window->constraint_window->height) + (window->constraint_window->boxed ? 1 : 0)) > 0){
+			window->height -= y_end_diff;
+		}
+	}
+	
+	display_reset_ncurses_window(window);
+
+	// reset offset
+	int selected_node_number = 0;
+	display_content_node_get_position(window, display_window_get_selected_node(window), &selected_node_number);
+
+	window->content_offset = selected_node_number - ((window->height - (window->boxed ? 2 : 1)) / 2);
 
 	return 0;
 }
@@ -1352,6 +1395,7 @@ display_window* display_create_window(char* dimensions_format){
 	new_window->width = 0;
 	new_window->height = 0;
 	new_window->contents = NULL;
+	new_window->constraint_window = NULL;
 	display_parse_dimensions_format(new_window);
 
 	new_window->window_group = NULL;

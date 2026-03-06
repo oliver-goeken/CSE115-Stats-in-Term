@@ -116,6 +116,8 @@ typedef struct display_window {
 
 	struct display_window_group* window_group;
 
+	struct display_window* constraint_window;
+
 	/*
 	 * bit flag for which sides of a windows box are shown
 	 * bits:
@@ -306,6 +308,8 @@ int display_window_set_boxed(display_window* window, bool boxed);
 // 7th bit: right side
 // 8th bit: bottom side
 int display_window_set_box_sides(display_window* window, uint8_t sides);
+
+int display_window_set_constraint_window(display_window* set, display_window* constraint);
 
 // set if a window expands to fit text
 int display_window_set_expansion(display_window* window, bool expand);

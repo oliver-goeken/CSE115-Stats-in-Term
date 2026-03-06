@@ -1,6 +1,7 @@
 #include "panel.h"
 #include "display.h"
 #include "sqlite3.h"
+#include "shared_defs.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -290,6 +291,15 @@ void panel_on_selection_changed(void) {
     if (g_list_window == NULL || g_info_window == NULL) {
         return;
     }
+
+	if (display_screen_get_selected_window_node(display_get_current_screen())->display_window == g_info_window){
+		return;
+	} else if (display_screen_get_selected_window_node(display_get_current_screen())->display_window != LIST_WINDOW){
+		display_window_set_visibility(g_info_window, WINDOW_HIDDEN);
+		return;
+	} else {
+		display_window_set_visibility(g_info_window, WINDOW_VISIBLE);
+	}
 
     display_content_node* selected_node = display_get_selected_content_node();
     if (selected_node == NULL || selected_node->data == NULL || selected_node->data->text_data == NULL) {
