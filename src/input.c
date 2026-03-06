@@ -141,9 +141,17 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 		display_set_screen(LOADING_DATA_SCREEN);
 		display_screen_draw_windows(LOADING_DATA_SCREEN);
 
-		json_import_directory(song_plays_database, args_buff);
+		int ret_val = 0;
+
+		if (json_import_directory(song_plays_database, args_buff) != 0){
+			ret_val = COMMAND_FILE_NOT_FOUND;
+		}
+
+		display_window_destroy_content_nodes(LIST_WINDOW);
 
 		display_set_screen(MAIN_SCREEN);
+
+		return ret_val;
 	} else {
 		return COMMAND_NOT_RECOGNIZED;
 	}
