@@ -4,7 +4,6 @@
 #include "display.h"
 #include "parse_db_funcs.h"
 
-static bool SIGINT_FLAG;
 
 
 // initializes everything

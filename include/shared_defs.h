@@ -12,4 +12,6 @@ extern display_window* LIST_WINDOW;
 
 extern sqlite3* song_plays_database;
 
+extern bool SIGINT_FLAG;
+
 #endif

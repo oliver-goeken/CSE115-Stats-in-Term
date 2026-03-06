@@ -12,19 +12,21 @@
 #include <signal.h>
 #include <time.h>
 
-display_window* LOADING_DATA_WINDOW;
+display_window* LOADING_DATA_WINDOW = NULL;
 
-display_window* QUIT_NO_WINDOW;
+display_window* QUIT_NO_WINDOW = NULL;
 
 display_screen* SCREEN_RETURN = NULL;
 
-display_screen* LOADING_DATA_SCREEN;
-display_screen* MAIN_SCREEN;
-display_screen* QUIT_SCREEN;
-display_screen* FULL_SCREEN;
-display_window* LIST_WINDOW;
+display_screen* LOADING_DATA_SCREEN = NULL;
+display_screen* MAIN_SCREEN = NULL;
+display_screen* QUIT_SCREEN = NULL;
+display_screen* FULL_SCREEN = NULL;
+display_window* LIST_WINDOW = NULL;
 
-sqlite3* song_plays_database;
+sqlite3* song_plays_database = NULL;
+
+bool SIGINT_FLAG = NULL;
 
 typedef struct {
 	char* text;
@@ -51,8 +53,8 @@ bool IN_MAIN_LOOP = true;
 
 
 int main(int argc, char **argv) {
-	//int rc = handle_args(argc, argv);
-	//if (rc >= 0) return rc;
+	int rc = handle_args(argc, argv);
+	if (rc >= 0) return rc;
 
 	init();
 
