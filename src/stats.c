@@ -9,7 +9,6 @@
 
 display_window* LOADING_DATA_WINDOW;
 
-display_window* LIST_WINDOW;
 display_window* QUIT_NO_WINDOW;
 
 display_screen* SCREEN_RETURN = NULL;
@@ -60,7 +59,7 @@ int main(int argc, char **argv) {
 				{"Commands", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
 			{"w2/3:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
-				{"General Info", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"Info", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
 			{"0:5:w1/3:h-5", WINDOW_SELECTED, WINDOW_BOXED, NULL, 7, {
 				{"[esc] - return to main screen from here", NULL, CONTENT_NODE_ALIGN_CENTER},
@@ -245,6 +244,8 @@ int main(int argc, char **argv) {
 								input_display_command_error(COMMAND_WINDOW, "Command not recognized");
 							} else if (command_return_val == COMMAND_HELP){
 								display_set_screen(HELP_SCREEN);
+							} else if (command_return_val == COMMAND_FILE_NOT_FOUND){
+								input_display_command_error(COMMAND_WINDOW, "Error loading file");
 							}
 							break;
 
@@ -305,7 +306,7 @@ void init(){
 	display_window_set_boxed(LOADING_DATA_WINDOW , WINDOW_BOXED);
 	display_window_set_expansion(LOADING_DATA_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
 	display_window_set_selected(LOADING_DATA_WINDOW, WINDOW_UNSELECTABLE);
-	display_content_node* loading_node_1 = display_new_text_content_node(LOADING_DATA_WINDOW, "Loading json file...");
+	display_content_node* loading_node_1 = display_new_text_content_node(LOADING_DATA_WINDOW, "Loading json file(s)...");
 	display_set_content_node_alignment(loading_node_1, CONTENT_NODE_ALIGN_CENTER);
 
 	display_screen_draw_windows(LOADING_DATA_SCREEN);
