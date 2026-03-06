@@ -1345,6 +1345,7 @@ display_window* display_create_window(char* dimensions_format){
 	new_window->start_y = 0;
 	new_window->width = 0;
 	new_window->height = 0;
+	new_window->contents = NULL;
 	display_parse_dimensions_format(new_window);
 
 	new_window->window_group = NULL;

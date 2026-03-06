@@ -5,7 +5,6 @@
 #include "parse_db_funcs.h"
 
 
-
 // initializes everything
 void init();
 
