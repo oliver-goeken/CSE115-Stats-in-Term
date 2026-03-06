@@ -2,14 +2,15 @@
 #define STATS_H
 
 #include "display.h"
+#include "parse_db_funcs.h"
 
-static bool SIGINT_FLAG;
 
 // initializes everything
 void init();
 
 //terminates everything
 void terminate();
+
 
 // handle interrupt signal
 void handle_sigint();
@@ -29,5 +30,9 @@ void sql_get_listening_history(display_content_node* content_node);
 void sql_get_top_songs(display_content_node* content_node);
 
 void handle_album_click(display_content_node* content_node);
+
+void go_to_quit_screen();
+
+void draw_boognish();
 
 #endif

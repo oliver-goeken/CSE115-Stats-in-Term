@@ -4,7 +4,7 @@
 
 cli_options CLI_OPTIONS = {
 	.db_path = "spotifyHistory.db",
-	.json_path = "/Users/oliverdgoeken/Downloads/Spotify Extended Streaming History/Streaming_History_Audio_2019-2020_0.json"
+	.json_path = ""
 };
 
 static void print_help(FILE *out) {

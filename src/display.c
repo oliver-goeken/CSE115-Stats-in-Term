@@ -354,6 +354,14 @@ int display_screen_set_selected_window(display_screen* screen, display_window* w
 		return -4;
 	}
 
+	if (window->window_group != NULL){
+		if (window->window_group->selected_window == NULL){
+			window->window_group->selected_window = window;
+		} else {
+			window = window->window_group->selected_window;
+		}
+	}
+
 	display_window_list_node* window_node = screen->window_list->root;
 
 	while (window_node != NULL){
@@ -402,6 +410,7 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 			continue;
 		}
 
+
 		int first_pos;
 		int second_pos;
 		int diff;
@@ -412,9 +421,21 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 		if (dimension == WINDOW_HORIZONTAL){
 			start_pos_new = window_node->display_window->start_x;
 			start_pos_cur = currently_selected->display_window->start_x;
+
+			if ((window_node->display_window->start_y + window_node->display_window->height - 1) < (currently_selected->display_window->start_y) ||
+					(window_node->display_window->start_y) > (currently_selected->display_window->start_y + currently_selected->display_window->height - 1)){
+				window_node = window_node->next_node;
+				continue;
+			}
 		} else {
 			start_pos_new = window_node->display_window->start_y;
 			start_pos_cur = currently_selected->display_window->start_y;
+
+			if ((window_node->display_window->start_x + window_node->display_window->width - 1) < (currently_selected->display_window->start_x) ||
+					(window_node->display_window->start_x) > (currently_selected->display_window->start_x + currently_selected->display_window->width - 1)){
+				window_node = window_node->next_node;
+				continue;
+			}
 		}
 
 		if (direction == NEXT_WINDOW){
@@ -427,12 +448,20 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 
 		diff = first_pos - second_pos;
 	
-		if (diff > 0 && diff < distance_to_new_selection){
-			distance_to_new_selection = diff;
-			new_selection = window_node;
+		if (diff > 0 && window_node->display_window->contents->root != NULL){
+			if (diff < distance_to_new_selection){
+				distance_to_new_selection = diff;
+				new_selection = window_node;
+			}
 		}
 
 		window_node = window_node->next_node;
+	}
+
+	if (currently_selected->display_window->window_group != NULL){
+		if (new_selection->display_window->window_group == currently_selected->display_window->window_group){
+			currently_selected->display_window->window_group->selected_window = new_selection->display_window;
+		}
 	}
 
 	display_screen_set_selected_window(screen, new_selection->display_window);
@@ -605,6 +634,36 @@ display_window_list_node* display_screen_get_selected_window_node(display_screen
 	return NULL;
 }
 
+int display_content_node_get_position(display_window* window, display_content_node* content_node, int* pos){
+	if (window == NULL){
+		log_err("no window");
+		return -1;
+	} if (content_node == NULL){
+		log_err("no content node");
+		return -2;
+	} if (window->contents == NULL){
+		log_err("no window contents");
+		return -3;
+	}
+
+	display_content_node* cur_node = window->contents->root;
+	int cur_node_pos = 0;
+
+	while (cur_node != content_node && cur_node != NULL){
+		cur_node = cur_node->next_node;
+		cur_node_pos ++;
+	}
+
+	if (cur_node == NULL){
+		log_err("couldn't find specified content node");
+		return -4;
+	}
+
+	*pos = cur_node_pos;
+
+	return 0;
+}
+
 display_window* display_screen_add_new_window(display_screen* screen, char* dimensions_format){
 	if (screen == NULL){
 		log_err("screen does not exist");
@@ -669,6 +728,14 @@ int display_screen_destroy_window(display_screen* screen, display_window* window
 
 	display_window_list_node* cur_node = screen->window_list->root;
 	display_window_list_node* prev_node = cur_node;
+
+	if (cur_node->next_node == NULL){
+		display_destroy_window(window);
+		free(cur_node);
+
+		screen->window_list->root = NULL;
+		return 0;
+	}
 
 	while (cur_node != NULL){
 		prev_node = cur_node;
@@ -1044,6 +1111,62 @@ display_window_list* display_create_window_list(display_screen* screen){
 	return screen->window_list;
 }
 
+display_window_group* display_create_window_group(){
+	display_window_group* new_window_group = calloc(1, sizeof(display_window_group));
+
+	return new_window_group;
+}
+
+int display_add_window_to_group(display_window* window, display_window_group* group){
+	if (window == NULL){
+		log_err("no window");
+		return -1;
+	} if (group == NULL){
+		log_err("no group");
+		return -2;
+	}
+
+	if (group->root == NULL){
+		group->root = calloc(1, sizeof(display_window_list_node));
+		group->root->display_window = window;
+		group->selected_window = window;
+	} else {
+		display_window_list_node* cur_node = group->root;
+
+		while (cur_node->next_node != NULL){
+			cur_node = cur_node->next_node;
+		}
+
+		cur_node->next_node = calloc(1, sizeof(display_window_list_node));
+		cur_node->next_node->display_window = window;
+	}
+
+	window->window_group = group;
+
+	return 0;
+}
+
+int display_destroy_window_group(display_window_group* group){
+	if (group == NULL){
+		log_err("no group to destroy");
+		return -1;
+	}
+
+	display_window_list_node* cur_node = group->root;
+
+	while (cur_node != NULL){
+		display_window_list_node* next_node = cur_node->next_node;
+		
+		free(cur_node);
+
+		cur_node = next_node;
+	}
+
+	free(group);
+
+	return 0;
+}
+
 int display_destroy_window_list(display_window_list* window_list){
 	if (window_list == NULL){
 		log_err("window list does not exist");
@@ -1081,6 +1204,10 @@ int display_reset_ncurses_window(display_window* window){
 
 	window->ncurses_window = newwin(window->height, window->width, window->start_y, window->start_x);
 
+	if (window->ncurses_window == NULL){
+		log_err("error creating ncurses window");
+	}
+
 	return 0;
 }
 
@@ -1107,7 +1234,6 @@ int display_parse_dimensions_format(display_window* window){
 	 * '-' or '+' indicates an offset {ALWAYS PUT OFFSET AFTER DIMENSIONS RATIO}
 	 * example: "h1/3:w1/3:h1/3:3" = start at 1/3 height, 1/3 width; width of 1/3 height and a height of 3
 	 * example: "0:0:w1/2:h-2" = start at 0, 0; width of 1/2; height of window height minus 2
-	 * 
 	 *
 	 * ADD SUPPORT FOR WINDOW EXPANSION IF TOO SMALL FOR TEXT */
 
@@ -1192,6 +1318,13 @@ int display_parse_dimensions_format(display_window* window){
 
 		display_reset_ncurses_window(window);
 
+		// reset offset
+
+		int selected_node_number = 0;
+		display_content_node_get_position(window, display_window_get_selected_node(window), &selected_node_number);
+
+		window->content_offset = selected_node_number - ((window->height - (window->boxed ? 2 : 1)) / 2);
+
 		position ++;
 	}
 
@@ -1212,7 +1345,10 @@ display_window* display_create_window(char* dimensions_format){
 	new_window->start_y = 0;
 	new_window->width = 0;
 	new_window->height = 0;
+	new_window->contents = NULL;
 	display_parse_dimensions_format(new_window);
+
+	new_window->window_group = NULL;
 
 	new_window->visible = WINDOW_VISIBLE;
 	new_window->expand = WINDOW_SET_SIZE;
@@ -1282,6 +1418,7 @@ int display_window_destroy_content_nodes(display_window* window){
 	}
 
 	window->contents->root = NULL;
+	window->content_offset = 0;
 
 	return 0;
 }
@@ -1511,7 +1648,7 @@ int display_content_node_data_set_text(display_content_node_data* content_data, 
 		return -1;
 	} 
 
-	char* new_data = calloc(sizeof(char), strlen(text_data) + 1);
+	char* new_data = calloc(strlen(text_data) + 1, sizeof(char));
 	strncpy(new_data, text_data, strlen(text_data));
 
 	content_data->text_data = new_data;

@@ -1,5 +1,8 @@
 #include "input.h"
 #include "stats.h"
+#include "shared_defs.h"
+#include "utils.h"
+#include "log.h"
 #include <string.h>
 
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size){
@@ -117,12 +120,39 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 
 	input_separate_command_and_args(in_buff, command_buff, args_buff, max_input_size);
 
+	/*
+	 *
+	 * maybe implement vim like lowest common denominator for larger commands
+	 * store a str array of commands
+	 * as soon as command_buff could only refer to one command, that is the command to run
+	 *
+	 */
+
 	if (*command_buff == '\0'){
 		return COMMAND_CANCEL;
-	}else if (strcmp(command_buff, "q") == 0){
+	}else if (strcmp(command_buff, "q") == 0 || strcmp(command_buff, "quit") == 0){
 		return COMMAND_QUIT;
 	} else if (strcmp(command_buff, "search") == 0){
 		
+	} else if (strcmp(command_buff, "help") == 0){
+		return COMMAND_HELP;
+	}  else if (strcmp(command_buff, "brown") == 0){
+		draw_boognish();
+	}else if (strcmp(command_buff, "load") == 0){
+		display_set_screen(LOADING_DATA_SCREEN);
+		display_screen_draw_windows(LOADING_DATA_SCREEN);
+
+		int ret_val = 0;
+
+		if (json_import_directory(song_plays_database, args_buff) != 0){
+			ret_val = COMMAND_FILE_NOT_FOUND;
+		}
+
+		display_window_destroy_content_nodes(LIST_WINDOW);
+
+		display_set_screen(MAIN_SCREEN);
+
+		return ret_val;
 	} else {
 		return COMMAND_NOT_RECOGNIZED;
 	}
@@ -214,3 +244,4 @@ int input_display_command_error(display_window* window, char* msg){
 
 	return 0;
 }
+
