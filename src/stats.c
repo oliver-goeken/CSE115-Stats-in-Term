@@ -1,3 +1,6 @@
+// definition necessary for strptime on linux
+#define _XOPEN_SOURCE 700
+
 #include "stats.h"
 #include "input.h"
 #include "boognish.h"
@@ -6,9 +9,6 @@
 #include "cli.h"
 #include <unistd.h>
 #include <signal.h>
-
-// definition necessary for strptime on linux
-#define _XOPEN_SOURCE 700
 #include <time.h>
 
 display_window* LOADING_DATA_WINDOW;
