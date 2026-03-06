@@ -51,8 +51,8 @@ bool IN_MAIN_LOOP = true;
 
 
 int main(int argc, char **argv) {
-	int rc = handle_args(argc, argv);
-	if (rc >= 0) return rc;
+	//int rc = handle_args(argc, argv);
+	//if (rc >= 0) return rc;
 
 	init();
 
