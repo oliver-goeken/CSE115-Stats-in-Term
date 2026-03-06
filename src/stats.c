@@ -6,6 +6,7 @@
 #include "cli.h"
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 display_window* LOADING_DATA_WINDOW;
 
