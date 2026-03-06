@@ -6,6 +6,9 @@
 #include "cli.h"
 #include <unistd.h>
 #include <signal.h>
+
+// definition necessary for strptime on linux
+#define _XOPEN_SOURCE
 #include <time.h>
 
 display_window* LOADING_DATA_WINDOW;
