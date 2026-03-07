@@ -18,7 +18,6 @@ void free_song_list(song_list* list) {
         free(list->songs[i].track);
         free(list->songs[i].album);
         free(list->songs[i].timestamp);
-        free(list->songs[i].track);
     }
     free(list->songs);
     list->songs = NULL;
@@ -43,19 +42,12 @@ void free_artist_list(artist_list list)
  
 int create_db(sqlite3 *database)
 {
-
     // function to initialize db
     // database initialization
     int rem_con ; // to establish the remote connection
-
-    // open db -- create if it doesn't exist
-    rem_con = sqlite3_open("spotifyHistory.db", &database);
-    
-    if (rem_con != 0) { // if it can't open!
-        log_msg_detailed("Error opening database: ", __FILE__, __LINE__, sqlite3_errmsg(database)) ;
-        database = NULL ;
-        sqlite3_close(database) ; 
-        return 1 ; 
+    if (!database) {
+        log_msg_detailed("Error opening database: ", __FILE__, __LINE__, NULL);
+        return 1;
     }
 
     const char *sql_cmd = "CREATE TABLE IF NOT EXISTS spotifyHistory ("
@@ -73,8 +65,6 @@ int create_db(sqlite3 *database)
     if (rem_con != 0)
     {
         log_msg_detailed("Error in database: ", __FILE__, __LINE__, sqlite3_errmsg(database)) ;
-        database = NULL ;
-        sqlite3_close(database) ; 
         return 1 ;
     }
 
@@ -511,6 +501,37 @@ song_list get_listening_history(sqlite3* database){
 
 	log_msg("done getting listening history");
 
+    return listen_history;
+}
+
+song_list get_listening_history_limit(sqlite3* database, int limit){
+    sqlite3_stmt* cmd = NULL;
+    const char* get_listen_history = "SELECT artist, track, album, timestamp, ms_played FROM spotifyHistory ORDER BY timestamp DESC LIMIT ?;"; 
+
+    song_list listen_history = { .songs = NULL, .num_songs = 0 };
+
+    if (sqlite3_prepare_v2(database, get_listen_history, -1, &cmd, NULL) != 0) return listen_history;
+    sqlite3_bind_int(cmd, 1, limit);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW){
+        int count = listen_history.num_songs + 1; 
+        song_info* new_song = realloc(listen_history.songs, count * sizeof(song_info));
+
+        if (!new_song) break; 
+
+        listen_history.songs = new_song;
+        listen_history.num_songs = count;
+
+        song_info* new_song_info = &(listen_history.songs[listen_history.num_songs - 1]);
+
+        new_song_info->artist = strdup((char*) sqlite3_column_text(cmd, 0));
+        new_song_info->track = strdup((char*) sqlite3_column_text(cmd, 1));
+        new_song_info->album = strdup((char*) sqlite3_column_text(cmd, 2));
+        new_song_info->timestamp = strdup((char*) sqlite3_column_text(cmd, 3));
+        new_song_info->ms_played = atoi((char*) sqlite3_column_text(cmd, 4));
+    }
+
+    sqlite3_finalize(cmd);
     return listen_history;
 }
 
