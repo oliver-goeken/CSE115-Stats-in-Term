@@ -159,6 +159,48 @@ static int print_bottom_albums(int limit){
 	return 0;
 }
 
+static int print_top_songs(int limit){
+	track_list top_songs = get_top_tracks_limit(song_plays_database, limit);
+
+	if (top_songs.root == NULL){
+		log_err("top songs list is empty");
+		return 1;
+	}
+
+	for (int i = 0; i < top_songs.len; i++){
+		printf("%d. %s - %s - %s [%d plays]\n",
+			i + 1,
+			top_songs.root[i].name,
+			top_songs.root[i].album,
+			top_songs.root[i].artist,
+			top_songs.root[i].num_plays);
+	}
+
+	free_track_list(top_songs);
+	return 0;
+}
+
+static int print_bottom_songs(int limit){
+	track_list bottom_songs = get_bottom_tracks_limit(song_plays_database, limit);
+
+	if (bottom_songs.root == NULL){
+		log_err("bottom songs list is empty");
+		return 1;
+	}
+
+	for (int i = 0; i < bottom_songs.len; i++){
+		printf("%d. %s - %s - %s [%d plays]\n",
+			i + 1,
+			bottom_songs.root[i].name,
+			bottom_songs.root[i].album,
+			bottom_songs.root[i].artist,
+			bottom_songs.root[i].num_plays);
+	}
+
+	free_track_list(bottom_songs);
+	return 0;
+}
+
 
 int main(int argc, char **argv) {
 	int rc = handle_args(argc, argv);
@@ -181,6 +223,20 @@ int main(int argc, char **argv) {
 	if (CLI_OPTIONS.album_bottom_count > 0){
 		if (init_db_only() != 0) return 1;
 		int prc = print_bottom_albums(CLI_OPTIONS.album_bottom_count);
+		terminate_db_only();
+		return prc;
+	}
+
+	if (CLI_OPTIONS.song_count > 0){
+		if (init_db_only() != 0) return 1;
+		int prc = print_top_songs(CLI_OPTIONS.song_count);
+		terminate_db_only();
+		return prc;
+	}
+
+	if (CLI_OPTIONS.song_bottom_count > 0){
+		if (init_db_only() != 0) return 1;
+		int prc = print_bottom_songs(CLI_OPTIONS.song_bottom_count);
 		terminate_db_only();
 		return prc;
 	}

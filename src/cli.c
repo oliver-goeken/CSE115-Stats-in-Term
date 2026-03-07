@@ -8,7 +8,9 @@ cli_options CLI_OPTIONS = {
 	.json_path = "",
 	.recent_count = 0,
 	.album_count = 0,
-	.album_bottom_count = 0
+	.album_bottom_count = 0,
+	.song_count = 0,
+	.song_bottom_count = 0
 };
 
 static void print_help(FILE *out) {
@@ -25,6 +27,8 @@ static void print_help(FILE *out) {
 			"  -r N, --recents N Print the N most recent listens and exit\n"
 			"  -a N, --albums N  Print the N top albums and exit\n"
 			"  -A N, --albums-bottom N Print the N least played albums and exit\n"
+			"  -s N, --songs N   Print the N top songs and exit\n"
+			"  -S N, --songs-bottom N Print the N least played songs and exit\n"
 			"\n"
 			"DEFAULT:\n"
 			"  Launches the TUI.\n"
@@ -111,6 +115,38 @@ int handle_args(int argc, char **argv) {
 			}
 			CLI_OPTIONS.album_bottom_count = (int)val;
 		}
+		else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--songs") == 0) {
+			if (i + 1 >= argc) {
+				fprintf(stderr, "%s requires a count\n", argv[i]);
+				fprintf(stderr, "Try './stats --help'\n");
+				return 2;
+			}
+
+			char *endptr = NULL;
+			long val = strtol(argv[++i], &endptr, 10);
+			if (endptr == argv[i] || *endptr != '\0' || val <= 0 || val > 1000000) {
+				fprintf(stderr, "%s expects a positive integer\n", argv[i - 1]);
+				fprintf(stderr, "Try './stats --help'\n");
+				return 2;
+			}
+			CLI_OPTIONS.song_count = (int)val;
+		}
+		else if (strcmp(argv[i], "-S") == 0 || strcmp(argv[i], "--songs-bottom") == 0) {
+			if (i + 1 >= argc) {
+				fprintf(stderr, "%s requires a count\n", argv[i]);
+				fprintf(stderr, "Try './stats --help'\n");
+				return 2;
+			}
+
+			char *endptr = NULL;
+			long val = strtol(argv[++i], &endptr, 10);
+			if (endptr == argv[i] || *endptr != '\0' || val <= 0 || val > 1000000) {
+				fprintf(stderr, "%s expects a positive integer\n", argv[i - 1]);
+				fprintf(stderr, "Try './stats --help'\n");
+				return 2;
+			}
+			CLI_OPTIONS.song_bottom_count = (int)val;
+		}
 
 		// otherwise
 		else {
@@ -124,6 +160,8 @@ int handle_args(int argc, char **argv) {
 	if (CLI_OPTIONS.recent_count > 0) selected_modes++;
 	if (CLI_OPTIONS.album_count > 0) selected_modes++;
 	if (CLI_OPTIONS.album_bottom_count > 0) selected_modes++;
+	if (CLI_OPTIONS.song_count > 0) selected_modes++;
+	if (CLI_OPTIONS.song_bottom_count > 0) selected_modes++;
 
 	if (selected_modes > 1) {
 		fprintf(stderr, "Choose only one print mode at a time\n");

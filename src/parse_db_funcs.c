@@ -39,6 +39,17 @@ void free_artist_list(artist_list list)
     free(list.root);
 }
 
+void free_track_list(track_list list)
+{
+    for (int i = 0; i < list.len; i++) {
+        free(list.root[i].name);
+        free(list.root[i].album);
+        free(list.root[i].artist);
+        free(list.root[i].track_uri);
+    }
+    free(list.root);
+}
+
  
 int create_db(sqlite3 *database)
 {
@@ -523,6 +534,66 @@ track_list get_top_tracks(sqlite3* database)
         info->num_plays = atoi((char*) sqlite3_column_text(cmd, 3)) ;
     }
         
+    sqlite3_finalize(cmd) ;
+    return t_list ;
+}
+
+track_list get_top_tracks_limit(sqlite3* database, int limit)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_track_listen_count = "SELECT track, album, artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY track, album, artist ORDER BY play_count DESC LIMIT ?;" ;
+
+    track_list t_list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_track_listen_count, -1, &cmd, NULL) != 0) return t_list;
+    sqlite3_bind_int(cmd, 1, limit);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = t_list.len + 1 ;
+        track* root = realloc(t_list.root, count * sizeof(track)) ;
+        if (!root) break ;
+        t_list.root = root ;
+        t_list.len = count ;
+
+        track* info = &t_list.root[t_list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->album = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 2)) ;
+        info->track_uri = NULL;
+        info->num_plays = atoi((char*) sqlite3_column_text(cmd, 3)) ;
+    }
+
+    sqlite3_finalize(cmd) ;
+    return t_list ;
+}
+
+track_list get_bottom_tracks_limit(sqlite3* database, int limit)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_track_listen_count = "SELECT track, album, artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY track, album, artist ORDER BY play_count ASC, track ASC, album ASC, artist ASC LIMIT ?;" ;
+
+    track_list t_list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_track_listen_count, -1, &cmd, NULL) != 0) return t_list;
+    sqlite3_bind_int(cmd, 1, limit);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = t_list.len + 1 ;
+        track* root = realloc(t_list.root, count * sizeof(track)) ;
+        if (!root) break ;
+        t_list.root = root ;
+        t_list.len = count ;
+
+        track* info = &t_list.root[t_list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->album = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 2)) ;
+        info->track_uri = NULL;
+        info->num_plays = atoi((char*) sqlite3_column_text(cmd, 3)) ;
+    }
+
     sqlite3_finalize(cmd) ;
     return t_list ;
 }

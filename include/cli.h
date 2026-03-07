@@ -7,6 +7,8 @@ typedef struct {
 	int recent_count;
 	int album_count;
 	int album_bottom_count;
+	int song_count;
+	int song_bottom_count;
 } cli_options;
 
 extern cli_options CLI_OPTIONS;
