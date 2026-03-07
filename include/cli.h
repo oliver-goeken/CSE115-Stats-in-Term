@@ -9,6 +9,8 @@ typedef struct {
 	int album_bottom_count;
 	int song_count;
 	int song_bottom_count;
+	int artist_count;
+	int artist_bottom_count;
 } cli_options;
 
 extern cli_options CLI_OPTIONS;

@@ -427,6 +427,62 @@ artist_list get_top_artists(sqlite3* database)
 
 }
 
+artist_list get_top_artists_limit(sqlite3* database, int limit)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_artist_listen_count = "SELECT artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY artist ORDER BY play_count DESC LIMIT ?;" ;
+
+    artist_list list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_artist_listen_count, -1, &cmd, NULL) != 0) return list;
+    sqlite3_bind_int(cmd, 1, limit);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.len + 1 ;
+        artist* temp = realloc(list.root, count * sizeof(artist)) ;
+        if (!temp) break ;
+        list.root = temp ;
+        list.len = count ;
+
+        artist* info = &list.root[list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->num_plays = sqlite3_column_int(cmd, 1) ;
+    }
+
+    sqlite3_finalize(cmd) ;
+    return list ;
+
+}
+
+artist_list get_bottom_artists_limit(sqlite3* database, int limit)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_artist_listen_count = "SELECT artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY artist ORDER BY play_count ASC, artist ASC LIMIT ?;" ;
+
+    artist_list list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_artist_listen_count, -1, &cmd, NULL) != 0) return list;
+    sqlite3_bind_int(cmd, 1, limit);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.len + 1 ;
+        artist* temp = realloc(list.root, count * sizeof(artist)) ;
+        if (!temp) break ;
+        list.root = temp ;
+        list.len = count ;
+
+        artist* info = &list.root[list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->num_plays = sqlite3_column_int(cmd, 1) ;
+    }
+
+    sqlite3_finalize(cmd) ;
+    return list ;
+
+}
+
 album_list get_top_albums(sqlite3* database)
 {
     sqlite3_stmt* cmd = NULL ;

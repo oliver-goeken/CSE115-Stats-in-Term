@@ -85,6 +85,8 @@ void sql_change_timestamp_format(sqlite3* database) ;
 
 // sort 
 artist_list get_top_artists(sqlite3* database);
+artist_list get_top_artists_limit(sqlite3* database, int limit);
+artist_list get_bottom_artists_limit(sqlite3* database, int limit);
 
 album_list get_top_albums(sqlite3* database);
 album_list get_top_albums_limit(sqlite3* database, int limit);
