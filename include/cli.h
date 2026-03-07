@@ -6,6 +6,7 @@ typedef struct {
 	const char *json_path;
 	int recent_count;
 	int album_count;
+	int album_bottom_count;
 } cli_options;
 
 extern cli_options CLI_OPTIONS;

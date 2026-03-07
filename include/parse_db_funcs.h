@@ -87,6 +87,7 @@ artist_list get_top_artists(sqlite3* database);
 
 album_list get_top_albums(sqlite3* database);
 album_list get_top_albums_limit(sqlite3* database, int limit);
+album_list get_bottom_albums_limit(sqlite3* database, int limit);
 
 track_list get_top_tracks(sqlite3* database);
 

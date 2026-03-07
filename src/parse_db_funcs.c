@@ -471,6 +471,34 @@ album_list get_top_albums_limit(sqlite3* database, int limit)
     return list ;
 }
 
+album_list get_bottom_albums_limit(sqlite3* database, int limit)
+{
+    sqlite3_stmt* cmd = NULL ;
+    const char* get_album_listen_count = "SELECT album, artist, COUNT(*) as play_count FROM spotifyHistory GROUP BY album, artist ORDER BY play_count ASC, album ASC, artist ASC LIMIT ?;" ;
+
+    album_list list = { .root = NULL, .len = 0 } ;
+
+    if (sqlite3_prepare_v2(database, get_album_listen_count, -1, &cmd, NULL) != 0) return list;
+    sqlite3_bind_int(cmd, 1, limit);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW)
+    {
+        int count = list.len + 1 ;
+        album* temp = realloc(list.root, count * sizeof(album)) ;
+        if (!temp) break ;
+        list.root = temp ;
+        list.len = count ;
+
+        album* info = &list.root[list.len - 1] ;
+        info->name = strdup((char*) sqlite3_column_text(cmd, 0)) ;
+        info->artist = strdup((char*) sqlite3_column_text(cmd, 1)) ;
+        info->num_plays = sqlite3_column_int(cmd, 2) ;
+    }
+
+    sqlite3_finalize(cmd) ;
+    return list ;
+}
+
 track_list get_top_tracks(sqlite3* database)
 {
     sqlite3_stmt* cmd = NULL ;
