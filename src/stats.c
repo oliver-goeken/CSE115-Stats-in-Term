@@ -119,6 +119,26 @@ static int print_recent_history(int limit){
 	return 0;
 }
 
+static int print_top_albums(int limit){
+	album_list top_albums = get_top_albums_limit(song_plays_database, limit);
+
+	if (top_albums.root == NULL){
+		log_err("top albums list is empty");
+		return 1;
+	}
+
+	for (int i = 0; i < top_albums.len; i++){
+		printf("%d. %s - %s [%d plays]\n",
+			i + 1,
+			top_albums.root[i].name,
+			top_albums.root[i].artist,
+			top_albums.root[i].num_plays);
+	}
+
+	free_album_list(top_albums);
+	return 0;
+}
+
 
 int main(int argc, char **argv) {
 	int rc = handle_args(argc, argv);
@@ -127,6 +147,13 @@ int main(int argc, char **argv) {
 	if (CLI_OPTIONS.recent_count > 0){
 		if (init_db_only() != 0) return 1;
 		int prc = print_recent_history(CLI_OPTIONS.recent_count);
+		terminate_db_only();
+		return prc;
+	}
+
+	if (CLI_OPTIONS.album_count > 0){
+		if (init_db_only() != 0) return 1;
+		int prc = print_top_albums(CLI_OPTIONS.album_count);
 		terminate_db_only();
 		return prc;
 	}
