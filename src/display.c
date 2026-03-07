@@ -1137,6 +1137,133 @@ display_window_list* display_create_window_list(display_screen* screen){
 	return screen->window_list;
 }
 
+int display_window_select_first_node(display_window* window){
+	if (window == NULL){
+		log_err("window does not exist");
+		return -1;
+	}
+	if (window->contents == NULL){
+		log_err("window contents does not exist");
+		return -2;
+	}
+	if (window->contents->root == NULL){
+		log_err("window contents does not have root node");
+		return -3;
+	}
+
+	display_content_node* cur = window->contents->root;
+	display_content_node* first_selectable = NULL;
+
+	while (cur != NULL){
+		if (cur->selected != CONTENT_NODE_UNSELECTABLE){
+			first_selectable = cur;
+			break;
+		}
+		cur = cur->next_node;
+	}
+
+	if (first_selectable == NULL){
+		log_err("no selectable content node found");
+		return -4;
+	}
+
+	cur = window->contents->root;
+	while (cur != NULL){
+		if (cur->selected != CONTENT_NODE_UNSELECTABLE){
+			display_content_node_set_selected(cur, CONTENT_NODE_NOT_SELECTED);
+		}
+		cur = cur->next_node;
+	}
+
+	display_content_node_set_selected(first_selectable, CONTENT_NODE_SELECTED);
+	window->content_offset = 0;
+
+	return 0;
+}
+
+int display_window_select_last_node(display_window* window){
+	if (window == NULL){
+		log_err("window does not exist");
+		return -1;
+	}
+	if (window->contents == NULL){
+		log_err("window contents does not exist");
+		return -2;
+	}
+	if (window->contents->root == NULL){
+		log_err("window contents does not have root node");
+		return -3;
+	}
+
+	display_content_node* cur = window->contents->root;
+	display_content_node* last_selectable = NULL;
+
+	int idx = 0;
+	int last_idx = -1;
+
+	while (cur != NULL){
+		if (cur->selected != CONTENT_NODE_UNSELECTABLE){
+			last_selectable = cur;
+			last_idx = idx;
+		}
+		cur = cur->next_node;
+		idx++;
+	}
+
+	if (last_selectable == NULL){
+		log_err("no selectable content node found");
+		return -4;
+	}
+
+	cur = window->contents->root;
+	while (cur != NULL){
+		if (cur->selected != CONTENT_NODE_UNSELECTABLE){
+			display_content_node_set_selected(cur, CONTENT_NODE_NOT_SELECTED);
+		}
+		cur = cur->next_node;
+	}
+
+	display_content_node_set_selected(last_selectable, CONTENT_NODE_SELECTED);
+
+	int visible_rows = window->height - (window->boxed ? 2 : 1);
+	if (visible_rows < 1){
+		visible_rows = 1;
+	}
+
+	window->content_offset = last_idx - (visible_rows - 1);
+	if (window->content_offset < 0){
+		window->content_offset = 0;
+	}
+
+	return 0;
+}
+
+int display_generic_select_first_node(){
+	display_window* current_window =
+		display_window_node_get_window(
+			display_screen_get_selected_window_node(display_get_current_screen())
+		);
+
+	if (current_window == NULL){
+		return -1;
+	}
+
+	return display_window_select_first_node(current_window);
+}
+
+int display_generic_select_last_node(){
+	display_window* current_window =
+		display_window_node_get_window(
+			display_screen_get_selected_window_node(display_get_current_screen())
+		);
+
+	if (current_window == NULL){
+		return -1;
+	}
+
+	return display_window_select_last_node(current_window);
+}
+
 display_window_group* display_create_window_group(){
 	display_window_group* new_window_group = calloc(1, sizeof(display_window_group));
 

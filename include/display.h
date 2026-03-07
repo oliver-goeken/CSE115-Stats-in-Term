@@ -344,6 +344,18 @@ int display_generic_select_next_node();
 // figures out which window is currently selected and gets the previous content node of that window
 int display_generic_select_prev_node();
 
+// select the first node of a window (jump to top)
+int display_window_select_first_node(display_window* window);
+
+// select the last node of a window (jump to bottom)
+int display_window_select_last_node(display_window* window);
+
+// figures out which window is currently selected and jumps to first node
+int display_generic_select_first_node();
+
+// figures out which window is currently selected and jumps to last node
+int display_generic_select_last_node();
+
 // create a new window list for a screen, used internally
 display_window_list* display_create_window_list(display_screen* screen);
 
