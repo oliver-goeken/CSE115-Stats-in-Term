@@ -90,6 +90,7 @@ album_list get_top_albums(sqlite3* database);
 track_list get_top_tracks(sqlite3* database);
 
 song_list get_listening_history(sqlite3* database);
+song_list get_listening_history_limit(sqlite3* database, int limit);
 
 
 // search

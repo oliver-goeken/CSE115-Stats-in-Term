@@ -1,10 +1,12 @@
 #include "cli.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 cli_options CLI_OPTIONS = {
 	.db_path = "spotifyHistory.db",
-	.json_path = ""
+	.json_path = "",
+	.recent_count = 0
 };
 
 static void print_help(FILE *out) {
@@ -18,6 +20,7 @@ static void print_help(FILE *out) {
 			"  -h, --help        Show this help message\n"
 			"  --db PATH         Use a specific sqlite database file\n"
 			"  --json PATH       Import Spotify history JSON from PATH\n"
+			"  -r N, --recents N Print the N most recent listens and exit\n"
 			"\n"
 			"DEFAULT:\n"
 			"  Launches the TUI.\n"
@@ -54,6 +57,23 @@ int handle_args(int argc, char **argv) {
 			}
 
 			CLI_OPTIONS.json_path = argv[++i];
+		}
+		// recent listens
+		else if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--recents") == 0) {
+			if (i + 1 >= argc) {
+				fprintf(stderr, "%s requires a count\n", argv[i]);
+				fprintf(stderr, "Try './stats --help'\n");
+				return 2;
+			}
+
+			char *endptr = NULL;
+			long val = strtol(argv[++i], &endptr, 10);
+			if (endptr == argv[i] || *endptr != '\0' || val <= 0 || val > 1000000) {
+				fprintf(stderr, "%s expects a positive integer\n", argv[i - 1]);
+				fprintf(stderr, "Try './stats --help'\n");
+				return 2;
+			}
+			CLI_OPTIONS.recent_count = (int)val;
 		}
 
 		// otherwise

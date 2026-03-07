@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include <stdio.h>
 
 sqlite3* song_plays_database;
 display_window* LOADING_DATA_WINDOW = NULL;
@@ -54,11 +55,81 @@ typedef struct {
 
 bool IN_MAIN_LOOP = true;
 
+static int init_db_only(void){
+	signal(SIGINT, handle_sigint);
+	log_init_file("stats.log");
+
+	if (sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database) != SQLITE_OK){
+		log_msg_detailed("Error opening database: ", __FILE__, __LINE__, sqlite3_errmsg(song_plays_database));
+		log_terminate();
+		return 1;
+	}
+
+	if (create_db(song_plays_database) != 0){
+		sqlite3_close(song_plays_database);
+		log_terminate();
+		return 1;
+	}
+
+	if (CLI_OPTIONS.json_path && CLI_OPTIONS.json_path[0] != '\0'){
+		json_import_directory(song_plays_database, (char*)CLI_OPTIONS.json_path);
+	}
+
+	return 0;
+}
+
+static void terminate_db_only(void){
+	sqlite3_close(song_plays_database);
+	log_terminate();
+}
+
+static int print_recent_history(int limit){
+	song_list listening_history = get_listening_history_limit(song_plays_database, limit);
+
+	if (listening_history.songs == NULL){
+		log_err("no songs in list");
+		return 1;
+	}
+
+	int str_data_size = 256;
+	for (int i = 0; i < listening_history.num_songs; i ++){
+		char listen_str_data[str_data_size];
+		memset(listen_str_data, 0, str_data_size);
+
+		char time_formatted[str_data_size];
+		struct tm time_struct;
+		memset(&time_struct, 0, sizeof(time_struct));
+
+		if (strptime(listening_history.songs[i].timestamp, "%Y-%m-%dT%H:%M:%S", &time_struct) == NULL){
+			strncpy(time_formatted, listening_history.songs[i].timestamp, str_data_size - 1);
+		} else {
+			strftime(time_formatted, str_data_size, "%D %R", &time_struct);
+		}
+
+		snprintf(listen_str_data, str_data_size, "[%s] %s - %s - %s",
+			time_formatted,
+			listening_history.songs[i].track,
+			listening_history.songs[i].album,
+			listening_history.songs[i].artist);
+
+		printf("%s\n", listen_str_data);
+	}
+
+	free_song_list(&listening_history);
+	return 0;
+}
 
 
 int main(int argc, char **argv) {
 	int rc = handle_args(argc, argv);
 	if (rc >= 0) return rc;
+
+	if (CLI_OPTIONS.recent_count > 0){
+		if (init_db_only() != 0) return 1;
+		int prc = print_recent_history(CLI_OPTIONS.recent_count);
+		terminate_db_only();
+		return prc;
+	}
 
 	init();
 
@@ -349,13 +420,15 @@ void init(){
 
 	display_screen_draw_windows(LOADING_DATA_SCREEN);
 
-	create_db(song_plays_database);
 	sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database);
+	create_db(song_plays_database);
 	
 	// move to its own function taking string
 	// function called by command or by cli option
 	// defaults to nothing
-	json_import_directory(song_plays_database, CLI_OPTIONS.json_path);
+	if (CLI_OPTIONS.json_path && CLI_OPTIONS.json_path[0] != '\0'){
+		json_import_directory(song_plays_database, CLI_OPTIONS.json_path);
+	}
 }
 
 void terminate(){
