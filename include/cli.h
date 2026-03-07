@@ -5,6 +5,12 @@ typedef struct {
 	const char *db_path;
 	const char *json_path;
 	int recent_count;
+	int album_count;
+	int album_bottom_count;
+	int song_count;
+	int song_bottom_count;
+	int artist_count;
+	int artist_bottom_count;
 } cli_options;
 
 extern cli_options CLI_OPTIONS;

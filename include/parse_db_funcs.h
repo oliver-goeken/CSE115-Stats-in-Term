@@ -67,6 +67,7 @@ typedef struct {
 void free_song_list(song_list* list) ;
 void free_album_list(album_list list) ;
 void free_artist_list(artist_list list) ;
+void free_track_list(track_list list) ;
 
 int create_db(sqlite3 *database) ; 
 
@@ -84,10 +85,16 @@ void sql_change_timestamp_format(sqlite3* database) ;
 
 // sort 
 artist_list get_top_artists(sqlite3* database);
+artist_list get_top_artists_limit(sqlite3* database, int limit);
+artist_list get_bottom_artists_limit(sqlite3* database, int limit);
 
 album_list get_top_albums(sqlite3* database);
+album_list get_top_albums_limit(sqlite3* database, int limit);
+album_list get_bottom_albums_limit(sqlite3* database, int limit);
 
 track_list get_top_tracks(sqlite3* database);
+track_list get_top_tracks_limit(sqlite3* database, int limit);
+track_list get_bottom_tracks_limit(sqlite3* database, int limit);
 
 song_list get_listening_history(sqlite3* database);
 song_list get_listening_history_limit(sqlite3* database, int limit);
