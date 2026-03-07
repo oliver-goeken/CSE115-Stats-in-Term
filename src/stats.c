@@ -242,6 +242,15 @@ int main(int argc, char **argv) {
 			case KEY_RIGHT:
 				display_screen_select_next_window(display_get_current_screen());
 				break;
+			case 'g':
+				display_generic_select_first_node();
+				panel_on_selection_changed();
+				break;
+
+			case 'G':
+				display_generic_select_last_node();
+				panel_on_selection_changed();
+				break;
 			case '\n':
 			case KEY_ENTER:
 			case 13:
