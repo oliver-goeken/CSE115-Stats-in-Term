@@ -406,11 +406,12 @@ int main(int argc, char **argv) {
 	display_window_set_boxed(LIST_WINDOW, WINDOW_BOXED);
 
 	//panel
-	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w2/3:8:w1/3-1:h1/3");
+	display_window* INFO_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "w2/3:0:w1/3:1");
 	display_window_set_boxed(INFO_WINDOW, WINDOW_BOXED);
 	display_window_set_constraint_window(INFO_WINDOW, LIST_WINDOW);
 	panel_init(song_plays_database, LIST_WINDOW, INFO_WINDOW);
 	display_window_set_visibility(INFO_WINDOW, WINDOW_HIDDEN);
+	display_window_set_vertical_expansion(INFO_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
 
 
 	display_window* COMMAND_WINDOW = display_screen_add_new_window(MAIN_SCREEN, "0:h-1:w:1");
@@ -422,7 +423,7 @@ int main(int argc, char **argv) {
 
 	display_window* QUIT_WINDOW = display_screen_add_new_window(QUIT_SCREEN, "w1/3:h1/2-3:w1/3:6");
 	display_window_set_boxed(QUIT_WINDOW , WINDOW_BOXED);
-	display_window_set_expansion(QUIT_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
+	display_window_set_horizontal_expansion(QUIT_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
 	display_window_set_selected(QUIT_WINDOW, WINDOW_UNSELECTABLE);
 	display_content_node* quit_node_1 = display_new_text_content_node(QUIT_WINDOW, "Are you sure you want to quit?");
 	display_set_content_node_alignment(quit_node_1, CONTENT_NODE_ALIGN_CENTER);
@@ -575,7 +576,7 @@ void init(){
 
 	LOADING_DATA_WINDOW = display_screen_add_new_window(LOADING_DATA_SCREEN, "w3/8:h1/2-1:w1/4:3");
 	display_window_set_boxed(LOADING_DATA_WINDOW , WINDOW_BOXED);
-	display_window_set_expansion(LOADING_DATA_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
+	display_window_set_horizontal_expansion(LOADING_DATA_WINDOW, WINDOW_EXPAND_TO_FIT_TEXT);
 	display_window_set_selected(LOADING_DATA_WINDOW, WINDOW_UNSELECTABLE);
 	display_content_node* loading_node_1 = display_new_text_content_node(LOADING_DATA_WINDOW, "Loading json file(s)...");
 	display_set_content_node_alignment(loading_node_1, CONTENT_NODE_ALIGN_CENTER);
