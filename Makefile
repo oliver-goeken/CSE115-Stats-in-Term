@@ -10,13 +10,13 @@ TESTDIR = tests/
 TESTOBJDIR = $(TESTDIR).obj/
 
 CC = clang
-LDLIBS = -lncurses
+LDLIBS = -lncurses -lssl -lcrypto -lcjson -ldotenv
 CFLAGS = -g -Wall -Wextra -I$(INCDIR) -I$(LIBDIR)
 
-CFILES = $(wildcard $(SRCDIR)*.c)
+CFILES = $(wildcard $(SRCDIR)*.c) $(curl-config --libs)
 OBJS := $(patsubst $(SRCDIR)%.c,$(OBJDIR)%.o,$(CFILES))
 
-LIBCFILES = lib/cJSON.c lib/sqlite3.c
+LIBCFILES = lib/cJSON.c lib/sqlite3.c lib/dotenv.c 
 LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.l,$(LIBCFILES))
 
 
