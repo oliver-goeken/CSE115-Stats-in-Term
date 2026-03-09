@@ -348,7 +348,7 @@ void sql_get_listening_history(display_content_node* content_node){
 		char time_formatted[str_data_size];
 		struct tm time_struct;
 
-		strptime(listening_history.songs[i].timestamp, "%Y-%m-%dT%H:%M:%S", &time_struct);
+		strftime(listening_history.songs[i].timestamp, "%Y-%m-%dT%H:%M:%S", &time_struct);
 		strftime(time_formatted, str_data_size, "%D %R", &time_struct);
 
 		snprintf(listen_str_data, str_data_size, "[%s] %s - %s - %s", time_formatted, listening_history.songs[i].track, listening_history.songs[i].album, listening_history.songs[i].artist);
