@@ -539,7 +539,6 @@ int main(int argc, char **argv) {
 				display_generic_select_first_node();
 				panel_on_selection_changed();
 				break;
-
 			case 'G':
 				display_generic_select_last_node();
 				panel_on_selection_changed();
