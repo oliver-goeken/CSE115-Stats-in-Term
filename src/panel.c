@@ -1,7 +1,5 @@
 #include "panel.h"
 #include "display.h"
-#include "parse_db_funcs.h"
-#include "spotify_api.h"
 #include "sqlite3.h"
 #include "shared_defs.h"
 #include <ctype.h>
@@ -119,79 +117,6 @@ static bool parse_artist_from_list_line(const char* line, char* out_artist, int 
     safe_copy(out_artist, out_size, last_sep + 3);
     trim_whitespace_in_place(out_artist);
     return (out_artist[0] != '\0');
-}
-
-static bool parse_song_from_list_line(
-    const char* line,
-    char* out_track,
-    int out_track_size,
-    char* out_album,
-    int out_album_size,
-    char* out_artist,
-    int out_artist_size
-) {
-    if (line == NULL || out_track == NULL || out_album == NULL || out_artist == NULL) {
-        return false;
-    }
-
-    out_track[0] = '\0';
-    out_album[0] = '\0';
-    out_artist[0] = '\0';
-
-    char buffer[512];
-    safe_copy(buffer, (int)sizeof(buffer), line);
-    trim_whitespace_in_place(buffer);
-
-    if (buffer[0] == '\0') {
-        return false;
-    }
-
-    char* working = buffer;
-    if (working[0] == '[') {
-        char* closing = strstr(working, "] ");
-        if (closing == NULL) {
-            return false;
-        }
-        working = closing + 2;
-    } else {
-        while (isdigit((unsigned char)*working)) {
-            working++;
-        }
-        if (*working == '.' && working[1] == ' ') {
-            working += 2;
-        }
-    }
-
-    char temp[512];
-    safe_copy(temp, (int)sizeof(temp), working);
-
-    char* plays_marker = strstr(temp, " - [");
-    if (plays_marker != NULL) {
-        *plays_marker = '\0';
-    }
-
-    char* first_sep = strstr(temp, " - ");
-    if (first_sep == NULL) {
-        return false;
-    }
-    *first_sep = '\0';
-
-    char* second_part = first_sep + 3;
-    char* second_sep = strstr(second_part, " - ");
-    if (second_sep == NULL) {
-        return false;
-    }
-    *second_sep = '\0';
-
-    safe_copy(out_track, out_track_size, temp);
-    safe_copy(out_album, out_album_size, second_part);
-    safe_copy(out_artist, out_artist_size, second_sep + 3);
-
-    trim_whitespace_in_place(out_track);
-    trim_whitespace_in_place(out_album);
-    trim_whitespace_in_place(out_artist);
-
-    return out_track[0] != '\0' && out_album[0] != '\0' && out_artist[0] != '\0';
 }
 
 static bool query_artist_summary(
@@ -354,76 +279,6 @@ static void draw_artist_info(const char* artist) {
     }
 }
 
-static void draw_song_info(const char* track, const char* album, const char* artist) {
-    if (g_info_window == NULL || g_database == NULL) return;
-
-    display_window_destroy_content_nodes(g_info_window);
-
-    char title[300];
-    snprintf(title, sizeof(title), "Song: %s", track);
-    display_new_text_content_node(g_info_window, title);
-
-    char album_line[320];
-    snprintf(album_line, sizeof(album_line), "Album: %s", album);
-    display_new_text_content_node(g_info_window, album_line);
-
-    char artist_line[320];
-    snprintf(artist_line, sizeof(artist_line), "Artist: %s", artist);
-    display_new_text_content_node(g_info_window, artist_line);
-
-    char* track_uri = get_track_uri_for_song(g_database, track, album, artist);
-    if (track_uri == NULL) {
-        display_new_text_content_node(g_info_window, "Spotify metadata: no stored track URI");
-        return;
-    }
-
-    spotify_track_metadata metadata;
-    int rc = spotify_api_fetch_track_metadata(track_uri, &metadata);
-    free(track_uri);
-
-    if (rc == SPOTIFY_API_ERR_NO_TOKEN) {
-        display_new_text_content_node(g_info_window, "Spotify metadata: set SPOTIFY_ACCESS_TOKEN");
-        return;
-    }
-
-    if (rc != SPOTIFY_API_OK) {
-        display_new_text_content_node(g_info_window, "Spotify metadata: lookup failed");
-        return;
-    }
-
-    display_new_text_content_node(g_info_window, "");
-    display_new_text_content_node(g_info_window, "Spotify metadata:");
-
-    if (metadata.track_name != NULL) {
-        char name_line[320];
-        snprintf(name_line, sizeof(name_line), "Name: %s", metadata.track_name);
-        display_new_text_content_node(g_info_window, name_line);
-    }
-
-    if (metadata.album_name != NULL) {
-        char spotify_album_line[320];
-        snprintf(spotify_album_line, sizeof(spotify_album_line), "Album: %s", metadata.album_name);
-        display_new_text_content_node(g_info_window, spotify_album_line);
-    }
-
-    if (metadata.artist_name != NULL) {
-        char spotify_artist_line[320];
-        snprintf(spotify_artist_line, sizeof(spotify_artist_line), "Artist: %s", metadata.artist_name);
-        display_new_text_content_node(g_info_window, spotify_artist_line);
-    }
-
-    if (metadata.duration_ms > 0) {
-        char duration_text[64];
-        format_ms_as_hms(metadata.duration_ms, duration_text, (int)sizeof(duration_text));
-
-        char duration_line[128];
-        snprintf(duration_line, sizeof(duration_line), "Duration: %s", duration_text);
-        display_new_text_content_node(g_info_window, duration_line);
-    }
-
-    spotify_track_metadata_free(&metadata);
-}
-
 void panel_init(sqlite3* database, display_window* list_window, display_window* info_window) {
     g_database = database;
     g_list_window = list_window;
@@ -454,14 +309,7 @@ void panel_on_selection_changed(void) {
 
     const char* selected_text = selected_node->data->text_data;
 
-    char track[256];
-    char album[256];
     char artist[256];
-    if (parse_song_from_list_line(selected_text, track, (int)sizeof(track), album, (int)sizeof(album), artist, (int)sizeof(artist))) {
-        draw_song_info(track, album, artist);
-        return;
-    }
-
     if (!parse_artist_from_list_line(selected_text, artist, (int)sizeof(artist))) {
         draw_info_default();
         return;

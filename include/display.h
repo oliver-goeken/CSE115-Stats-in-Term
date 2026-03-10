@@ -139,7 +139,6 @@ typedef struct display_window {
 	int selected;
 
 	WINDOW* ncurses_window;
-	bool fully_update;
 
 	int content_offset;
 	display_window_contents* contents;

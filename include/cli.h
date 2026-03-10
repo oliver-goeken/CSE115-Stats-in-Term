@@ -4,8 +4,6 @@
 typedef struct {
 	const char *db_path;
 	const char *json_path;
-	const char *search_kind;
-	const char *search_query;
 	int recent_count;
 	int album_count;
 	int album_bottom_count;
@@ -13,7 +11,6 @@ typedef struct {
 	int song_bottom_count;
 	int artist_count;
 	int artist_bottom_count;
-	int search_limit;
 } cli_options;
 
 extern cli_options CLI_OPTIONS;
