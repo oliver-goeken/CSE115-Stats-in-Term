@@ -1109,6 +1109,7 @@ int display_window_select_next_node(display_window* window){
 
 		node_window_pos_x -= window->content_offset;
 
+		log_msg_f("*********************%d:%d:%d", window->content_offset, node_window_pos_x, window->height);
 		if (node_window_pos_x >= (window->height - (window->boxed ? 1 : 0))){
 			window->content_offset ++;
 		}
@@ -1575,7 +1576,9 @@ int display_parse_dimensions_format(display_window* window){
 	int selected_node_number = 0;
 	display_content_node_get_position(window, display_window_get_selected_node(window), &selected_node_number);
 
-	window->content_offset = selected_node_number - ((window->height - (window->boxed ? 2 : 1)) / 2);
+	if ((selected_node_number - window->content_offset) > (window->height - (window->boxed ? 2 : 0))){
+		window->content_offset = selected_node_number - ((window->height - (window->boxed ? 2 : 1)) / 2);
+	}
 
 	return 0;
 }
