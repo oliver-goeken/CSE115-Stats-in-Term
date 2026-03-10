@@ -1051,6 +1051,44 @@ album_list get_top_albums_for_artist_limit(sqlite3* database, const char* artist
     return list;
 }
 
+char* get_track_uri_for_song(sqlite3* database, const char* track_name, const char* album_name, const char* artist_name)
+{
+    sqlite3_stmt* cmd = NULL;
+
+    if (database == NULL || track_name == NULL || album_name == NULL || artist_name == NULL) {
+        return NULL;
+    }
+
+    const char* sql_cmd =
+        "SELECT track_uri "
+        "FROM spotifyHistory "
+        "WHERE track = ? COLLATE NOCASE "
+        "  AND album = ? COLLATE NOCASE "
+        "  AND artist = ? COLLATE NOCASE "
+        "  AND track_uri IS NOT NULL "
+        "  AND track_uri != '' "
+        "LIMIT 1;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return NULL;
+    }
+
+    sqlite3_bind_text(cmd, 1, track_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(cmd, 2, album_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(cmd, 3, artist_name, -1, SQLITE_TRANSIENT);
+
+    char* track_uri = NULL;
+    if (sqlite3_step(cmd) == SQLITE_ROW) {
+        const unsigned char* uri_text = sqlite3_column_text(cmd, 0);
+        if (uri_text != NULL) {
+            track_uri = strdup((const char*)uri_text);
+        }
+    }
+
+    sqlite3_finalize(cmd);
+    return track_uri;
+}
+
 // function to clear the table
 // function to delete table
 // function to merge tables

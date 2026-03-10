@@ -120,4 +120,6 @@ track_list get_top_tracks_for_album_limit(sqlite3* database, const char* album_n
 
 album_list get_top_albums_for_artist_limit(sqlite3* database, const char* artist_name, int limit);
 
+char* get_track_uri_for_song(sqlite3* database, const char* track_name, const char* album_name, const char* artist_name);
+
 #endif
