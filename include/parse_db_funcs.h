@@ -108,4 +108,14 @@ song_list search_album(sqlite3* database, char* album_name);
 
 song_list search_artist(sqlite3* database, char* artist_name);
 
+artist_list search_artists_by_name(sqlite3* database, const char* query, int limit);
+
+album_list search_albums_by_name(sqlite3* database, const char* query, int limit);
+
+track_list search_tracks_by_name(sqlite3* database, const char* query, int limit);
+
+track_list get_top_tracks_for_artist_limit(sqlite3* database, const char* artist_name, int limit);
+
+track_list get_top_tracks_for_album_limit(sqlite3* database, const char* album_name, const char* artist_name, int limit);
+
 #endif
