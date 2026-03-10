@@ -133,7 +133,8 @@ typedef struct display_window {
 	uint8_t box_sides;
 
 	bool boxed;
-	bool expand;
+	bool expand_horizontal;
+	bool expand_vertical;
 
 	int selected;
 
@@ -312,7 +313,9 @@ int display_window_set_box_sides(display_window* window, uint8_t sides);
 int display_window_set_constraint_window(display_window* set, display_window* constraint);
 
 // set if a window expands to fit text
-int display_window_set_expansion(display_window* window, bool expand);
+int display_window_set_horizontal_expansion(display_window* window, bool expand);
+
+int display_window_set_vertical_expansion(display_window* window, bool expand);
 
 // set if a window is selected or not
 int display_window_set_selected(display_window* window, int selected);
