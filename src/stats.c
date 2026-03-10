@@ -239,10 +239,69 @@ static int print_bottom_songs(int limit){
 	return 0;
 }
 
+static int print_search_results(const char* kind, int limit, const char* query){
+	artist_list matches = search_artists_by_name(song_plays_database, query, 1);
+
+	if (matches.root == NULL || matches.len == 0){
+		fprintf(stderr, "No artist found matching \"%s\"\n", query);
+		return 1;
+	}
+
+	const char* artist_name = matches.root[0].name;
+	printf("Best match: %s\n", artist_name);
+
+	if (strcmp(kind, "songs") == 0){
+		track_list top_songs = get_top_tracks_for_artist_limit(song_plays_database, artist_name, limit);
+
+		if (top_songs.root == NULL){
+			fprintf(stderr, "No songs found for \"%s\"\n", artist_name);
+			free_artist_list(matches);
+			return 1;
+		}
+
+		for (int i = 0; i < top_songs.len; i++){
+			printf("%d. %s - %s [%d plays]\n",
+				i + 1,
+				top_songs.root[i].name,
+				top_songs.root[i].album,
+				top_songs.root[i].num_plays);
+		}
+
+		free_track_list(top_songs);
+	} else {
+		album_list top_albums = get_top_albums_for_artist_limit(song_plays_database, artist_name, limit);
+
+		if (top_albums.root == NULL){
+			fprintf(stderr, "No albums found for \"%s\"\n", artist_name);
+			free_artist_list(matches);
+			return 1;
+		}
+
+		for (int i = 0; i < top_albums.len; i++){
+			printf("%d. %s [%d plays]\n",
+				i + 1,
+				top_albums.root[i].name,
+				top_albums.root[i].num_plays);
+		}
+
+		free_album_list(top_albums);
+	}
+
+	free_artist_list(matches);
+	return 0;
+}
+
 
 int main(int argc, char **argv) {
 	int rc = handle_args(argc, argv);
 	if (rc >= 0) return rc;
+
+	if (CLI_OPTIONS.search_kind != NULL){
+		if (init_db_only() != 0) return 1;
+		int prc = print_search_results(CLI_OPTIONS.search_kind, CLI_OPTIONS.search_limit, CLI_OPTIONS.search_query);
+		terminate_db_only();
+		return prc;
+	}
 
 	if (CLI_OPTIONS.recent_count > 0){
 		if (init_db_only() != 0) return 1;

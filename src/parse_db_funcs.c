@@ -1073,6 +1073,38 @@ track_list get_top_tracks_for_album_limit(sqlite3* database, const char* album_n
     return list;
 }
 
+album_list get_top_albums_for_artist_limit(sqlite3* database, const char* artist_name, int limit)
+{
+    sqlite3_stmt* cmd = NULL;
+    album_list list = { .root = NULL, .len = 0 };
+
+    if (database == NULL || artist_name == NULL || *artist_name == '\0') {
+        return list;
+    }
+
+    const char* sql_cmd =
+        "SELECT album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE artist = ? COLLATE NOCASE "
+        "GROUP BY album, artist "
+        "ORDER BY play_count DESC, album COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, artist_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(cmd, 2, limit > 0 ? limit : 5);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_album_from_stmt(&list, cmd);
+    }
+
+    sqlite3_finalize(cmd);
+    return list;
+}
+
 
     
 // function to clear the table
