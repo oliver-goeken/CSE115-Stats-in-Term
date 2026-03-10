@@ -32,7 +32,6 @@ int display_ncurses_init(){
 		return -1;
 	}
 
-
 	int MINTERM_Y = 14;
 	int MINTERM_X = 100; //135
 
@@ -52,7 +51,6 @@ int display_ncurses_init(){
 	noecho();
 	curs_set(0);
 	ESCDELAY = 0;
-	nodelay(stdscr, TRUE);
 
 	timeout(33);
 
@@ -284,13 +282,15 @@ int display_handle_winch(){
 		while (window_node != NULL){
 			display_parse_dimensions_format(window_node->display_window);
 
+			if (window_node->display_window->fully_update == true){
+				werase(window_node->display_window->ncurses_window);
+			}
+
 			window_node = window_node->next_node;
 		}
 
 		screen_node = screen_node->next_node;
 	}
-
-	erase();
 
 	display_screen_draw_windows(display_get_current_screen());
 
@@ -310,8 +310,12 @@ int display_screen_draw_windows(display_screen* screen){
 
 	while (cur_node != NULL){
 		if (cur_node->display_window != NULL && cur_node->display_window->visible == WINDOW_VISIBLE){
-			werase(cur_node->display_window->ncurses_window);
-			display_draw_window(cur_node->display_window);
+			if (cur_node->display_window->fully_update == true){
+				werase(cur_node->display_window->ncurses_window);
+				display_draw_window(cur_node->display_window);
+			} else {
+				wnoutrefresh(cur_node->display_window->ncurses_window);
+			}
 		}
 
 		cur_node = cur_node->next_node;
@@ -1094,7 +1098,7 @@ int display_window_select_next_node(display_window* window){
 		display_content_node_set_selected(new_selection, CONTENT_NODE_SELECTED);
 
 		// loop if not null to see if selection (position - offset) > window height, if so update offset
-		int node_window_pos_x = 1;
+		int node_window_pos_x = (window->boxed ? 1 : 0);
 
 		display_content_node* cur_node = window->contents->root;
 		while (cur_node != NULL && cur_node != new_selection){
@@ -1105,7 +1109,7 @@ int display_window_select_next_node(display_window* window){
 
 		node_window_pos_x -= window->content_offset;
 
-		if (node_window_pos_x >= window->height - (window->boxed ? 1 : 0)){
+		if (node_window_pos_x >= (window->height - (window->boxed ? 1 : 0))){
 			window->content_offset ++;
 		}
 	}
@@ -1595,6 +1599,7 @@ display_window* display_create_window(char* dimensions_format){
 	new_window->constraint_window = NULL;
 	new_window->expand_horizontal = WINDOW_SET_SIZE;
 	new_window->expand_vertical = WINDOW_SET_SIZE;
+	new_window->fully_update = true;
 
 	display_parse_dimensions_format(new_window);
 

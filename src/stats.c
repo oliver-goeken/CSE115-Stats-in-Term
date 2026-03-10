@@ -442,7 +442,7 @@ int main(int argc, char **argv) {
 			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
 										 }},
-			{"0:h-2:w:2", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, NULL, 1, {
+			{"0:h-2:w:1", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, NULL, 1, {
 				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [esc] to return to options - [H] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}
 										 }}
 		}
@@ -578,8 +578,6 @@ int main(int argc, char **argv) {
 								input_display_command_error(COMMAND_WINDOW, "Error loading file");
 							}
 							break;
-
-							return 0;
 						}
 				break;
 					}
@@ -762,7 +760,7 @@ void sql_get_listening_history(display_content_node* content_node){
 		char time_formatted[str_data_size];
 		struct tm time_struct;
 
-		strptime(listening_history.songs[i].timestamp, "%Y-%m-%dT%H:%M:%S", &time_struct);
+		strptime(listening_history.songs[i].timestamp, "%Y-%m-%dT%H:%M:%S%z", &time_struct);
 		strftime(time_formatted, str_data_size, "%D %R", &time_struct);
 
 		snprintf(listen_str_data, str_data_size, "[%s] %s - %s - %s", time_formatted, listening_history.songs[i].track, listening_history.songs[i].album, listening_history.songs[i].artist);
