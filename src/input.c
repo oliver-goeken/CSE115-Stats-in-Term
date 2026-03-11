@@ -121,7 +121,6 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 		return -5;
 	}
 
-
 	input_command_remove_excess_space(in_buff, max_input_size);
 
 	char command_buff[max_input_size];
@@ -226,7 +225,9 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 		return 0;
 	} else if (strcmp(command_buff, "reset") == 0){
 		return COMMAND_RESET;
-	}else if (strcmp(command_buff, "help") == 0){
+	} else if (strcmp(command_buff, "get") == 0){
+
+	}else if (strcmp(command_buff, "h") == 0 || strcmp(command_buff, "help") == 0){
 		return COMMAND_HELP;
 	}  else if (strcmp(command_buff, "brown") == 0){
 		draw_boognish();
@@ -238,9 +239,9 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 
 		if (json_import_directory(song_plays_database, args_buff) != 0){
 			ret_val = COMMAND_FILE_NOT_FOUND;
+		} else {
+			display_window_destroy_content_nodes(LIST_WINDOW);
 		}
-
-		display_window_destroy_content_nodes(LIST_WINDOW);
 
 		display_set_screen(MAIN_SCREEN);
 
