@@ -363,29 +363,34 @@ int main(int argc, char **argv) {
 			{"0:0:w:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
 				{"Help Menu", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"0:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+			{"0:3:w1/3:3", WINDOW_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"Hotkeys", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"w1/3:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+			{"w1/3:3:w1/3:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"Commands", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"w2/3:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+			{"w2/3:3:w1/3:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"Info", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"0:5:w1/3:h-5", WINDOW_SELECTED, WINDOW_BOXED, NULL, 7, {
-				{"[esc] - return to main screen from here", NULL, CONTENT_NODE_ALIGN_CENTER},
-				{"[esc] - on main screen, select new option", NULL, CONTENT_NODE_ALIGN_CENTER},
-				{"[arrows keys]/[hjkl] - navigate", NULL, CONTENT_NODE_ALIGN_CENTER},
+			{"0:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 11, {
+				{"[esc] return to main screen from here", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[arrows keys]/[hjkl] navigate", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[g] go to bottom of list", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[G] go to top of list", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"[enter] interact", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[q] quit", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"[H] on main screen, show this help screen", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"[:] on main screen, enter command", NULL, CONTENT_NODE_ALIGN_CENTER},
-				{"[q] quit", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[esc] on main screen, select new category", NULL, CONTENT_NODE_ALIGN_CENTER},
 																	 }},
 			{"w1/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
 																			}},
-			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
-				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
+			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 2, {
+				{"run with --help to see a list", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"of command line arguments!", NULL, CONTENT_NODE_ALIGN_CENTER}
 																			}}
 		}
 	};
