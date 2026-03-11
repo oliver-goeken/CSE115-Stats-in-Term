@@ -453,13 +453,13 @@ int main(int argc, char **argv) {
 				{"History", sql_get_listening_history, CONTENT_NODE_ALIGN_CENTER}
 									}},
 			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Top Artists", sql_get_top_artists, CONTENT_NODE_ALIGN_CENTER}
+				{"Artists", sql_get_top_artists, CONTENT_NODE_ALIGN_CENTER}
 										}},
 			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Top Albums", sql_get_top_albums, CONTENT_NODE_ALIGN_CENTER}
+				{"Albums", sql_get_top_albums, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Top Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
+				{"Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
