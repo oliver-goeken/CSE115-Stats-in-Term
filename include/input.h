@@ -6,8 +6,14 @@
 #define COMMAND_QUIT -100
 #define COMMAND_FILE_NOT_FOUND -300
 #define COMMAND_NOT_RECOGNIZED -200
+#define COMMAND_MUST_SELECT_CATEGORY -400
+#define COMMAND_NOTHING_TO_SEARCH -500
+#define COMMAND_NO_RESULTS_FOUND -600
+
 #define COMMAND_CANCEL 100
 #define COMMAND_HELP 200
+
+#define COMMAND_RESET 300
 
 // gets input from the user
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size);

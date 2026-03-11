@@ -3,6 +3,7 @@
 #include "shared_defs.h"
 #include "utils.h"
 #include "log.h"
+#include "panel.h"
 #include <string.h>
 
 int get_input(display_window* window, int start_x, int start_y, char* input_buffer, int input_buffer_size){
@@ -141,8 +142,91 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 	}else if (strcmp(command_buff, "q") == 0 || strcmp(command_buff, "quit") == 0){
 		return COMMAND_QUIT;
 	} else if (strcmp(command_buff, "search") == 0){
-		
-	} else if (strcmp(command_buff, "help") == 0){
+		switch (currently_displayed){
+			case ARTISTS: {
+				artist_list search_results = search_artists_by_name(song_plays_database, args_buff, 1000);
+				if (search_results.len <= 0){
+					return COMMAND_NO_RESULTS_FOUND;
+				}
+
+				display_window_destroy_content_nodes(LIST_WINDOW);
+
+				int str_data_size = 256;
+				for (int i = 0; i < search_results.len; i ++){
+					char artist_str_data[str_data_size];
+					memset(artist_str_data, 0, str_data_size);
+
+					snprintf(artist_str_data, str_data_size, "%d. %s - [%d plays]", i + 1, search_results.root[i].name, search_results.root[i].num_plays);
+
+					display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, artist_str_data);
+					display_content_node_set_interaction(new_node, handle_album_click);
+				}
+
+				display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+				panel_on_selection_changed(); //CHANGES
+											  
+				break;
+						  }
+			case ALBUMS: {
+				album_list search_results = search_albums_by_name(song_plays_database, args_buff, 1000);
+				if (search_results.len <= 0){
+					return COMMAND_NO_RESULTS_FOUND;
+				}
+
+				display_window_destroy_content_nodes(LIST_WINDOW);
+
+				int str_data_size = 256;
+				for (int i = 0; i < search_results.len; i ++){
+					char album_str_data[str_data_size];
+					memset(album_str_data, 0, str_data_size);
+
+					snprintf(album_str_data, str_data_size, "%d. %s - %s - [%d plays]", i + 1, search_results.root[i].name, search_results.root[i].artist, search_results.root[i].num_plays);
+
+					display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, album_str_data);
+					display_content_node_set_interaction(new_node, handle_album_click);
+				}
+
+				display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+				panel_on_selection_changed(); //CHANGES
+											  
+				break;
+						}
+			case SONGS: {
+				track_list search_results = search_tracks_by_name(song_plays_database, args_buff, 1000);
+				if (search_results.len <= 0){
+					return COMMAND_NO_RESULTS_FOUND;
+				}
+
+				display_window_destroy_content_nodes(LIST_WINDOW);
+
+				int str_data_size = 256;
+				for (int i = 0; i < search_results.len; i ++){
+					char songs_str_data[str_data_size];
+					memset(songs_str_data, 0, str_data_size);
+
+					snprintf(songs_str_data, str_data_size, "%d. %s - %s - %s - [%d plays]", i + 1, search_results.root[i].name, search_results.root[i].album, search_results.root[i].artist, search_results.root[i].num_plays);
+
+					display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
+					display_content_node_set_interaction(new_node, handle_album_click);
+				}
+
+				display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+				panel_on_selection_changed(); //CHANGES
+
+				break;
+						}
+			case HISTORY: 
+				return COMMAND_MUST_SELECT_CATEGORY;
+				break;
+			default:
+				return COMMAND_NOTHING_TO_SEARCH;
+				break;
+		}
+
+		return 0;
+	} else if (strcmp(command_buff, "reset") == 0){
+		return COMMAND_RESET;
+	}else if (strcmp(command_buff, "help") == 0){
 		return COMMAND_HELP;
 	}  else if (strcmp(command_buff, "brown") == 0){
 		draw_boognish();

@@ -31,6 +31,8 @@ display_window* LIST_WINDOW = NULL;
 
 sqlite3* song_plays_database = NULL;
 
+category_displayed currently_displayed = NONE;
+
 bool SIGINT_FLAG = NULL;
 
 typedef struct {
@@ -588,7 +590,31 @@ int main(int argc, char **argv) {
 								display_set_screen(HELP_SCREEN);
 							} else if (command_return_val == COMMAND_FILE_NOT_FOUND){
 								input_display_command_error(COMMAND_WINDOW, "Error loading file");
+							} else if (command_return_val == COMMAND_RESET){
+								switch (currently_displayed){
+									case SONGS:
+										sql_get_top_songs(NULL);
+										break;
+									case ALBUMS:
+										sql_get_top_albums(NULL);
+										break;
+									case ARTISTS:
+										sql_get_top_artists(NULL);
+										break;
+									case HISTORY:
+										sql_get_listening_history(NULL);
+										break;
+									default:
+										break;
+								}
+							} else if (command_return_val == COMMAND_MUST_SELECT_CATEGORY){
+								input_display_command_error(COMMAND_WINDOW, "Must select a category other than history");
+							} else if (command_return_val == COMMAND_NOTHING_TO_SEARCH){
+								input_display_command_error(COMMAND_WINDOW, "Nothing to search");
+							} else if (command_return_val == COMMAND_NO_RESULTS_FOUND){
+								input_display_command_error(COMMAND_WINDOW, "Couldn't find any match");
 							}
+
 							break;
 						}
 				break;
@@ -695,6 +721,7 @@ void quit_button_interact(display_content_node* content_node){
 
 void sql_get_top_albums(display_content_node* content_node){
 	log_msg("getting top albums");
+	currently_displayed = ALBUMS;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
@@ -727,6 +754,7 @@ void sql_get_top_albums(display_content_node* content_node){
 
 void sql_get_top_artists(display_content_node* content_node){
 	log_msg("getting top artists");
+	currently_displayed = ARTISTS;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
@@ -754,6 +782,7 @@ void sql_get_top_artists(display_content_node* content_node){
 
 void sql_get_listening_history(display_content_node* content_node){
 	log_msg("getting listening history");
+	currently_displayed = HISTORY;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
@@ -789,6 +818,7 @@ void sql_get_listening_history(display_content_node* content_node){
 
 void sql_get_top_songs(display_content_node* content_node){
 	log_msg("getting top songs");
+	currently_displayed = SONGS;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 

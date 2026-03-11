@@ -1206,7 +1206,7 @@ artist_list get_rev_alpha_artists_limit(sqlite3* db, int limit) {
 
 
 
-void clear_table(sqlite3* database)
+void clear_table(sqlite3* database);
 song_list search_track(sqlite3* database, char* track_name)
 {
     return search_song_history_by_column(database, "track", track_name);

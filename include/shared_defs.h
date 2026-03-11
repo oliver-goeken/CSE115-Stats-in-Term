@@ -14,4 +14,14 @@ extern sqlite3* song_plays_database;
 
 extern bool SIGINT_FLAG;
 
+typedef enum category_displayed {
+	HISTORY,
+	ARTISTS,
+	ALBUMS,
+	SONGS,
+	NONE
+} category_displayed;
+
+extern category_displayed currently_displayed;
+
 #endif
