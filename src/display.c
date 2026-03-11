@@ -403,6 +403,10 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 	if (currently_selected == NULL){
 		return -5;
 	}
+
+	if (dimension == WINDOW_VERTICAL && currently_selected->display_window != NULL && currently_selected->display_window->constraint_window != NULL){
+		return 0;
+	}
 	
 	display_window_list_node* new_selection = currently_selected;
 	int distance_to_new_selection = INT_MAX;
@@ -435,8 +439,7 @@ int display_screen_select_window_directional(display_screen* screen, int directi
 			start_pos_cur = currently_selected->display_window->start_y;
 
 			if ((window_node->display_window->start_x + window_node->display_window->width - 1) < (currently_selected->display_window->start_x) ||
-					(window_node->display_window->start_x) > (currently_selected->display_window->start_x + currently_selected->display_window->width - 1) ||
-					window_node->display_window == currently_selected->display_window->constraint_window){
+					(window_node->display_window->start_x) > (currently_selected->display_window->start_x + currently_selected->display_window->width - 1)){
 				window_node = window_node->next_node;
 				continue;
 			}
