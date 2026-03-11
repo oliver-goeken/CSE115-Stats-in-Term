@@ -49,6 +49,150 @@ void free_track_list(track_list list){
     free(list.root);
 }
 
+static char* sql_like_pattern(const char* raw)
+{
+    if (raw == NULL) {
+        return NULL;
+    }
+
+    size_t raw_len = strlen(raw);
+    size_t escaped_len = 2; // surrounding %
+
+    for (size_t i = 0; i < raw_len; i++) {
+        if (raw[i] == '%' || raw[i] == '_' || raw[i] == '\\') {
+            escaped_len++;
+        }
+        escaped_len++;
+    }
+
+    char* pattern = malloc(escaped_len + 1);
+    if (pattern == NULL) {
+        return NULL;
+    }
+
+    size_t j = 0;
+    pattern[j++] = '%';
+    for (size_t i = 0; i < raw_len; i++) {
+        if (raw[i] == '%' || raw[i] == '_' || raw[i] == '\\') {
+            pattern[j++] = '\\';
+        }
+        pattern[j++] = raw[i];
+    }
+    pattern[j++] = '%';
+    pattern[j] = '\0';
+
+    return pattern;
+}
+
+static void append_song_from_stmt(song_list* list, sqlite3_stmt* cmd)
+{
+    int count = list->num_songs + 1;
+    song_info* new_song = realloc(list->songs, count * sizeof(song_info));
+    if (new_song == NULL) {
+        return;
+    }
+
+    list->songs = new_song;
+    list->num_songs = count;
+
+    song_info* info = &list->songs[count - 1];
+    info->artist = strdup((char*) sqlite3_column_text(cmd, 0));
+    info->track = strdup((char*) sqlite3_column_text(cmd, 1));
+    info->album = strdup((char*) sqlite3_column_text(cmd, 2));
+    info->timestamp = strdup((char*) sqlite3_column_text(cmd, 3));
+    info->ms_played = sqlite3_column_int(cmd, 4);
+}
+
+static void append_artist_from_stmt(artist_list* list, sqlite3_stmt* cmd)
+{
+    int count = list->len + 1;
+    artist* root = realloc(list->root, count * sizeof(artist));
+    if (root == NULL) {
+        return;
+    }
+
+    list->root = root;
+    list->len = count;
+
+    artist* info = &list->root[count - 1];
+    info->name = strdup((char*) sqlite3_column_text(cmd, 0));
+    info->num_plays = sqlite3_column_int(cmd, 1);
+}
+
+static void append_album_from_stmt(album_list* list, sqlite3_stmt* cmd)
+{
+    int count = list->len + 1;
+    album* root = realloc(list->root, count * sizeof(album));
+    if (root == NULL) {
+        return;
+    }
+
+    list->root = root;
+    list->len = count;
+
+    album* info = &list->root[count - 1];
+    info->name = strdup((char*) sqlite3_column_text(cmd, 0));
+    info->artist = strdup((char*) sqlite3_column_text(cmd, 1));
+    info->num_plays = sqlite3_column_int(cmd, 2);
+}
+
+static void append_track_from_stmt(track_list* list, sqlite3_stmt* cmd)
+{
+    int count = list->len + 1;
+    track* root = realloc(list->root, count * sizeof(track));
+    if (root == NULL) {
+        return;
+    }
+
+    list->root = root;
+    list->len = count;
+
+    track* info = &list->root[count - 1];
+    info->name = strdup((char*) sqlite3_column_text(cmd, 0));
+    info->album = strdup((char*) sqlite3_column_text(cmd, 1));
+    info->artist = strdup((char*) sqlite3_column_text(cmd, 2));
+    info->track_uri = NULL;
+    info->num_plays = sqlite3_column_int(cmd, 3);
+}
+
+static song_list search_song_history_by_column(sqlite3* database, const char* column_name, const char* query)
+{
+    sqlite3_stmt* cmd = NULL;
+    song_list list = { .songs = NULL, .num_songs = 0 };
+
+    if (database == NULL || column_name == NULL || query == NULL || *query == '\0') {
+        return list;
+    }
+
+    char sql_cmd[256];
+    snprintf(sql_cmd, sizeof(sql_cmd),
+        "SELECT artist, track, album, timestamp, ms_played "
+        "FROM spotifyHistory "
+        "WHERE %s LIKE ? ESCAPE '\\' COLLATE NOCASE "
+        "ORDER BY timestamp DESC;",
+        column_name);
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    char* pattern = sql_like_pattern(query);
+    if (pattern == NULL) {
+        sqlite3_finalize(cmd);
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, pattern, -1, SQLITE_TRANSIENT);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_song_from_stmt(&list, cmd);
+    }
+
+    free(pattern);
+    sqlite3_finalize(cmd);
+    return list;
+}
+
  
 int create_db(sqlite3 *database){
     // function to initialize db
@@ -72,7 +216,7 @@ int create_db(sqlite3 *database){
     free(error_msg); 
     // check connection again
     if (rem_con != 0){
-        log_msg_detailed("Error in database: ", __FILE__, __LINE__, sqlite3_errmsg(database));
+        log_msg_detailed("Error in database: ", __FILE__, __LINE__, (char*) sqlite3_errmsg(database));
         return 1;
     }
 
@@ -164,7 +308,7 @@ int json_import_to_db(sqlite3* database, char* file_name){
     int rem_con = sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL); 
     
     if (rem_con != 0) { // if it can't open!
-        log_msg_detailed("Error: could not insert data into database", __FILE__, __LINE__, sqlite3_errmsg(database));
+        log_msg_detailed("Error: could not insert data into database", __FILE__, __LINE__, (char*) sqlite3_errmsg(database));
         cJSON_Delete(root);
         free(json_data);
         return 1; 
@@ -203,7 +347,7 @@ int json_import_to_db(sqlite3* database, char* file_name){
 
         rem_con = sqlite3_step(cmd); 
         if (rem_con != SQLITE_DONE){
-            log_msg_detailed("Error: execute failed. Resetting table.", __FILE__, __LINE__, sqlite3_errmsg(database));
+            log_msg_detailed("Error: execute failed. Resetting table.", __FILE__, __LINE__, (char*) sqlite3_errmsg(database));
             sqlite3_exec(database, "ROLLBACK;", NULL, NULL, NULL); // reset everything if failed!!!
             success = false; 
             break; 
@@ -1063,19 +1207,287 @@ artist_list get_rev_alpha_artists_limit(sqlite3* db, int limit) {
 
 
 void clear_table(sqlite3* database)
+song_list search_track(sqlite3* database, char* track_name)
 {
-    //NOTE: this does NOT delete the table or its attributes!
-    sqlite3_stmt* cmd = NULL;
-    const char* clear_cmd = "TRUNCATE TABLE spotifyHistory";
-
-    if (sqlite3_prepare_v2(database, clear_cmd, -1, &cmd, NULL) != 0) {
-        log_msg("Error: could not clear table!"); 
-        return;
-    }
-    sqlite3_step(cmd);
-    sqlite3_finalize(cmd);
+    return search_song_history_by_column(database, "track", track_name);
 }
-    
+
+song_list search_album(sqlite3* database, char* album_name)
+{
+    return search_song_history_by_column(database, "album", album_name);
+}
+
+song_list search_artist(sqlite3* database, char* artist_name)
+{
+    return search_song_history_by_column(database, "artist", artist_name);
+}
+
+artist_list search_artists_by_name(sqlite3* database, const char* query, int limit)
+{
+    sqlite3_stmt* cmd = NULL;
+    artist_list list = { .root = NULL, .len = 0 };
+
+    if (database == NULL || query == NULL || *query == '\0') {
+        return list;
+    }
+
+    const char* sql_cmd =
+        "SELECT artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE artist LIKE ? ESCAPE '\\' COLLATE NOCASE "
+        "GROUP BY artist "
+        "ORDER BY play_count DESC, artist COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    char* pattern = sql_like_pattern(query);
+    if (pattern == NULL) {
+        sqlite3_finalize(cmd);
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, pattern, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(cmd, 2, limit > 0 ? limit : 25);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_artist_from_stmt(&list, cmd);
+    }
+
+    free(pattern);
+    sqlite3_finalize(cmd);
+    return list;
+}
+
+album_list search_albums_by_name(sqlite3* database, const char* query, int limit)
+{
+    sqlite3_stmt* cmd = NULL;
+    album_list list = { .root = NULL, .len = 0 };
+
+    if (database == NULL || query == NULL || *query == '\0') {
+        return list;
+    }
+
+    const char* sql_cmd =
+        "SELECT album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE album LIKE ? ESCAPE '\\' COLLATE NOCASE "
+        "GROUP BY album, artist "
+        "ORDER BY play_count DESC, album COLLATE NOCASE ASC, artist COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    char* pattern = sql_like_pattern(query);
+    if (pattern == NULL) {
+        sqlite3_finalize(cmd);
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, pattern, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(cmd, 2, limit > 0 ? limit : 25);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_album_from_stmt(&list, cmd);
+    }
+
+    free(pattern);
+    sqlite3_finalize(cmd);
+    return list;
+}
+
+track_list search_tracks_by_name(sqlite3* database, const char* query, int limit)
+{
+    sqlite3_stmt* cmd = NULL;
+    track_list list = { .root = NULL, .len = 0 };
+
+    if (database == NULL || query == NULL || *query == '\0') {
+        return list;
+    }
+
+    const char* sql_cmd =
+        "SELECT track, album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE track LIKE ? ESCAPE '\\' COLLATE NOCASE "
+        "GROUP BY track, album, artist "
+        "ORDER BY play_count DESC, track COLLATE NOCASE ASC, artist COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    char* pattern = sql_like_pattern(query);
+    if (pattern == NULL) {
+        sqlite3_finalize(cmd);
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, pattern, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(cmd, 2, limit > 0 ? limit : 25);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_track_from_stmt(&list, cmd);
+    }
+
+    free(pattern);
+    sqlite3_finalize(cmd);
+    return list;
+}
+
+track_list get_top_tracks_for_artist_limit(sqlite3* database, const char* artist_name, int limit)
+{
+    sqlite3_stmt* cmd = NULL;
+    track_list list = { .root = NULL, .len = 0 };
+
+    if (database == NULL || artist_name == NULL || *artist_name == '\0') {
+        return list;
+    }
+
+    const char* sql_cmd =
+        "SELECT track, album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE artist = ? COLLATE NOCASE "
+        "GROUP BY track, album, artist "
+        "ORDER BY play_count DESC, track COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, artist_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(cmd, 2, limit > 0 ? limit : 5);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_track_from_stmt(&list, cmd);
+    }
+
+    sqlite3_finalize(cmd);
+    return list;
+}
+
+track_list get_top_tracks_for_album_limit(sqlite3* database, const char* album_name, const char* artist_name, int limit)
+{
+    sqlite3_stmt* cmd = NULL;
+    track_list list = { .root = NULL, .len = 0 };
+
+    if (database == NULL || album_name == NULL || *album_name == '\0') {
+        return list;
+    }
+
+    const char* sql_album_only =
+        "SELECT track, album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE album = ? COLLATE NOCASE "
+        "GROUP BY track, album, artist "
+        "ORDER BY play_count DESC, track COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    const char* sql_album_and_artist =
+        "SELECT track, album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE album = ? COLLATE NOCASE AND artist = ? COLLATE NOCASE "
+        "GROUP BY track, album, artist "
+        "ORDER BY play_count DESC, track COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    const char* sql_cmd = (artist_name != NULL && *artist_name != '\0') ? sql_album_and_artist : sql_album_only;
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, album_name, -1, SQLITE_TRANSIENT);
+    if (artist_name != NULL && *artist_name != '\0') {
+        sqlite3_bind_text(cmd, 2, artist_name, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(cmd, 3, limit > 0 ? limit : 5);
+    } else {
+        sqlite3_bind_int(cmd, 2, limit > 0 ? limit : 5);
+    }
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_track_from_stmt(&list, cmd);
+    }
+
+    sqlite3_finalize(cmd);
+    return list;
+}
+
+album_list get_top_albums_for_artist_limit(sqlite3* database, const char* artist_name, int limit)
+{
+    sqlite3_stmt* cmd = NULL;
+    album_list list = { .root = NULL, .len = 0 };
+
+    if (database == NULL || artist_name == NULL || *artist_name == '\0') {
+        return list;
+    }
+
+    const char* sql_cmd =
+        "SELECT album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "WHERE artist = ? COLLATE NOCASE "
+        "GROUP BY album, artist "
+        "ORDER BY play_count DESC, album COLLATE NOCASE ASC "
+        "LIMIT ?;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return list;
+    }
+
+    sqlite3_bind_text(cmd, 1, artist_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(cmd, 2, limit > 0 ? limit : 5);
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        append_album_from_stmt(&list, cmd);
+    }
+
+    sqlite3_finalize(cmd);
+    return list;
+}
+
+char* get_track_uri_for_song(sqlite3* database, const char* track_name, const char* album_name, const char* artist_name)
+{
+    sqlite3_stmt* cmd = NULL;
+
+    if (database == NULL || track_name == NULL || album_name == NULL || artist_name == NULL) {
+        return NULL;
+    }
+
+    const char* sql_cmd =
+        "SELECT track_uri "
+        "FROM spotifyHistory "
+        "WHERE track = ? COLLATE NOCASE "
+        "  AND album = ? COLLATE NOCASE "
+        "  AND artist = ? COLLATE NOCASE "
+        "  AND track_uri IS NOT NULL "
+        "  AND track_uri != '' "
+        "LIMIT 1;";
+
+    if (sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL) != SQLITE_OK) {
+        return NULL;
+    }
+
+    sqlite3_bind_text(cmd, 1, track_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(cmd, 2, album_name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(cmd, 3, artist_name, -1, SQLITE_TRANSIENT);
+
+    char* track_uri = NULL;
+    if (sqlite3_step(cmd) == SQLITE_ROW) {
+        const unsigned char* uri_text = sqlite3_column_text(cmd, 0);
+        if (uri_text != NULL) {
+            track_uri = strdup((const char*)uri_text);
+        }
+    }
+
+    sqlite3_finalize(cmd);
+    return track_uri;
+}
+
 // function to clear the table
 // function to delete table
 // function to merge tables

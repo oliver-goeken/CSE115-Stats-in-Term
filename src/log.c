@@ -3,12 +3,15 @@
 #include <time.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define TIME_STR_LEN 128
 
 
 FILE* LOG_FILE;
 time_t raw_time;
+
+bool SHOW_ERRORS = false;
 
 int log_init_file(char* filename){
 	LOG_FILE = fopen(filename, "a+");
@@ -45,6 +48,10 @@ int log_msg_detailed(char* err, char* file, int line, char* msg){
 		return -1;
 	}
 
+	if (!SHOW_ERRORS && err[0] != '\0'){
+		return -2;
+	}
+
 	time(&raw_time);
 	struct tm* time_struct = localtime(&raw_time);
 	char time_formatted[TIME_STR_LEN];
@@ -61,6 +68,10 @@ int log_msg_detailed(char* err, char* file, int line, char* msg){
 int log_msg_f_detailed(char* err, char* file, int line, char* format, ...){
 	if (LOG_FILE == NULL){
 		return -1;
+	}
+
+	if (!SHOW_ERRORS && err[0] != '\0'){
+		return -2;
 	}
 
 	va_list args;

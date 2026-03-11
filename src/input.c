@@ -16,6 +16,8 @@ int get_input(display_window* window, int start_x, int start_y, char* input_buff
 		return -4;
 	}
 
+	window->fully_update = false;
+
 	memset(input_buffer, '\0', input_buffer_size);
 	int input_buffer_pos = 0;
 
@@ -27,7 +29,7 @@ int get_input(display_window* window, int start_x, int start_y, char* input_buff
 			return -5;
 		}
 
-		display_draw_window_and_update(window);
+		display_screen_draw_windows(display_get_current_screen());
 
 		int user_input = getch();
 
@@ -73,13 +75,15 @@ int get_input(display_window* window, int start_x, int start_y, char* input_buff
 				}
 				break;
 		}
-
-		if (cancel_input){
-			input_buffer[0] = '\0';
-		} else {
-			input_buffer[input_buffer_pos] = '\0';
-		}
 	}
+
+	if (cancel_input){
+		input_buffer[0] = '\0';
+	} else {
+		input_buffer[input_buffer_pos] = '\0';
+	}
+
+	window->fully_update = true;
 
 	werase(window->ncurses_window);
 	wrefresh(window->ncurses_window);
@@ -112,7 +116,11 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 	int max_input_size = 256;
 	char in_buff[max_input_size];
 
-	get_input(window, start_x, start_y, in_buff, max_input_size);
+	if (get_input(window, start_x, start_y, in_buff, max_input_size) == -5){
+		return -5;
+	}
+
+
 	input_command_remove_excess_space(in_buff, max_input_size);
 
 	char command_buff[max_input_size];
