@@ -844,6 +844,16 @@ track_list get_bottom_tracks_limit(sqlite3* db, int limit) {
     );
 }
 
+// By num listens, sorted by album
+track_list tracks_by_album(sqlite3* db) {
+    return get_tracks_sorted(
+        db,
+        "",   // no WHERE clause
+        "album COLLATE NOCASE ASC, play_count DESC, track COLLATE NOCASE ASC",
+        -1    // no limit
+    );
+}
+
 // Date Listened
 track_list get_recent_tracks(sqlite3* db) {
     return get_tracks_sorted(db,
@@ -893,6 +903,7 @@ track_list get_rev_alpha_tracks_limit(sqlite3* db, int limit) {
         limit                   // Has limit
     );
 }
+
 
 
 
