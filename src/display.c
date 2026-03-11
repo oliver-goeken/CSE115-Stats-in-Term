@@ -1952,7 +1952,8 @@ int display_draw_content_node(display_window* window, int start_x, int start_y, 
 	} else {
 		wattron(window->ncurses_window, COLOR_PAIR(content_node->data->color_pair_num));
 	}
-	mvwprintw(window->ncurses_window, start_y, alignment_start_x, trunc_string);
+	//mvwprintw(window->ncurses_window, start_y, alignment_start_x, trunc_string);
+	mvwprintw(window->ncurses_window, start_y, alignment_start_x, "%s", trunc_string); //catli
 	wattron(window->ncurses_window, COLOR_PAIR(COLOR_PAIR_DEFAULT));
 
 	return 0;

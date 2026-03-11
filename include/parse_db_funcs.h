@@ -75,7 +75,7 @@ char* read_json (char* file) ;
 
 int json_import_to_db(sqlite3* database, char* file) ; 
 
-int json_import_directory(sqlite3* database, char* path);
+int json_import_directory(sqlite3* database, const char* path);
 
 song_list get_all_songs_played_for_artist(sqlite3* database, char* artist_name) ;
 int get_num_songs_played_for_song(sqlite3* database, char* song_name, char* artist_name) ;

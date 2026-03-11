@@ -11,10 +11,14 @@
 #include "log.h"
 #include "cli.h"
 #include "shared_defs.h"
+#include "spotify_api.h"
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
 #include <stdio.h>
+
+#include "cJSON.h"
+//int wait_for_auth_json(char *auth_code);
 
 sqlite3* song_plays_database;
 display_window* LOADING_DATA_WINDOW = NULL;
@@ -291,6 +295,187 @@ static int print_search_results(const char* kind, int limit, const char* query){
 	return 0;
 }
 
+//catlin
+int wait_for_auth_json(char *auth_code)
+{
+    if (auth_code == NULL) {
+        return 0;
+    }
+
+    const int max_wait_seconds = 120;
+    int waited = 0;
+
+    while (waited < max_wait_seconds) {
+        FILE *fp = fopen("spotify_code.JSON", "r");
+        if (fp != NULL) {
+            fseek(fp, 0, SEEK_END);
+            long size = ftell(fp);
+            rewind(fp);
+
+            if (size > 0 && size < 8192) {
+                char buffer[8192];
+                size_t bytes_read = fread(buffer, 1, (size_t)size, fp);
+                buffer[bytes_read] = '\0';
+                fclose(fp);
+
+                cJSON *root = cJSON_Parse(buffer);
+                if (root != NULL) {
+                    cJSON *code_item = cJSON_GetObjectItemCaseSensitive(root, "code");
+                    if (cJSON_IsString(code_item) &&
+                        code_item->valuestring != NULL &&
+                        code_item->valuestring[0] != '\0') {
+
+                        snprintf(auth_code, 2048, "%s", code_item->valuestring);
+                        cJSON_Delete(root);
+
+                        remove("spotify_code.JSON");  // optional cleanup
+                        return 1;
+                    }
+                    cJSON_Delete(root);
+                }
+            } else {
+                fclose(fp);
+            }
+        }
+
+        sleep(1);
+        waited++;
+    }
+
+    return 0;
+}/*
+int wait_for_auth_json(char *auth_code)
+{
+    if (auth_code == NULL) {
+        return 0;
+    }
+
+    while (1) {
+        FILE *fp = fopen("spotify_code.JSON", "r");
+        if (fp != NULL) {
+            fseek(fp, 0, SEEK_END);
+            long size = ftell(fp);
+            rewind(fp);
+
+            if (size > 0 && size < 8192) {
+                char buffer[8192];
+                size_t bytes_read = fread(buffer, 1, (size_t)size, fp);
+                buffer[bytes_read] = '\0';
+
+                cJSON *root = cJSON_Parse(buffer);
+                if (root != NULL) {
+                    cJSON *code_item = cJSON_GetObjectItemCaseSensitive(root, "code");
+                    if (cJSON_IsString(code_item) && code_item->valuestring != NULL && code_item->valuestring[0] != '\0') {
+                        snprintf(auth_code, 2048, "%s", code_item->valuestring);
+                        cJSON_Delete(root);
+                        fclose(fp);
+                        return 1;
+                    }
+                    cJSON_Delete(root);
+                }
+            }
+
+            fclose(fp);
+        }
+
+        sleep(1);
+    }
+
+    return 0;
+}*/
+
+static void print_wrapped_url(display_window* win, const char* url)
+{
+    int width = win->width - 4;   // leave border padding
+    int len = strlen(url);
+
+    for (int i = 0; i < len; i += width) {
+        char buffer[1024];
+
+        int chunk = width;
+        if (i + chunk > len)
+            chunk = len - i;
+
+        snprintf(buffer, sizeof(buffer), "%.*s", chunk, url + i);
+
+        display_new_text_content_node(win, buffer);
+    }
+}
+
+void spotify_auth_button_interact(display_content_node* content_node)
+{
+    (void)content_node;
+
+    if (LIST_WINDOW == NULL) {
+        return;
+    }
+
+    display_window_destroy_content_nodes(LIST_WINDOW);
+
+    if (!spotify_api_has_auth_env()) {
+        display_new_text_content_node(LIST_WINDOW, "Spotify auth is not configured.");
+        display_new_text_content_node(LIST_WINDOW, "Set these environment variables first:");
+        display_new_text_content_node(LIST_WINDOW, "SPOTIFY_CLIENT_ID");
+        display_new_text_content_node(LIST_WINDOW, "SPOTIFY_CLIENT_SECRET");
+        display_new_text_content_node(LIST_WINDOW, "SPOTIFY_REDIRECT_URI");
+        //display_new_text_content_node(LIST_WINDOW, "Example redirect:");
+        //display_new_text_content_node(LIST_WINDOW, "http://127.0.0.1:8888/callback");
+        return;
+    }
+
+    char auth_url[2048];
+    spotify_api_build_auth_url(auth_url, (int)sizeof(auth_url));
+	printf("\nAUTH URL:\n%s\n\n", auth_url);
+	fflush(stdout);
+    if (auth_url[0] == '\0') {
+        display_new_text_content_node(LIST_WINDOW, "Could not build Spotify auth URL.");
+        return;
+    }
+
+    display_new_text_content_node(LIST_WINDOW, "Spotify Authentication");
+	display_new_text_content_node(LIST_WINDOW, "1. Open this URL in your browser:");
+	print_wrapped_url(LIST_WINDOW, auth_url);
+	display_new_text_content_node(LIST_WINDOW, "2. Log in and approve access.");
+	display_new_text_content_node(LIST_WINDOW, "3. Copy the 'code' parameter from the redirect URL.");
+	display_new_text_content_node(LIST_WINDOW, "4. Write the code into spotify_code.JSON.");
+	display_new_text_content_node(LIST_WINDOW, "   Format: { \"code\": \"PASTE_CODE_HERE\" }");
+	display_new_text_content_node(LIST_WINDOW, "Waiting for spotify_code.JSON...");
+
+    display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+
+    display_screen_draw_windows(display_get_current_screen());
+    wrefresh(LIST_WINDOW->ncurses_window);
+
+    display_screen_draw_windows(display_get_current_screen());
+    wrefresh(LIST_WINDOW->ncurses_window);
+
+    char auth_code[2048];
+    memset(auth_code, 0, sizeof(auth_code));
+
+    if (!wait_for_auth_json(auth_code)) {
+        display_window_destroy_content_nodes(LIST_WINDOW);
+        display_new_text_content_node(LIST_WINDOW, "Authentication cancelled or spotify_code.JSON was invalid.");
+        return;
+    }
+
+    char error_text[512];
+    int rc = spotify_api_exchange_code_for_token(auth_code, error_text, (int)sizeof(error_text));
+
+    display_window_destroy_content_nodes(LIST_WINDOW);
+
+    if (rc == SPOTIFY_API_OK) {
+        display_new_text_content_node(LIST_WINDOW, "Authentication successful.");
+        display_new_text_content_node(LIST_WINDOW, "SPOTIFY_ACCESS_TOKEN is now loaded for this run.");
+    } else {
+        display_new_text_content_node(LIST_WINDOW, "Authentication failed.");
+        if (error_text[0] != '\0') {
+            display_new_text_content_node(LIST_WINDOW, error_text);
+        }
+    }
+	display_screen_draw_windows(display_get_current_screen());
+	wrefresh(LIST_WINDOW->ncurses_window);
+	wgetch(LIST_WINDOW->ncurses_window);
+}
 
 int main(int argc, char **argv) {
 	int rc = handle_args(argc, argv);
@@ -420,7 +605,7 @@ int main(int argc, char **argv) {
 	display_window_group* options_group = display_create_window_group();
 	
 	screen_setup menu_setup = {
-		7, {
+		8, {
 			{"0:0:w:4", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 2, {
 				//{"", NULL, CONTENT_NODE_ALIGN_CENTER},  // MAKE A OPTION TO SHRINK WINDOW HEIGHT AS MUCH AS POSSIBLE TO FIT CONTENT, as well as option to center nodes vertically
 													// this title will be 6 high (two spaces) unless terminal too small
@@ -440,6 +625,9 @@ int main(int argc, char **argv) {
 				{"Top Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
+                {"Authenticate", spotify_auth_button_interact, CONTENT_NODE_ALIGN_CENTER}
+                                         }},
+			{"w6/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
 				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"0:h-2:w:1", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, NULL, 1, {
@@ -646,7 +834,7 @@ void init(){
 	// function called by command or by cli option
 	// defaults to nothing
 	if (CLI_OPTIONS.json_path && CLI_OPTIONS.json_path[0] != '\0'){
-		json_import_directory(song_plays_database, (char*) CLI_OPTIONS.json_path);
+		json_import_directory(song_plays_database, CLI_OPTIONS.json_path); //catli
 	}
 }
 

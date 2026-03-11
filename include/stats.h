@@ -35,4 +35,6 @@ void go_to_quit_screen();
 
 void draw_boognish();
 
+void spotify_auth_button_interact(display_content_node* content_node); //catlin
+
 #endif

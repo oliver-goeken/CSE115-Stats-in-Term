@@ -368,7 +368,7 @@ int json_import_to_db(sqlite3* database, char* file_name){
     return 0; 
 }
 
-int json_import_directory(sqlite3* database, char* path){
+int json_import_directory(sqlite3* database, const char* path){
 	if (database == NULL){
 		log_err("database does not exist");
 		return -1;

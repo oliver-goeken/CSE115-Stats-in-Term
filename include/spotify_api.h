@@ -36,4 +36,8 @@ int spotify_api_fetch_track_metadata_with_token(
 
 void spotify_track_metadata_free(spotify_track_metadata* metadata);
 
+//catlin
+void spotify_api_build_auth_url(char* out_url, int out_size);
+int spotify_api_exchange_code_for_token(const char* auth_code, char* out_error, int out_error_size);
+bool spotify_api_has_auth_env(void);
 #endif

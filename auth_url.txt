@@ -1,0 +1,1 @@
+https://accounts.spotify.com/authorize?response_type=code&client_id=bb07264e25d443629b7b9306ec78eed0&redirect_uri=http%3A%2F%2F127.0.0.1%3A8888%2Fcallback&scope=user-read-private%20user-read-email%20user-top-read%20user-read-recently-played
