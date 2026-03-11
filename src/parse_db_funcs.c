@@ -216,7 +216,7 @@ int create_db(sqlite3 *database){
     free(error_msg); 
     // check connection again
     if (rem_con != 0){
-        log_msg_detailed("Error in database: ", __FILE__, __LINE__, sqlite3_errmsg(database));
+        log_msg_detailed("Error in database: ", __FILE__, __LINE__, (char*) sqlite3_errmsg(database));
         return 1;
     }
 
@@ -308,7 +308,7 @@ int json_import_to_db(sqlite3* database, char* file_name){
     int rem_con = sqlite3_prepare_v2(database, sql_cmd, -1, &cmd, NULL); 
     
     if (rem_con != 0) { // if it can't open!
-        log_msg_detailed("Error: could not insert data into database", __FILE__, __LINE__, sqlite3_errmsg(database));
+        log_msg_detailed("Error: could not insert data into database", __FILE__, __LINE__, (char*) sqlite3_errmsg(database));
         cJSON_Delete(root);
         free(json_data);
         return 1; 
@@ -347,7 +347,7 @@ int json_import_to_db(sqlite3* database, char* file_name){
 
         rem_con = sqlite3_step(cmd); 
         if (rem_con != SQLITE_DONE){
-            log_msg_detailed("Error: execute failed. Resetting table.", __FILE__, __LINE__, sqlite3_errmsg(database));
+            log_msg_detailed("Error: execute failed. Resetting table.", __FILE__, __LINE__, (char*) sqlite3_errmsg(database));
             sqlite3_exec(database, "ROLLBACK;", NULL, NULL, NULL); // reset everything if failed!!!
             success = false; 
             break; 

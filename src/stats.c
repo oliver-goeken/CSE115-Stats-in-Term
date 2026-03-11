@@ -60,7 +60,7 @@ static int init_db_only(void){
 	log_init_file("stats.log");
 
 	if (sqlite3_open(CLI_OPTIONS.db_path, &song_plays_database) != SQLITE_OK){
-		log_msg_detailed("Error opening database: ", __FILE__, __LINE__, sqlite3_errmsg(song_plays_database));
+		log_msg_detailed("Error opening database: ", __FILE__, __LINE__, (char*) sqlite3_errmsg(song_plays_database));
 		log_terminate();
 		return 1;
 	}
@@ -646,7 +646,7 @@ void init(){
 	// function called by command or by cli option
 	// defaults to nothing
 	if (CLI_OPTIONS.json_path && CLI_OPTIONS.json_path[0] != '\0'){
-		json_import_directory(song_plays_database, CLI_OPTIONS.json_path);
+		json_import_directory(song_plays_database, (char*) CLI_OPTIONS.json_path);
 	}
 }
 
