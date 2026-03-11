@@ -57,3 +57,4 @@ full-clean: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT) $(OBJDIR)*.d
 	rm -f $(TEST_OUTS)
+	rm -rf $(TESTDIR)test_*.dSYM
