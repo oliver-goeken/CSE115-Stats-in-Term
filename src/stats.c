@@ -388,9 +388,17 @@ int main(int argc, char **argv) {
 			{"w1/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
 																			}},
-			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 2, {
+			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 10, {
 				{"run with --help to see a list", NULL, CONTENT_NODE_ALIGN_CENTER},
-				{"of command line arguments!", NULL, CONTENT_NODE_ALIGN_CENTER}
+				{"of command line arguments!", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Credits:", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Evelyn Shashikanth", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Oliver Goeken", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Ryan Chou", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Catlinh Nguyen", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Zachary Roberson", NULL, CONTENT_NODE_ALIGN_CENTER}
 																			}}
 		}
 	};
