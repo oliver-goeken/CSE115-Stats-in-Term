@@ -271,6 +271,8 @@ int display_handle_winch(){
 
 	display_screen_node* screen_node = display_info_struct->screen_list->root;
 
+	erase();
+
 	while (screen_node != NULL){
 		log_msg_f("resizing screen %s", screen_node->display_screen->name);
 		if (screen_node->display_screen == NULL || screen_node->display_screen->window_list == NULL){
@@ -1586,8 +1588,8 @@ int display_parse_dimensions_format(display_window* window){
 	int selected_node_number = 0;
 	display_content_node_get_position(window, display_window_get_selected_node(window), &selected_node_number);
 
-	if ((selected_node_number - window->content_offset) > (window->height - (window->boxed ? 2 : 0))){
-		window->content_offset = selected_node_number - ((window->height - (window->boxed ? 2 : 1)) / 2);
+	if ((selected_node_number - window->content_offset) > (window->height - (window->boxed ? 2 : 0)) || (window->content_offset > selected_node_number)){
+		window->content_offset = selected_node_number - ((window->height - (window->boxed ? 2 : 0)) / 2);
 	}
 
 	return 0;

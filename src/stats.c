@@ -35,6 +35,8 @@ display_window* LIST_WINDOW = NULL;
 
 sqlite3* song_plays_database = NULL;
 
+category_displayed currently_displayed = NONE;
+
 bool SIGINT_FLAG = NULL;
 
 typedef struct {
@@ -548,29 +550,49 @@ int main(int argc, char **argv) {
 			{"0:0:w:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
 				{"Help Menu", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"0:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+			{"0:3:w1/3:3", WINDOW_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"Hotkeys", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"w1/3:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+			{"w1/3:3:w1/3:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"Commands", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"w2/3:3:w1/3:3", WINDOW_UNSELECTABLE, WINDOW_BOXED, NULL, 1, {
+			{"w2/3:3:w1/3:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
 				{"Info", NULL, CONTENT_NODE_ALIGN_CENTER}
 																	}},
-			{"0:5:w1/3:h-5", WINDOW_SELECTED, WINDOW_BOXED, NULL, 7, {
-				{"[esc] - return to main screen from here", NULL, CONTENT_NODE_ALIGN_CENTER},
-				{"[esc] - on main screen, select new option", NULL, CONTENT_NODE_ALIGN_CENTER},
-				{"[arrows keys]/[hjkl] - navigate", NULL, CONTENT_NODE_ALIGN_CENTER},
+			{"0:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 11, {
+				{"[esc] return to main screen from here", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[arrows keys]/[hjkl] navigate", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[g] go to bottom of list", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[G] go to top of list", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"[enter] interact", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[q] quit", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"[H] on main screen, show this help screen", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"[:] on main screen, enter command", NULL, CONTENT_NODE_ALIGN_CENTER},
-				{"[q] quit", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[esc] on main screen, select new category", NULL, CONTENT_NODE_ALIGN_CENTER},
 																	 }},
-			{"w1/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
-				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
+			{"w1/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 8, {
+				{"[q], [quit] - quit", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[load {path_to_file_or_folder}]:", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"load a json file or folder of json files", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[h], [help] - show this help screen", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[reset] - reset a category to default", NULL, CONTENT_NODE_ALIGN_CENTER},
 																			}},
-			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
-				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
+			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 10, {
+				{"run with --help to see a list", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"of command line arguments!", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Credits:", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Evelyn Shashikanth", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Oliver Goeken", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Ryan Chou", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Catlinh Nguyen", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"Zachary Roberson", NULL, CONTENT_NODE_ALIGN_CENTER}
 																			}}
 		}
 	};
@@ -616,13 +638,13 @@ int main(int argc, char **argv) {
 				{"History", sql_get_listening_history, CONTENT_NODE_ALIGN_CENTER}
 									}},
 			{"w2/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Top Artists", sql_get_top_artists, CONTENT_NODE_ALIGN_CENTER}
+				{"Artists", sql_get_top_artists, CONTENT_NODE_ALIGN_CENTER}
 										}},
 			{"w3/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Top Albums", sql_get_top_albums, CONTENT_NODE_ALIGN_CENTER}
+				{"Albums", sql_get_top_albums, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w4/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Top Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
+				{"Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
                 {"Authenticate", spotify_auth_button_interact, CONTENT_NODE_ALIGN_CENTER}
@@ -763,7 +785,31 @@ int main(int argc, char **argv) {
 								display_set_screen(HELP_SCREEN);
 							} else if (command_return_val == COMMAND_FILE_NOT_FOUND){
 								input_display_command_error(COMMAND_WINDOW, "Error loading file");
+							} else if (command_return_val == COMMAND_RESET){
+								switch (currently_displayed){
+									case SONGS:
+										sql_get_top_songs(NULL);
+										break;
+									case ALBUMS:
+										sql_get_top_albums(NULL);
+										break;
+									case ARTISTS:
+										sql_get_top_artists(NULL);
+										break;
+									case HISTORY:
+										sql_get_listening_history(NULL);
+										break;
+									default:
+										break;
+								}
+							} else if (command_return_val == COMMAND_MUST_SELECT_CATEGORY){
+								input_display_command_error(COMMAND_WINDOW, "Must select a category other than history");
+							} else if (command_return_val == COMMAND_NOTHING_TO_SEARCH){
+								input_display_command_error(COMMAND_WINDOW, "Nothing to search");
+							} else if (command_return_val == COMMAND_NO_RESULTS_FOUND){
+								input_display_command_error(COMMAND_WINDOW, "Couldn't find any match");
 							}
+
 							break;
 						}
 				break;
@@ -870,6 +916,7 @@ void quit_button_interact(display_content_node* content_node){
 
 void sql_get_top_albums(display_content_node* content_node){
 	log_msg("getting top albums");
+	currently_displayed = ALBUMS;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
@@ -902,6 +949,7 @@ void sql_get_top_albums(display_content_node* content_node){
 
 void sql_get_top_artists(display_content_node* content_node){
 	log_msg("getting top artists");
+	currently_displayed = ARTISTS;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
@@ -929,6 +977,7 @@ void sql_get_top_artists(display_content_node* content_node){
 
 void sql_get_listening_history(display_content_node* content_node){
 	log_msg("getting listening history");
+	currently_displayed = HISTORY;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
@@ -964,6 +1013,7 @@ void sql_get_listening_history(display_content_node* content_node){
 
 void sql_get_top_songs(display_content_node* content_node){
 	log_msg("getting top songs");
+	currently_displayed = SONGS;
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 

@@ -20,6 +20,9 @@ The project imports Spotify extended streaming history JSON into SQLite, provide
 - `lib/`: vendored dependencies (`sqlite3`, `cJSON`)
 - `tests/`: Unity-based tests
 - `data/`: sample Spotify export files
+- `examples/`: example json files to parse
+- `doc/release`: release documents for product release
+- `doc/scrum`: scrum documents for product release
 
 ## Requirements
 

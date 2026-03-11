@@ -511,7 +511,7 @@ void sql_change_timestamp_format(sqlite3* database){
 		}
 	}
 }
-
+/*
 artist_list get_top_artists(sqlite3* database){
     // goal: get the top artist
     sqlite3_stmt* cmd = NULL;
@@ -743,6 +743,7 @@ track_list get_bottom_tracks_limit(sqlite3* database, int limit){
     sqlite3_finalize(cmd);
     return t_list;
 }
+*/
 
 song_list get_listening_history(sqlite3* database){
     sqlite3_stmt* cmd = NULL;
@@ -808,6 +809,404 @@ song_list get_listening_history_limit(sqlite3* database, int limit){
     return listen_history;
 }
 
+//New sorts
+track_list get_tracks_sorted  (sqlite3* db, const char* where_clause, const char* order_by, int limit){
+    sqlite3_stmt* cmd = NULL;
+    track_list t_list = { .root = NULL, .len = 0 };
+
+    char where_buf[512] = "";
+    char limit_buf[64]  = "";
+    char query[1024];
+
+    if (where_clause && strlen(where_clause) > 0) {
+        snprintf(where_buf, sizeof(where_buf),
+                 "WHERE %s", where_clause);
+    }
+
+    if (limit > 0) {
+        snprintf(limit_buf, sizeof(limit_buf),
+                 "LIMIT %d", limit);
+    }
+
+    snprintf(query, sizeof(query),
+        "SELECT track, album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "%s "
+        "GROUP BY track, album, artist "
+        "ORDER BY %s "
+        "%s;",
+        where_buf,
+        order_by,
+        limit_buf
+    );
+
+    if (sqlite3_prepare_v2(db, query, -1, &cmd, NULL) != SQLITE_OK)
+        return t_list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        int count = t_list.len + 1;
+        track* root = realloc(t_list.root, count * sizeof(track));
+        if (!root) break;
+
+        t_list.root = root;
+        t_list.len = count;
+
+        track* info = &t_list.root[count - 1];
+        info->name      = strdup((char*)sqlite3_column_text(cmd, 0));
+        info->album     = strdup((char*)sqlite3_column_text(cmd, 1));
+        info->artist    = strdup((char*)sqlite3_column_text(cmd, 2));
+        info->num_plays = sqlite3_column_int(cmd, 3);
+    }
+
+    sqlite3_finalize(cmd);
+    return t_list;
+}
+artist_list get_artists_sorted(sqlite3* db, const char* where_clause, const char* order_by, int limit){
+    sqlite3_stmt* cmd = NULL;
+    artist_list a_list = { .root = NULL, .len = 0 };
+
+    char where_buf[512] = "";
+    char limit_buf[64]  = "";
+    char query[1024];
+
+    if (where_clause && strlen(where_clause) > 0) {
+        snprintf(where_buf, sizeof(where_buf),
+                 "WHERE %s", where_clause);
+    }
+
+    if (limit > 0) {
+        snprintf(limit_buf, sizeof(limit_buf),
+                 "LIMIT %d", limit);
+    }
+
+    snprintf(query, sizeof(query),
+        "SELECT artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "%s "
+        "GROUP BY artist "
+        "ORDER BY %s "
+        "%s;",
+        where_buf,
+        order_by,
+        limit_buf
+    );
+
+    if (sqlite3_prepare_v2(db, query, -1, &cmd, NULL) != SQLITE_OK)
+        return a_list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        int count = a_list.len + 1;
+        artist* root = realloc(a_list.root, count * sizeof(artist));
+        if (!root) break;
+
+        a_list.root = root;
+        a_list.len = count;
+
+        artist* info = &a_list.root[count - 1];
+        info->name      = strdup((char*)sqlite3_column_text(cmd, 0));
+        info->num_plays = sqlite3_column_int(cmd, 1);
+    }
+
+    sqlite3_finalize(cmd);
+    return a_list;
+}
+album_list get_albums_sorted  (sqlite3* db, const char* where_clause, const char* order_by, int limit){
+    sqlite3_stmt* cmd = NULL;
+    album_list al_list = { .root = NULL, .len = 0 };
+
+    char where_buf[512] = "";
+    char limit_buf[64]  = "";
+    char query[1024];
+
+    if (where_clause && strlen(where_clause) > 0) {
+        snprintf(where_buf, sizeof(where_buf),
+                 "WHERE %s", where_clause);
+    }
+
+    if (limit > 0) {
+        snprintf(limit_buf, sizeof(limit_buf),
+                 "LIMIT %d", limit);
+    }
+
+    snprintf(query, sizeof(query),
+        "SELECT album, artist, COUNT(*) AS play_count "
+        "FROM spotifyHistory "
+        "%s "
+        "GROUP BY album, artist "
+        "ORDER BY %s "
+        "%s;",
+        where_buf,
+        order_by,
+        limit_buf
+    );
+
+    if (sqlite3_prepare_v2(db, query, -1, &cmd, NULL) != SQLITE_OK)
+        return al_list;
+
+    while (sqlite3_step(cmd) == SQLITE_ROW) {
+        int count = al_list.len + 1;
+        album* root = realloc(al_list.root, count * sizeof(album));
+        if (!root) break;
+
+        al_list.root = root;
+        al_list.len = count;
+
+        album* info = &al_list.root[count - 1];
+        info->name      = strdup((char*)sqlite3_column_text(cmd, 0));
+        info->artist    = strdup((char*)sqlite3_column_text(cmd, 1));
+        info->num_plays = sqlite3_column_int(cmd, 2);
+    }
+
+    sqlite3_finalize(cmd);
+    return al_list;
+}
+
+
+// ______Tracks______ //
+// Num Listens
+track_list get_top_tracks(sqlite3* db) {
+    return get_tracks_sorted(db,
+        "",                     // no WHERE clause
+        "play_count DESC",      // sort by number of plays
+        -1                      // no limit
+    );
+}
+
+track_list get_top_tracks_limit(sqlite3* db, int limit) {
+    return get_tracks_sorted(db,
+        "",                     // no WHERE clause
+        "play_count DESC",      // sort by number of plays
+        limit                   // Has limit
+    );
+}
+
+track_list get_bottom_tracks_limit(sqlite3* db, int limit) {
+    return get_tracks_sorted(db,
+        "",                     // no WHERE clause
+        "play_count ASC",       // sort by number of plays ascending
+        limit                   // Has limit
+    );
+}
+
+// By num listens, sorted by album
+track_list tracks_by_album(sqlite3* db) {
+    return get_tracks_sorted(
+        db,
+        "",   // no WHERE clause
+        "album COLLATE NOCASE ASC, play_count DESC, track COLLATE NOCASE ASC",
+        -1    // no limit
+    );
+}
+
+// Date Listened
+track_list get_recent_tracks(sqlite3* db) {
+    return get_tracks_sorted(db,
+        "",                        // no WHERE clause
+        "timestamp DESC", // sort by most recent play
+        -1                         // no limit
+    );
+}
+
+track_list get_recent_tracks_limit(sqlite3* db, int limit) {
+    return get_tracks_sorted(db,
+        "",                       // no WHERE clause
+        "timestamp DESC",// sort by most recent play
+        limit                     // Has limit
+    );
+}
+
+track_list get_earliest_tracks_limit(sqlite3* db, int limit) {
+    return get_tracks_sorted(db,
+        "",                        // no WHERE clause
+        "timestamp ASC",  // sort by least recent play
+        limit                      // Has limit
+    );
+}
+
+// Alphabetically
+track_list get_alpha_tracks(sqlite3* db) {
+    return get_tracks_sorted(db,
+        "",                     // no WHERE clause
+        "track COLLATE NOCASE ASC",
+        -1                      // no limit
+    );
+}
+
+track_list get_alpha_tracks_limit(sqlite3* db, int limit) {
+    return get_tracks_sorted(db,
+        "",                     // no WHERE clause
+        "track COLLATE NOCASE ASC",
+        limit                   // Has limit
+    );
+}
+
+track_list get_rev_alpha_tracks_limit(sqlite3* db, int limit) {
+    return get_tracks_sorted(db,
+        "",                     // no WHERE clause
+        "track COLLATE NOCASE DESC",
+        limit                   // Has limit
+    );
+}
+
+
+
+
+// ______Albums______ //
+// Num Listens
+album_list get_top_albums(sqlite3* db){
+    return get_albums_sorted(db,
+        "",                     // no WHERE clause
+        "play_count DESC",      // sort by number of plays
+        -1                      // no limit
+        );
+}
+
+album_list get_top_albums_limit(sqlite3* db, int limit){
+    return get_albums_sorted(db,
+        "",                     // no WHERE clause
+        "play_count DESC",      // sort by number of plays
+        limit                   // limit
+        );
+}
+
+album_list get_bottom_albums_limit(sqlite3* db, int limit){
+    return get_albums_sorted(db,
+        "",                     // no WHERE clause
+        "play_count ASC",       // sort by number of plays ascending
+        limit                   // limit
+        );
+}
+
+// Date Listened
+album_list get_recent_albums(sqlite3* db){
+    return get_albums_sorted(db,
+        "",                        // no WHERE clause
+        "timestamp DESC", // sort by most recent play
+        -1                         // no limit
+        );
+}
+
+album_list get_recent_albums_limit(sqlite3* db, int limit){
+    return get_albums_sorted(db,
+        "",                       // no WHERE clause
+        "timestamp DESC",// sort by most recent play
+        limit                     // Has limit
+        );
+}
+
+album_list get_earliest_albums_limit(sqlite3* db, int limit){
+    return get_albums_sorted(db,
+        "",                        // no WHERE clause
+        "timestamp ASC",  // sort by least recent play
+        limit                      // Has limit
+        );
+}
+
+// Alphabetically
+album_list get_alpha_albums(sqlite3* db) {
+    return get_albums_sorted(db,
+        "",                     // no WHERE clause
+        "album COLLATE NOCASE ASC",
+        -1                      // no limit
+    );
+}
+
+album_list get_alpha_albums_limit(sqlite3* db, int limit) {
+    return get_albums_sorted(db,
+        "",                     // no WHERE clause
+        "album COLLATE NOCASE ASC",
+        limit                   // Has limit
+    );
+}
+
+album_list get_rev_alpha_albums_limit(sqlite3* db, int limit) {
+    return get_albums_sorted(db,
+        "",                     // no WHERE clause
+        "album COLLATE NOCASE DESC",
+        limit                   // Has limit
+    );
+}
+
+
+// ______Artists______ //
+// Num Listens
+artist_list get_top_artists(sqlite3* db){
+    return get_artists_sorted(db,
+        "",                     // no WHERE clause
+        "play_count DESC",      // sort by number of plays
+        -1                      // no limit
+        );
+}
+
+artist_list get_top_artists_limit(sqlite3* db, int limit){
+    return get_artists_sorted(db,
+        "",                     // no WHERE clause
+        "play_count DESC",      // sort by number of plays
+        limit                   // limit
+        );
+}
+
+artist_list get_bottom_artists_limit(sqlite3* db, int limit){
+    return get_artists_sorted(db,
+        "",                     // no WHERE clause
+        "play_count ASC",       // sort by number of plays ascending
+        limit                   // limit
+        );
+}
+
+// Date Listened
+artist_list get_recent_artists(sqlite3* db){
+    return get_artists_sorted(db,
+        "",                        // no WHERE clause
+        "timestamp DESC", // sort by most recent play
+        -1                         // no limit
+        );
+}
+
+artist_list get_recent_artists_limit(sqlite3* db, int limit){
+    return get_artists_sorted(db,
+        "",                       // no WHERE clause
+        "timestamp DESC",// sort by most recent play
+        limit                     // Has limit
+        );
+}
+
+artist_list get_earliest_artists_limit(sqlite3* db, int limit){
+    return get_artists_sorted(db,
+        "",                        // no WHERE clause
+        "timestamp ASC",  // sort by least recent play
+        limit                      // Has limit
+        );
+}
+
+// Alphabetically
+artist_list get_alpha_artists(sqlite3* db) {
+    return get_artists_sorted(db,
+        "",                     // no WHERE clause
+        "artist COLLATE NOCASE ASC",
+        -1                      // no limit
+    );
+}
+
+artist_list get_alpha_artists_limit(sqlite3* db, int limit) {
+    return get_artists_sorted(db,
+        "",                     // no WHERE clause
+        "artist COLLATE NOCASE ASC",
+        limit                   // Has limit
+    );
+}
+
+artist_list get_rev_alpha_artists_limit(sqlite3* db, int limit) {
+    return get_artists_sorted(db,
+        "",                     // no WHERE clause
+        "artist COLLATE NOCASE DESC",
+        limit                   // Has limit
+    );
+}
+
+
+
+void clear_table(sqlite3* database);
 song_list search_track(sqlite3* database, char* track_name)
 {
     return search_song_history_by_column(database, "track", track_name);

@@ -84,20 +84,79 @@ void sql_change_timestamp_format(sqlite3* database) ;
 
 
 // sort 
-artist_list get_top_artists(sqlite3* database);
-artist_list get_top_artists_limit(sqlite3* database, int limit);
+/*
+artist_list get_top_artists			(sqlite3* database);
+artist_list get_top_artists_limit	(sqlite3* database, int limit);
 artist_list get_bottom_artists_limit(sqlite3* database, int limit);
 
-album_list get_top_albums(sqlite3* database);
-album_list get_top_albums_limit(sqlite3* database, int limit);
+album_list get_top_albums		  (sqlite3* database);
+album_list get_top_albums_limit	  (sqlite3* database, int limit);
 album_list get_bottom_albums_limit(sqlite3* database, int limit);
 
-track_list get_top_tracks(sqlite3* database);
-track_list get_top_tracks_limit(sqlite3* database, int limit);
+track_list get_top_tracks		  (sqlite3* database);
+track_list get_top_tracks_limit   (sqlite3* database, int limit);
 track_list get_bottom_tracks_limit(sqlite3* database, int limit);
-
-song_list get_listening_history(sqlite3* database);
+*/
+song_list get_listening_history		 (sqlite3* database);
 song_list get_listening_history_limit(sqlite3* database, int limit);
+
+
+
+// New Sorting
+album_list  get_albums_sorted (sqlite3* db, const char* where_clause, const char* order_by, int limit);
+artist_list get_artists_sorted(sqlite3* db, const char* where_clause, const char* order_by, int limit);
+track_list  get_tracks_sorted (sqlite3* db, const char* where_clause, const char* order_by, int limit);
+
+// Tracks
+// Tracks — Number of Listens
+track_list get_top_tracks		  (sqlite3* db);
+track_list get_top_tracks_limit   (sqlite3* db, int limit);
+track_list get_bottom_tracks_limit(sqlite3* db, int limit);
+track_list tracks_by_album		  (sqlite3* db);
+
+// Tracks — Date Listened
+track_list get_recent_tracks		(sqlite3* db);
+track_list get_recent_tracks_limit  (sqlite3* db, int limit);
+track_list get_earliest_tracks_limit(sqlite3* db, int limit);
+
+// Tracks — Alphabetical
+track_list get_alpha_tracks			 (sqlite3* db);
+track_list get_alpha_tracks_limit	 (sqlite3* db, int limit);
+track_list get_rev_alpha_tracks_limit(sqlite3* db, int limit);
+
+
+// Albums
+// Albums — Number of Listens
+album_list get_top_albums		  (sqlite3* db);
+album_list get_top_albums_limit	  (sqlite3* db, int limit);
+album_list get_bottom_albums_limit(sqlite3* db, int limit);
+
+// Albums — Date Listened
+album_list get_recent_albums		(sqlite3* db);
+album_list get_recent_albums_limit  (sqlite3* db, int limit);
+album_list get_earliest_albums_limit(sqlite3* db, int limit);
+
+// Albums — Alphabetical
+album_list get_alpha_albums			 (sqlite3* db);
+album_list get_alpha_albums_limit	 (sqlite3* db, int limit);
+album_list get_rev_alpha_albums_limit(sqlite3* db, int limit);
+
+
+// Artists
+// Artists — Number of Listens
+artist_list get_top_artists			(sqlite3* db);
+artist_list get_top_artists_limit	(sqlite3* db, int limit);
+artist_list get_bottom_artists_limit(sqlite3* db, int limit);
+
+// Artists — Date Listened
+artist_list get_recent_artists		  (sqlite3* db);
+artist_list get_recent_artists_limit  (sqlite3* db, int limit);
+artist_list get_earliest_artists_limit(sqlite3* db, int limit);
+
+// Artists — Alphabetical
+artist_list get_alpha_artists		   (sqlite3* db);
+artist_list get_alpha_artists_limit	   (sqlite3* db, int limit);
+artist_list get_rev_alpha_artists_limit(sqlite3* db, int limit);
 
 
 // search

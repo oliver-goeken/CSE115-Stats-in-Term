@@ -23,7 +23,7 @@ LIBOBJS := $(patsubst $(LIBDIR)%.c,$(OBJDIR)%.l,$(LIBCFILES))
 TESTS = $(wildcard $(TESTDIR)test_*.c)
 TEST_OUTS := $(patsubst $(TESTDIR)%.c,$(TESTDIR)%,$(TESTS))
 TEST_FLAGS = -I$(TESTDIR) -I$(SRCDIR)
-TEST_PROJECT_OBJS := $(filter-out $(OBJDIR)stats.o $(OBJDIR)cli.o $(OBJDIR)panel.o,$(OBJS))
+TEST_PROJECT_OBJS := $(filter-out $(OBJDIR)stats.o $(OBJDIR)panel.o,$(OBJS))
 
 
 all: $(OUT)
@@ -57,3 +57,4 @@ full-clean: clean
 clean:
 	rm -f $(OBJDIR)*.o $(OUT) $(OBJDIR)*.d
 	rm -f $(TEST_OUTS)
+	rm -rf $(TESTDIR)test_*.dSYM
