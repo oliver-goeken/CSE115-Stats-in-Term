@@ -387,8 +387,15 @@ int main(int argc, char **argv) {
 				{"[:] on main screen, enter command", NULL, CONTENT_NODE_ALIGN_CENTER},
 				{"[esc] on main screen, select new category", NULL, CONTENT_NODE_ALIGN_CENTER},
 																	 }},
-			{"w1/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 1, {
-				{"", NULL, CONTENT_NODE_ALIGN_CENTER}
+			{"w1/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 8, {
+				{"[q], [quit] - quit", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[load {path_to_file_or_folder}]:", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"load a json file or folder of json files", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[h], [help] - show this help screen", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"", NULL, CONTENT_NODE_ALIGN_CENTER},
+				{"[reset] - reset a category to default", NULL, CONTENT_NODE_ALIGN_CENTER},
 																			}},
 			{"w2/3:5:w1/3:h-5", WINDOW_NOT_SELECTED, WINDOW_BOXED, NULL, 10, {
 				{"run with --help to see a list", NULL, CONTENT_NODE_ALIGN_CENTER},
