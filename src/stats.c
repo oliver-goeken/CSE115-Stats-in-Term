@@ -795,7 +795,7 @@ void sql_get_listening_history(display_content_node* content_node){
 
 	display_window_destroy_content_nodes(LIST_WINDOW);
 
-	song_list listening_history = get_listening_history(song_plays_database);
+	song_list listening_history = get_listening_history_limit(song_plays_database, 1500);
 
 	if (listening_history.songs == NULL){
 		log_err("no songs in list");
