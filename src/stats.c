@@ -620,6 +620,8 @@ int main(int argc, char **argv) {
 								input_display_command_error(COMMAND_WINDOW, "Nothing to search");
 							} else if (command_return_val == COMMAND_NO_RESULTS_FOUND){
 								input_display_command_error(COMMAND_WINDOW, "Couldn't find any match");
+							} else if (command_return_val == COMMAND_ARGS_NOT_RECOGNIZED){
+								input_display_command_error(COMMAND_WINDOW, "Arguments not recognized");
 							}
 
 							break;

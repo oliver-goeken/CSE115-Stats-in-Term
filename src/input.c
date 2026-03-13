@@ -203,7 +203,10 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 					char songs_str_data[str_data_size];
 					memset(songs_str_data, 0, str_data_size);
 
-					snprintf(songs_str_data, str_data_size, "%d. %s - %s - %s - [%d plays]", i + 1, search_results.root[i].name, search_results.root[i].album, search_results.root[i].artist, search_results.root[i].num_plays);
+					snprintf(songs_str_data, str_data_size, "%d. %s - %s - %s - [%d plays]", i + 1, search_results.root[i].name, 
+																									search_results.root[i].album, 
+																									search_results.root[i].artist, 
+																									search_results.root[i].num_plays);
 
 					display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
 					display_content_node_set_interaction(new_node, handle_album_click);
@@ -223,15 +226,128 @@ int input_handle_command(display_window* window, int start_x, int start_y){
 		}
 
 		return 0;
+	} else if (strcmp(command_buff, "brown") == 0){
+		draw_boognish();
 	} else if (strcmp(command_buff, "reset") == 0){
 		return COMMAND_RESET;
+	} else if (strcmp(command_buff, "authorize") == 0){
+		
+	} else if (strcmp(command_buff, "sort") == 0){
+		char* sort_parameter;
+
+		if (strcmp(args_buff, "count") == 0){
+			sort_parameter = "play_count DESC";
+		} else if (strcmp(args_buff, "date") == 0){
+			sort_parameter = "timestamp DESC";
+		} else if (strcmp(args_buff, "alphabetical") == 0){
+			switch (currently_displayed){
+				case SONGS:
+					sort_parameter = "track COLLATE NOCASE ASC";
+					break;
+				case ALBUMS:
+					sort_parameter = "album COLLATE NOCASE ASC";
+					break;
+				case ARTISTS:
+					sort_parameter = "artist COLLATE NOCASE ASC";
+					break;
+				default:
+					break;
+			}
+		} else {
+			return COMMAND_ARGS_NOT_RECOGNIZED;
+		}
+
+		switch (currently_displayed){
+			case SONGS: {
+				track_list search_results = get_tracks_sorted(song_plays_database, "", sort_parameter, -1);
+
+				if (search_results.len <= 0){
+					return COMMAND_NO_RESULTS_FOUND;
+				}
+
+				display_window_destroy_content_nodes(LIST_WINDOW);
+
+				int str_data_size = 256;
+				for (int i = 0; i < search_results.len; i ++){
+					char songs_str_data[str_data_size];
+					memset(songs_str_data, 0, str_data_size);
+
+					snprintf(songs_str_data, str_data_size, "%d. %s - %s - %s - [%d plays]", i + 1, search_results.root[i].name, 
+																									search_results.root[i].album, 
+																									search_results.root[i].artist, 
+																									search_results.root[i].num_plays);
+
+					display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
+					display_content_node_set_interaction(new_node, handle_album_click);
+				}
+
+				display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+				panel_on_selection_changed(); //CHANGES
+											  
+				break;
+				}
+			case ALBUMS: {
+				album_list search_results = get_albums_sorted(song_plays_database, "", sort_parameter, -1);
+
+				if (search_results.len <= 0){
+					return COMMAND_NO_RESULTS_FOUND;
+				}
+
+				display_window_destroy_content_nodes(LIST_WINDOW);
+
+				int str_data_size = 256;
+				for (int i = 0; i < search_results.len; i ++){
+					char songs_str_data[str_data_size];
+					memset(songs_str_data, 0, str_data_size);
+
+					snprintf(songs_str_data, str_data_size, "%d. %s - %s - [%d plays]", i + 1, search_results.root[i].name, 
+																									search_results.root[i].artist, 
+																									search_results.root[i].num_plays);
+
+					display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
+					display_content_node_set_interaction(new_node, handle_album_click);
+				}
+
+				display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+				panel_on_selection_changed(); //CHANGES
+											  
+				break;
+				}
+			case ARTISTS: {
+				artist_list search_results = get_artists_sorted(song_plays_database, "", sort_parameter, -1);
+
+				if (search_results.len <= 0){
+					return COMMAND_NO_RESULTS_FOUND;
+				}
+
+				display_window_destroy_content_nodes(LIST_WINDOW);
+
+				int str_data_size = 256;
+				for (int i = 0; i < search_results.len; i ++){
+					char songs_str_data[str_data_size];
+					memset(songs_str_data, 0, str_data_size);
+
+					snprintf(songs_str_data, str_data_size, "%d. %s - [%d plays]", i + 1, search_results.root[i].name, 
+																									search_results.root[i].num_plays);
+
+					display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
+					display_content_node_set_interaction(new_node, handle_album_click);
+				}
+
+				display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+				panel_on_selection_changed(); //CHANGES
+											  
+				break;
+				}
+
+			default:
+				break;
+		}
 	} else if (strcmp(command_buff, "get") == 0){
 
-	}else if (strcmp(command_buff, "h") == 0 || strcmp(command_buff, "help") == 0){
+	} else if (strcmp(command_buff, "h") == 0 || strcmp(command_buff, "help") == 0){
 		return COMMAND_HELP;
-	}  else if (strcmp(command_buff, "brown") == 0){
-		draw_boognish();
-	}else if (strcmp(command_buff, "load") == 0){
+	} else if (strcmp(command_buff, "load") == 0){
 		display_set_screen(LOADING_DATA_SCREEN);
 		display_screen_draw_windows(LOADING_DATA_SCREEN);
 
