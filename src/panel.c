@@ -383,7 +383,7 @@ static void draw_song_info(const char* track, const char* album, const char* art
 
     if (rc == SPOTIFY_API_ERR_NO_TOKEN) {
         //display_new_text_content_node(g_info_window, "Spotify metadata: set SPOTIFY_ACCESS_TOKEN");
-        display_new_text_content_node(g_info_window, "");
+        //display_new_text_content_node(g_info_window, "");
         return;
     }
 
