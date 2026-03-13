@@ -829,7 +829,9 @@ track_list get_tracks_sorted  (sqlite3* db, const char* where_clause, const char
     }
 
     snprintf(query, sizeof(query),
-        "SELECT track, album, artist, COUNT(*) AS play_count "
+        "SELECT track, album, artist, "
+        "COUNT(*) AS play_count, "
+        "MAX(timestamp) AS last_play "
         "FROM spotifyHistory "
         "%s "
         "GROUP BY track, album, artist "
@@ -880,7 +882,7 @@ artist_list get_artists_sorted(sqlite3* db, const char* where_clause, const char
     }
 
     snprintf(query, sizeof(query),
-        "SELECT artist, COUNT(*) AS play_count "
+        "SELECT artist, COUNT(*) AS play_count, MAX(timestamp) AS last_play "
         "FROM spotifyHistory "
         "%s "
         "GROUP BY artist "
@@ -929,7 +931,7 @@ album_list get_albums_sorted  (sqlite3* db, const char* where_clause, const char
     }
 
     snprintf(query, sizeof(query),
-        "SELECT album, artist, COUNT(*) AS play_count "
+        "SELECT album, artist, COUNT(*) AS play_count, MAX(timestamp) AS last_play "
         "FROM spotifyHistory "
         "%s "
         "GROUP BY album, artist "
@@ -1002,7 +1004,7 @@ track_list tracks_by_album(sqlite3* db) {
 track_list get_recent_tracks(sqlite3* db) {
     return get_tracks_sorted(db,
         "",                        // no WHERE clause
-        "timestamp DESC", // sort by most recent play
+        "last_play DESC", // sort by most recent play
         -1                         // no limit
     );
 }
@@ -1010,7 +1012,7 @@ track_list get_recent_tracks(sqlite3* db) {
 track_list get_recent_tracks_limit(sqlite3* db, int limit) {
     return get_tracks_sorted(db,
         "",                       // no WHERE clause
-        "timestamp DESC",// sort by most recent play
+        "last_play DESC",// sort by most recent play
         limit                     // Has limit
     );
 }
@@ -1018,7 +1020,7 @@ track_list get_recent_tracks_limit(sqlite3* db, int limit) {
 track_list get_earliest_tracks_limit(sqlite3* db, int limit) {
     return get_tracks_sorted(db,
         "",                        // no WHERE clause
-        "timestamp ASC",  // sort by least recent play
+        "last_play ASC",  // sort by least recent play
         limit                      // Has limit
     );
 }
@@ -1081,7 +1083,7 @@ album_list get_bottom_albums_limit(sqlite3* db, int limit){
 album_list get_recent_albums(sqlite3* db){
     return get_albums_sorted(db,
         "",                        // no WHERE clause
-        "timestamp DESC", // sort by most recent play
+        "last_play DESC", // sort by most recent play
         -1                         // no limit
         );
 }
@@ -1089,7 +1091,7 @@ album_list get_recent_albums(sqlite3* db){
 album_list get_recent_albums_limit(sqlite3* db, int limit){
     return get_albums_sorted(db,
         "",                       // no WHERE clause
-        "timestamp DESC",// sort by most recent play
+        "last_play DESC",// sort by most recent play
         limit                     // Has limit
         );
 }
@@ -1097,7 +1099,7 @@ album_list get_recent_albums_limit(sqlite3* db, int limit){
 album_list get_earliest_albums_limit(sqlite3* db, int limit){
     return get_albums_sorted(db,
         "",                        // no WHERE clause
-        "timestamp ASC",  // sort by least recent play
+        "last_play ASC",  // sort by least recent play
         limit                      // Has limit
         );
 }
@@ -1158,7 +1160,7 @@ artist_list get_bottom_artists_limit(sqlite3* db, int limit){
 artist_list get_recent_artists(sqlite3* db){
     return get_artists_sorted(db,
         "",                        // no WHERE clause
-        "timestamp DESC", // sort by most recent play
+        "last_play DESC", // sort by most recent play
         -1                         // no limit
         );
 }
@@ -1166,7 +1168,7 @@ artist_list get_recent_artists(sqlite3* db){
 artist_list get_recent_artists_limit(sqlite3* db, int limit){
     return get_artists_sorted(db,
         "",                       // no WHERE clause
-        "timestamp DESC",// sort by most recent play
+        "last_play DESC",// sort by most recent play
         limit                     // Has limit
         );
 }
@@ -1174,7 +1176,7 @@ artist_list get_recent_artists_limit(sqlite3* db, int limit){
 artist_list get_earliest_artists_limit(sqlite3* db, int limit){
     return get_artists_sorted(db,
         "",                        // no WHERE clause
-        "timestamp ASC",  // sort by least recent play
+        "last_play ASC",  // sort by least recent play
         limit                      // Has limit
         );
 }
