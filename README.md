@@ -30,6 +30,7 @@ The project imports Spotify extended streaming history JSON into SQLite, provide
 - `make`
 - `ncurses`
 - `curl`
+- `python-dotenv`
 
 Optional for Spotify metadata in the info panel:
 
