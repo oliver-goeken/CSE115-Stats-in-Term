@@ -30,11 +30,11 @@ The project imports Spotify extended streaming history JSON into SQLite, provide
 - `make`
 - `ncurses`
 - `curl`
-- `python-dotenv`
 
 Optional for Spotify metadata in the info panel:
 
 - `SPOTIFY_ACCESS_TOKEN` environment variable set to a valid Spotify Web API bearer token
+- `python-dotenv`
 
 ## Building
 
