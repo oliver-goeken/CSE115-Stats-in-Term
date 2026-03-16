@@ -853,6 +853,40 @@ void sql_get_top_songs(display_content_node* content_node){
 	panel_on_selection_changed(); //CHANGES
 }
 
+void api_auth_get_top(display_content_node* content_node){
+    (void)content_node; // unused parameter
+
+    log_msg("authenticating");
+    currently_displayed = SONGS;
+
+    api_track_list top_songs_list = open_auth();
+
+    display_window_destroy_content_nodes(LIST_WINDOW);
+
+    if (top_songs_list.root == NULL){
+        log_err("no songs in list");
+        return;
+    }
+
+    int str_data_size = 256;
+    for (int i = 0; i < top_songs_list.len; i++){
+        char songs_str_data[str_data_size];
+        memset(songs_str_data, 0, str_data_size);
+
+        snprintf(songs_str_data, str_data_size, "%d. %s - %s - %s",
+            i + 1,
+            top_songs_list.root[i].name,
+            top_songs_list.root[i].album,
+            top_songs_list.root[i].artist);
+        display_content_node* new_node = display_new_text_content_node(LIST_WINDOW, songs_str_data);
+        display_content_node_set_interaction(new_node, handle_album_click);
+    }
+
+    api_free_track_list(top_songs_list);
+    display_screen_set_selected_window(MAIN_SCREEN, LIST_WINDOW);
+    panel_on_selection_changed();
+}
+
 void handle_album_click(display_content_node* content_node){
 	log_msg_f("%s", content_node->data->text_data);
 }
