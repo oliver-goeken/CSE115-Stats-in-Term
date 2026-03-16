@@ -10,7 +10,7 @@ TESTDIR = tests/
 TESTOBJDIR = $(TESTDIR).obj/
 
 CC = clang
-LDLIBS = -lncurses
+LDLIBS = -lncurses -lcurl
 CFLAGS = -g -Wall -Wextra -I$(INCDIR) -I$(LIBDIR)
 
 CFILES = $(wildcard $(SRCDIR)*.c)
@@ -26,11 +26,13 @@ TEST_FLAGS = -I$(TESTDIR) -I$(SRCDIR)
 TEST_PROJECT_OBJS := $(filter-out $(OBJDIR)stats.o $(OBJDIR)panel.o,$(OBJS))
 
 
-all: $(OUT)
+all: pip $(OUT)
 
 .PHONY: test
 test: $(TEST_OUTS)
 
+.PHONY pip
+pip: python3 -m pip install python-dotenv #for linux/macos
 
 $(OUT): $(OBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LIBOBJS) $(LDLIBS)
@@ -58,3 +60,4 @@ clean:
 	rm -f $(OBJDIR)*.o $(OUT) $(OBJDIR)*.d
 	rm -f $(TEST_OUTS)
 	rm -rf $(TESTDIR)test_*.dSYM
+	rm -f $(SRCDIR)*.txt tokens.json output.txt
