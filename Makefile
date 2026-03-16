@@ -26,13 +26,10 @@ TEST_FLAGS = -I$(TESTDIR) -I$(SRCDIR)
 TEST_PROJECT_OBJS := $(filter-out $(OBJDIR)stats.o $(OBJDIR)panel.o,$(OBJS))
 
 
-all: pip $(OUT)
+all: $(OUT)
 
 .PHONY: test
 test: $(TEST_OUTS)
-
-.PHONY pip
-pip: python3 -m pip install python-dotenv #for linux/macos
 
 $(OUT): $(OBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJS) $(LIBOBJS) $(LDLIBS)

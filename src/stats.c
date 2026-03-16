@@ -462,7 +462,7 @@ int main(int argc, char **argv) {
 				{"Songs", sql_get_top_songs, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"w5/7:4:w1/7:3", WINDOW_NOT_SELECTED, WINDOW_BOXED, options_group, 1, {
-				{"Quit", quit_button_interact, CONTENT_NODE_ALIGN_CENTER}
+				{"Recents", api_auth_get_top, CONTENT_NODE_ALIGN_CENTER}
 										 }},
 			{"0:h-2:w:1", WINDOW_UNSELECTABLE, WINDOW_NOT_BOXED, NULL, 1, {
 				{"[arrow keys] or [hjkl] to navigate - [enter] to select - [esc] to return to options - [H] for help - [:] to enter command - [q] to quit", NULL, CONTENT_NODE_ALIGN_CENTER}

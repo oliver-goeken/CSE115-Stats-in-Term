@@ -173,7 +173,7 @@ api_track_list api_get_top_tracks(const char* access_token) {
 api_track_list open_auth(){
     api_track_list empty = {0};
 
-    int rc = system("/usr/bin/python3 /Users/eshashik/Desktop/CSE115-Stats-in-Term/src/pkce.py");
+    int rc = system("/Users/oliverdgoeken/.local/pipx/venvs/python-dotenv/bin/python3 /Users/oliverdgoeken/school/25-26/q2/cse/CSE115-Stats-in-Term/src/pkce_auth.py");
     if (rc != 0) {
         log_msg("Auth failed");
         return empty;
