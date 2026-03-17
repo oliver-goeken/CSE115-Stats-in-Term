@@ -36,6 +36,13 @@ Optional for Spotify metadata in the info panel:
 - `SPOTIFY_ACCESS_TOKEN` environment variable set to a valid Spotify Web API bearer token
 - `python-dotenv`
 
+Note: ensure you have the correct absolute path to pkce_auth.py in the system command in integration.c line 176
+
+e.g
+```C
+int rc = system("/Users/.../bin/python3 /Users/.../CSE115-Stats-in-Term/src/pkce_auth.py")
+```
+
 ## Building
 
 Build the main binary:
@@ -178,12 +185,6 @@ To enable it:
 ```bash
 export SPOTIFY_ACCESS_TOKEN='your_token_here'
 ./stats
-```
-
-Note: ensure you have the correct absolute path to pkce_auth.py in the system command in integration.c line 176
-e.g
-```C
-int rc = system("/Users/.../bin/python3 /Users/.../CSE115-Stats-in-Term/src/pkce_auth.py")
 ```
 
 ## Testing
