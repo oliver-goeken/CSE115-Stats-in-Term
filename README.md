@@ -40,7 +40,7 @@ Note: ensure you have the correct absolute path to pkce_auth.py in the system co
 
 e.g
 ```C
-int rc = system("/Users/.../bin/python3 /Users/.../CSE115-Stats-in-Term/src/pkce_auth.py")
+int rc = system("/Users/.../bin/python3 /Users/.../CSE115-Stats-in-Term/src/pkce_auth.py 2> /dev/null")
 ```
 
 ## Building
