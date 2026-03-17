@@ -180,6 +180,12 @@ export SPOTIFY_ACCESS_TOKEN='your_token_here'
 ./stats
 ```
 
+Note: ensure you have the correct absolute path to pkce_auth.py in the system command in integration.c line 176
+e.g
+```C
+int rc = system("/Users/.../bin/python3 /Users/.../CSE115-Stats-in-Term/src/pkce_auth.py")
+```
+
 ## Testing
 
 Build the test binaries:
